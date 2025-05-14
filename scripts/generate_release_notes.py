@@ -1,0 +1,2244 @@
+# Static configuration
+RELEASE_TABLE_FILE = None  # Must be specified via --release-table when using table source
+RELEASES_DIR = "releases"
+REPOS = ["backend", "frontend", "agents", "documentation"]
+
+# Label hierarchy for organizing release notes
+label_hierarchy = ["highlight", "enhancement", "breaking-change", "deprecation", "bug", "documentation"]
+
+label_to_category = {
+    "highlight": "### Release highlights",
+    "enhancement": "### Enhancements",
+    "breaking-change": "### Breaking changes",
+    "deprecation": "### Deprecations",
+    "bug": "### Bug fixes",
+    "documentation": "### Documentation"
+}
+
+categories = { 
+    "highlight": [],
+    "enhancement": [],
+    "breaking-change": [],
+    "deprecation": [],
+    "bug": [],
+    "documentation": []
+}
+
+# --- Editing prompt and static editing info ---
+EDIT_TITLE_PROMPT = (
+    "Edit the following PR title for release notes:\n"
+    "- Remove any ticket numbers, branch names, or prefixes (e.g., '9870:', 'hotfix:', 'nibz/cherry pick/1420', etc.).\n"
+    "- Enclose technical terms (words with underscores or file extensions like .py, .lock, etc.) in backticks.\n"
+    "- Use sentence-style capitalization (capitalize only the first word and proper nouns).\n"
+    "- Make the title clear and concise for end users.\n"
+    "- Limit the title to 80 characters or less.\n"
+    "- Use the PR body for context if needed.\n\n"
+    "Title: {title}\n"
+    "PR Body: {body}"
+)
+
+# --- Content editing instructions ---
+EDIT_CONTENT_INSTRUCTIONS = (
+    "When editing content:\n"
+    "- DO NOT add any headings like 'Summary' or 'Release Notes' - just provide the content itself.\n"
+    "- Maintain the original meaning and technical accuracy.\n"
+    "- Use clear, professional language suitable for end users.\n"
+    "- Format technical terms and code references consistently, using backticks for code and file names.\n"
+    "- Keep the content concise and focused on user-facing changes.\n"
+    "- Uppercase all acronyms (e.g., 'LLM', 'API', 'UI', 'REST').\n"
+    "- Ensure proper names are spelled correctly (e.g., 'ValidMind', 'GitHub', 'OpenAI').\n"
+    "- Follow Quarto's Markdown formatting: add blank lines between all block elements (headings, lists, paragraphs, code blocks, callouts, etc.).\n"
+    "- Ensure a space after each list marker (e.g., '- Item').\n"
+    "- Start each list item with a capital letter and use appropriate punctuation.\n"
+    "- Do not leave empty sections or headings without a clear placeholder comment.\n"
+    "- DO NOT add, remove, or modify any comment tags (<!-- ... --> or <!--- ... --->), and ensure they remain on their own lines."
+)
+
+# --- Content validation instructions ---
+VALIDATION_INSTRUCTIONS = (
+    "You are a judge evaluating the quality of edited content.\n"
+    "For {content_type}, check if the edit:\n"
+    "1. Maintains the core meaning and facts.\n"
+    "1. Maintains the core meaning and facts\n"
+    "2. Uses proper formatting and structure\n"
+    "3. Is clear and professional\n"
+    "4. Doesn't add unsupported information\n"
+    "5. For titles: Is properly capitalized and punctuated\n"
+    "6. For summaries/notes: Has proper paragraph structure\n"
+    "Respond with only 'PASS' or 'FAIL' followed by a brief reason."
+)
+
+import subprocess
+import json
+import re
+import shutil
+import numpy as np
+import datetime
+import openai
+from dotenv import dotenv_values
+import os
+from collections import defaultdict
+from IPython import get_ipython
+from collections import Counter
+import sys
+import requests
+import argparse
+import concurrent.futures
+
+ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+
+class PR:
+    def __init__(self, repo_name=None, pr_number=None, title=None, body=None, url=None, labels=None, debug=False):
+        self.repo_name = repo_name
+        self.pr_number = pr_number
+        self.url = url
+        self.data_json = None
+        self.debug = debug
+        
+        self.title = title
+        self.cleaned_title = None
+        self.pr_body = None
+        self.labels = labels if labels is not None else []
+
+        self.generated_lines = None
+        self.edited_text = None
+        
+        self.pr_auto_summary = None
+        self.pr_interpreted_summary = None
+        self.pr_details = None # final form
+        self.validated = False  # Track if any content was validated
+        self.last_validation_result = None  # Add this attribute to store the result
+
+    def load_data_json(self):
+        """Loads the JSON data from a PR to self.data_json, sets to None if any labels are 'internal'
+
+        Modifies:
+            self.data_json
+        """
+        print(f"Storing data from PR #{self.pr_number} of {self.repo_name} ...\n")
+        cmd = ['gh', 'pr', 'view', self.pr_number, '--json', 'title,body,url,labels', '--repo', self.repo_name]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        output = result.stdout.strip()
+
+        output_clean = ansi_escape.sub('', output)
+
+        try:
+            self.data_json = json.loads(output_clean)
+        except json.JSONDecodeError:
+            print(f"ERROR: Unable to parse PR data for PR number {self.pr_number} in repository {self.repo_name}")
+            return None
+        
+        if any(label['name'] == 'internal' for label in self.data_json['labels']):
+            self.data_json = None  # Ignore PRs with the 'internal' label
+        
+    def extract_external_release_notes(self):
+        """Turns the JSON body into lines (str) that are ready for ChatGPT
+        
+        Modifies: 
+            self.pr_body - Contains JSON body
+            self.generated_lines - Converted string ready for ChatGPT
+        """
+        self.pr_body = self.data_json['body']
+        match = re.search(r"## External Release Notes(.+)", self.pr_body, re.DOTALL)
+        if match:
+            extracted_text = match.group(1).strip()
+            # Process each line to add an extra '#' if the line starts with three or more '#'
+            self.generated_lines = '\n'.join(''.join(['#', line]) if line.lstrip().startswith('###') else line for line in extracted_text.split('\n'))  
+            return True
+        else:
+            return None
+        
+    def extract_pr_summary_comment(self):
+        """Takes the github bot's comment containing an auto-generated summary of the PR.
+
+        Modifies:
+            self.pr_auto_summary
+        """
+        # Run the GitHub CLI command and capture the output
+        cmd = f'gh pr view {self.pr_number} --repo {self.repo_name} --comments'
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+
+        if result.returncode == 0:
+            output = result.stdout
+            
+            # Extract the content under '# PR Summary' from comments by github-actions
+            lines = output.splitlines()
+            capture = False
+            summary_content = []
+
+            for line in lines:
+                if "github-actions" in line:
+                    capture = False
+                if "# PR Summary" in line:
+                    capture = True
+                    continue
+                if capture:
+                    if "## Test Suggestions" in line:
+                        break
+                    summary_content.append(line)
+
+            # Join and print the captured summary content
+            summary = "\n".join(summary_content).strip()
+            if summary:
+                self.pr_auto_summary = summary
+            else:
+                print(f"No PR summary found for #{self.pr_number} from {self.repo_name}\n")
+        else:
+            print(f"Failed to fetch comments: {result.stderr}")
+
+    def edit_content(self, content_type, content, editing_instructions):
+        """Unified function to edit PR content (summaries, titles, or release notes).
+        
+        Args:
+            content_type (str): Type of content being edited ('title', 'summary', or 'notes')
+            content (str): The content to edit
+            editing_instructions (str): Instructions for the LLM editor
+            
+        Modifies:
+            self.cleaned_title: If content_type is 'title'
+            self.pr_interpreted_summary: If content_type is 'summary'
+            self.edited_text: If content_type is 'notes'
+            self.validated: Set to True if validation passes
+        """
+        if self.debug:
+            print(f"DEBUG: [edit_content] PR #{self.pr_number} in {self.repo_name} - Editing {content_type}")
+            print(f"DEBUG: [edit_content] Original content (first 100 chars): {repr(content[:100]) if content else None}")
+            print(f"DEBUG: [edit_content] Editing instructions (first 100 chars): {repr(editing_instructions[:100]) if editing_instructions else None}")
+        print(f"Editing {content_type} for PR #{self.pr_number} in {self.repo_name} ...")
+        try:
+            if self.debug:
+                print(f"DEBUG: [edit_content] Making OpenAI API call for PR #{self.pr_number}")
+            # Combine the specific editing instructions with the general content instructions
+            full_instructions = f"{editing_instructions}\n\n{EDIT_CONTENT_INSTRUCTIONS}"
+            
+            # First attempt at editing
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": full_instructions
+                    },
+                    {
+                        "role": "user",
+                        "content": content
+                    }
+                ],
+                max_tokens=4096,
+                temperature=0.2,
+                frequency_penalty=0.0,
+                presence_penalty=0.0
+            )
+            first_edit = response.choices[0].message.content
+            if self.debug:
+                print(f"DEBUG: [edit_content] First attempt content (first 100 chars): {repr(first_edit[:100]) if first_edit else None}")
+            
+            # Validate first attempt
+            if self.debug:
+                print(f"DEBUG: [edit_content] Validating first attempt for PR #{self.pr_number}")
+            is_valid, validation_result = self.validate_edit(content_type, content, first_edit)
+            if self.debug:
+                print(f"DEBUG: [edit_content] First validation result: {is_valid}")
+            
+            # If first attempt fails, try again
+            if not is_valid:
+                if self.debug:
+                    print(f"INFO: First validation failed for {content_type} in PR #{self.pr_number} - trying again")
+                # Second attempt with slightly different temperature
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": full_instructions
+                        },
+                        {
+                            "role": "user",
+                            "content": content
+                        }
+                    ],
+                    max_tokens=4096,
+                    temperature=0.3,  # Slightly higher temperature for variation
+                    frequency_penalty=0.0,
+                    presence_penalty=0.0
+                )
+                second_edit = response.choices[0].message.content
+                if self.debug:
+                    print(f"DEBUG: [edit_content] Second attempt content (first 100 chars): {repr(second_edit[:100]) if second_edit else None}")
+                
+                # Validate second attempt
+                if self.debug:
+                    print(f"DEBUG: [edit_content] Validating second attempt for PR #{self.pr_number}")
+                is_valid, validation_result = self.validate_edit(content_type, content, second_edit)
+                if self.debug:
+                    print(f"DEBUG: [edit_content] Second validation result: {is_valid}")
+                
+                if not is_valid:
+                    print(f"WARN: A content edit or edit validation failed twice for {content_type} in PR #{self.pr_number}")
+                    edited_content = first_edit  # Use the first edit if both fail
+                    self.last_validation_result = validation_result
+                else:
+                    edited_content = second_edit  # Use the second edit if it passes
+                    self.last_validation_result = validation_result
+            else:
+                edited_content = first_edit  # Use the first edit if it passes
+            
+            # Set the content based on type
+            if content_type == 'title':
+                self.cleaned_title = edited_content.rstrip('.')
+                if self.debug:
+                    print(f"DEBUG: [edit_content] Set cleaned_title: {self.cleaned_title}")
+            elif content_type == 'summary':
+                self.pr_interpreted_summary = edited_content
+                self.edited_text = self.pr_interpreted_summary
+                if self.debug:
+                    print(f"DEBUG: [edit_content] Set pr_interpreted_summary and edited_text")
+            elif content_type == 'notes':
+                self.edited_text = edited_content
+                if self.debug:
+                    print(f"DEBUG: [edit_content] Set edited_text")
+            
+            if is_valid:
+                self.validated = True
+                
+        except Exception as e:
+            print(f"\nFailed to edit {content_type} with OpenAI: {str(e)}")
+            print(f"\n{content}\n")
+
+    def validate_edit(self, content_type, original_content, edited_content):
+        """Uses LLM to validate edits by checking for common issues.
+        
+        Args:
+            content_type (str): Type of content that was edited
+            original_content (str): The original content before editing
+            edited_content (str): The edited content to validate
+            
+        Returns:
+            tuple: (bool, str): True if the edit passes validation, False otherwise; and the raw PASS/FAIL string
+        """
+        if self.debug:
+            print(f"DEBUG: [validate_edit] PR #{self.pr_number} - Validating {content_type}")
+            print(f"DEBUG: [validate_edit] Original (first 100 chars): {repr(original_content[:100]) if original_content else None}")
+            print(f"DEBUG: [validate_edit] Edited (first 100 chars): {repr(edited_content[:100]) if edited_content else None}")
+        validation_prompt = VALIDATION_INSTRUCTIONS.format(content_type=content_type)
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": validation_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Original content: {original_content}\n\nEdited content: {edited_content}"
+                    }
+                ],
+                max_tokens=100,
+                temperature=0.0
+            )
+            result = response.choices[0].message.content.strip()
+            if self.debug:
+                print(f"DEBUG: [validate_edit] Validation LLM response: {result}")
+            return result.startswith('PASS'), result
+        except Exception as e:
+            print(f"\nValidation failed: {str(e)}")
+            return True, "FAIL: Exception during validation"
+
+class ReleaseURL:
+    def __init__(self, url):
+        self.url = url
+        self.repo_name = None # backend
+        self.tag_name = None # v.2.0.23
+        self.data_json = None
+        self.prs = []
+
+    def extract_repo_name(self):
+        """Extracts and returns the repository name from the URL."""
+        match = re.search(r"github\.com/(.+)/releases/tag/", self.url)
+        if not match:
+            print(f"ERROR: Invalid URL format '{self.url}'")
+            return None
+        return match.group(1)
+
+    def set_repo_and_tag_name(self):
+        """Sets the repo name (documentation/backend/...) and the release tag from the GitHub URL.
+
+        Modifies:
+            self.repo_name
+            self.tag_name
+        """
+        match = re.search(r"github\.com/(.+)/releases/tag/(.+)$", self.url)
+        if not match:
+            print(f"ERROR: Invalid URL format '{self.url}'")
+            return
+
+        self.repo_name, self.tag_name = match.groups()
+
+    def extract_prs(self):
+        """Extracts PRs from the release URL.
+
+        Modifies:
+            self.prs
+            self.data_json
+        """
+        print(f"Extracting PRs from {self.url} ...\n")
+        cmd_release = ['gh', 'api', f'repos/{self.repo_name}/releases/tags/{self.tag_name}']
+        result_release = subprocess.run(cmd_release, capture_output=True, text=True)
+        output_release = result_release.stdout.strip()
+
+        output_release_clean = ansi_escape.sub('', output_release) # to clean up notebook output
+
+        try:
+            self.data_json = json.loads(output_release_clean)
+        except json.JSONDecodeError:
+            print(f"ERROR: Unable to parse release data for URL '{self.url}'")      
+        
+        if 'body' in self.data_json:
+            body = self.data_json['body']
+            pr_numbers = re.findall(r"https://github.com/.+/pull/(\d+)", body)
+
+            for pr_number in pr_numbers: # initialize PR objects using pr_numbers and add to list of PRs
+                curr_PR = PR(self.repo_name, pr_number)
+                self.prs.append(curr_PR)
+                print(f"PR #{pr_number} retrieved.\n")
+
+        else:
+            print(f"ERROR: No body found in release data for URL '{self.url}'")
+
+    def populate_pr_data(self):
+        """Helper method. Calls JSON loader on each PR in a URL.
+        """
+        for pr in self.prs:
+            pr.load_data_json()
+
+def get_env_location():
+    """
+    Asks the user for the location of their .env file.
+
+    Returns:
+        str: The provided location or a default value (../.env).
+    """
+    # Default location of the .env file
+    default_env_location = "../.env"
+
+    # Prompt the user for input
+    env_location = input(
+        f"Enter the location of your .env file (leave empty for default [{default_env_location}]): "
+    ) or default_env_location
+
+    print(f"Using .env file location: {env_location}\n")
+    return env_location
+
+def setup_openai_api(env_location):
+    """
+    Loads .env file from the specified location and retrieves the OpenAI API key.
+    Also checks environment variables for the API key.
+
+    Args:
+        env_location (str): The location of the .env file.
+
+    Raises:
+        FileNotFoundError: If the .env file is not found at the specified location.
+        KeyError: If the OPENAI_API_KEY is not present in the .env file or environment variables.
+    """
+    api_key = None
+    
+    # First check environment variables
+    api_key = os.environ.get('OPENAI_API_KEY')
+    if api_key:
+        print("✓ Found OpenAI API Key in environment variables\n")
+        return api_key
+
+    # If not in environment, try .env file
+    try:
+        config = dotenv_values(env_location)
+        if config:
+            api_key = config.get('OPENAI_API_KEY')
+            if api_key:
+                print(f"✓ Found OpenAI API Key in {env_location}\n")
+                return api_key
+    except Exception as e:
+        print(f"Error reading .env file: {str(e)}")
+
+    # If we get here, no API key was found
+    print("ERROR: OPENAI_API_KEY not found in environment variables or .env file")
+    sys.exit(1)
+
+def display_list(array):
+    """
+    Lists an array in a numbered list. Used to check the `label_hierarchy`.
+    """
+    print("Label hierarchy:\n")
+    for i, item in enumerate(array, start=1):
+        print(f"{i}. {item}")
+
+release_components = {} 
+
+def parse_date(date_str):
+    """Parse a date string into a datetime object, handling different formats.
+    
+    Args:
+        date_str (str): Date string to parse
+        
+    Returns:
+        datetime: Parsed datetime object or datetime.min if parsing fails
+    """
+    if date_str.lower() in ['n/a', 'tbd']:
+        return datetime.datetime.min
+        
+    # Try different date formats
+    formats = [
+        "%B %d, %Y",  # April 14, 2025
+        "%B %Y",      # November 2024
+        "%Y-%m-%d",   # 2025-04-14
+        "%m/%d/%Y"    # 04/14/2025
+    ]
+    
+    for fmt in formats:
+        try:
+            return datetime.datetime.strptime(date_str, fmt)
+        except ValueError:
+            continue
+            
+    print(f"WARN: Could not parse date '{date_str}' - using minimum date")
+    return datetime.datetime.min
+
+def check_github_tag(repo, version):
+    """Check if a GitHub tag exists for a given repository and version.
+    
+    Args:
+        repo (str): Repository name (backend, frontend, agents, documentation)
+        version (str): Release version (with or without cmvm/ prefix)
+        
+    Returns:
+        bool: True if tag exists, False otherwise
+    """
+    try:
+        # Ensure version has cmvm/ prefix
+        if not version.startswith('cmvm/'):
+            version = f'cmvm/{version}'
+            
+        # First check for git tags
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags/{version}']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            return True
+            
+        # If no git tag found, check releases
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{version}']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            return True
+            
+        # If still not found, list all tags for debugging
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/tags']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            tags = json.loads(result.stdout)
+            cmvm_tags = [t['name'] for t in tags if t['name'].startswith('cmvm/')]
+            if cmvm_tags:
+                return False
+            
+        return False
+            
+    except Exception as e:
+        print(f"  WARN: Error checking tag {version} in {repo}: {e}")
+        return False
+
+def get_github_tag_url(repo, version):
+    """Construct GitHub tag URL for a given repository and version.
+    
+    Args:
+        repo (str): Repository name (backend, frontend, agents, documentation)
+        version (str): Release version
+        
+    Returns:
+        str: GitHub tag URL
+    """
+    return f"https://github.com/validmind/{repo}/releases/tag/{version}"
+
+def get_all_cmvm_tags(repo, version=None, debug=False):
+    """Get all cmvm tags from a repository using /git/refs/tags for reliability.
+    
+    Args:
+        repo (str): Repository name (backend, frontend, agents, documentation)
+        version (str, optional): Specific version to check for
+        debug (bool): Whether to show debug output
+        
+    Returns:
+        List[str]: List of cmvm tags found in the repository
+    """
+    try:
+        # Get all refs/tags (may require paging for large repos)
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            tags = json.loads(result.stdout)
+            # Handle both single tag and multiple tags cases
+            if isinstance(tags, dict):
+                tags = [tags]
+            elif not isinstance(tags, list):
+                tags = []
+                
+            cmvm_tags = []
+            for t in tags:
+                ref = t.get('ref', '')
+                # ref is like 'refs/tags/cmvm/25.04'
+                if ref.startswith('refs/tags/cmvm/'):
+                    tag_name = ref.replace('refs/tags/', '')
+                    cmvm_tags.append(tag_name)
+            if debug:
+                # Sort tags using version_key function
+                sorted_tags = sorted(cmvm_tags, key=version_key)
+                print(f"DEBUG: {repo} tag list sorted: {sorted_tags}")
+            
+            # Check for releases in parallel
+            import concurrent.futures
+            
+            def check_release(tag):
+                cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if result.returncode == 0:
+                    if debug and (not version or tag.replace('cmvm/', '') == version.replace('cmvm/', '')):
+                        print(f"DEBUG: Release exists for {tag}")
+                return tag
+            
+            # Use ThreadPoolExecutor to check releases in parallel
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # Submit all tasks
+                future_to_tag = {executor.submit(check_release, tag): tag for tag in cmvm_tags}
+                # Wait for all tasks to complete
+                concurrent.futures.wait(future_to_tag)
+                
+            return cmvm_tags
+    except Exception as e:
+        if debug:
+            print(f"DEBUG: Error getting tags from {repo}: {e}")
+        else:
+            print(f"  WARN: Error getting tags from {repo}: {e}")
+    return []
+
+def get_pr_content(pr_number, repo, debug=False):
+    """Get content from a PR's external release notes, PR summary, title, and image URLs.
+    
+    Args:
+        pr_number (str): PR number
+        repo (str): Repository name
+        debug (bool): Whether to show debug output
+        
+    Returns:
+        tuple: (external_notes, pr_summary, labels, title, pr_body, image_urls) - all may be None
+    """
+    try:
+        cmd = ['gh', 'pr', 'view', pr_number, '--json', 'body,labels,comments,title', '--repo', f'validmind/{repo}']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            if debug:
+                print(f"DEBUG: Failed to fetch PR #{pr_number} in {repo}")
+            return None, None, [], None, None, []
+        pr_data = json.loads(result.stdout)
+        if debug:
+            print(f"DEBUG: PR #{pr_number} in {repo} - Title: {pr_data.get('title')}")
+            print(f"DEBUG: PR #{pr_number} in {repo} - Labels: {[label['name'] for label in pr_data.get('labels', [])]}")
+        # Always build a list of label names
+        labels = [label['name'] for label in pr_data.get('labels', [])]
+        # Skip internal PRs but return the title
+        if 'internal' in labels:
+            if debug:
+                print(f"DEBUG: PR #{pr_number} in {repo} is internal, skipping.")
+            return None, None, ['internal'], pr_data.get('title'), None, []
+        # Extract external release notes
+        external_notes = None
+        if pr_data.get('body'):
+            match = re.search(r"## External Release Notes(.+)", pr_data['body'], re.DOTALL)
+            if match:
+                external_notes = match.group(1).strip()
+        # Extract PR summary (robust: search all comments for '# PR Summary')
+        pr_summary = None
+        comments = pr_data.get('comments', [])
+        if debug:
+            print(f"DEBUG: PR #{pr_number} in {repo} - Number of comments: {len(comments)}")
+        for i, comment in enumerate(comments):
+            body = comment.get('body', '')
+            if debug:
+                print(f"DEBUG: PR #{pr_number} in {repo} - Comment {i} full body: {body!r}")
+            if "# PR Summary" in body:
+                match = re.search(r"# PR Summary\s*(.+?)(?=^## |\Z)", body, re.DOTALL | re.MULTILINE)
+                if match:
+                    pr_summary = match.group(1).strip()
+                    if debug:
+                        print(f"DEBUG: PR #{pr_number} in {repo} - Found PR summary: {pr_summary[:80]!r}")
+                    break
+        if pr_summary is None and debug:
+            print(f"DEBUG: PR #{pr_number} in {repo} - No PR summary found.")
+        title = pr_data.get('title')
+        pr_body = pr_data.get('body')
+        # Extract image URLs from PR body and comments
+        image_urls = []
+        if pr_body:
+            image_urls += re.findall(r'!\[[^\]]*\]\((https?://[^)]+)\)', pr_body)
+        for comment in comments:
+            cbody = comment.get('body', '')
+            image_urls += re.findall(r'!\[[^\]]*\]\((https?://[^)]+)\)', cbody)
+        if debug:
+            print(f"DEBUG: PR #{pr_number} in {repo} - Image URLs: {image_urls}")
+        return external_notes, pr_summary, labels, title, pr_body, image_urls
+    except Exception as e:
+        if debug:
+            print(f"  WARN: Error getting PR content for #{pr_number} in {repo}: {e}")
+        return None, None, [], None, None, []
+
+def version_key(tag):
+    # Remove prefix
+    tag = tag.replace('cmvm/', '')
+    # Split RC if present
+    if '-rc' in tag:
+        base, rc = tag.split('-rc')
+        is_rc = 1
+        rc_number = int(rc) if rc.isdigit() else 0
+    else:
+        base = tag
+        is_rc = 0
+        rc_number = 0
+    # Split base into major, minor, patch (pad as needed)
+    parts = base.split('.')
+    major = int(parts[0]) if len(parts) > 0 and parts[0].isdigit() else 0
+    minor = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+    patch = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
+    # RCs sort before their base version (so is_rc=1 sorts before is_rc=0)
+    return (major, minor, patch, -is_rc, rc_number)
+
+def get_previous_tag(repo, tag, debug=False):
+    """Find the previous tag for a given repo and current tag, using CMVM versioning rules.
+    Uses /git/refs/tags as primary, /tags as fallback.
+    
+    For RC tags (e.g., 25.05-rc1):
+    1. First looks for previous RC of same version (e.g., looks for earlier RCs)
+    2. Then tries previous version's final release
+    3. Finally tries previous version's RCs in reverse order
+    
+    For regular releases:
+    1. First tries previous regular release
+    2. Then tries RCs of current version in reverse order
+    """
+    tag_names = set()
+    # Try /git/refs/tags first
+    cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags']
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode == 0:
+        tags = json.loads(result.stdout)
+        if isinstance(tags, dict):
+            tags = [tags]
+        for t in tags:
+            ref = t.get('ref', '')
+            if ref.startswith('refs/tags/cmvm/'):
+                tag_names.add(ref.replace('refs/tags/', ''))
+    # Fallback to /tags if no cmvm/ tags found
+    if not tag_names:
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/tags']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            tags = json.loads(result.stdout)
+            for t in tags:
+                name = t.get('name', '')
+                if name.startswith('cmvm/'):
+                    tag_names.add(name)
+
+    # Extract version info from current tag
+    match = re.match(r'cmvm/(\d+)\.(\d+)(?:\.(\d+))?(?:-rc(\d+))?$', tag)
+    if not match:
+        if debug:
+            print(f"DEBUG: {repo} invalid tag format: {tag}")
+        return None
+    
+    major, minor, patch, rc_num = match.groups()
+    major, minor = int(major), int(minor)
+    patch = int(patch) if patch else None
+    is_rc = rc_num is not None
+    rc_num = int(rc_num) if rc_num else None
+    
+    # Filter and sort tags
+    valid_tags = []
+    for tag_name in tag_names:
+        match = re.match(r'cmvm/(\d+)\.(\d+)(?:\.(\d+))?(?:-rc(\d+))?$', tag_name)
+        if not match:
+            continue
+        tag_major = int(match.group(1))
+        tag_minor = int(match.group(2))
+        tag_patch = int(match.group(3)) if match.group(3) else None
+        tag_rc = int(match.group(4)) if match.group(4) else None
+        valid_tags.append({
+            'name': tag_name,
+            'major': tag_major,
+            'minor': tag_minor,
+            'patch': tag_patch,
+            'rc': tag_rc
+        })
+    
+    # Sort tags by version and RC number (RCs come after their base version)
+    valid_tags.sort(key=lambda x: (x['major'], x['minor'], x['patch'] if x['patch'] is not None else 0, float('inf') if x['rc'] is None else x['rc']))
+    
+    if debug:
+        print(f"\nDEBUG: {repo} tag list sorted: {[t['name'] for t in valid_tags]}")
+    
+    # Find current tag's index
+    current_idx = None
+    for i, t in enumerate(valid_tags):
+        if (t['major'] == major and t['minor'] == minor and 
+            ((is_rc and t['rc'] == rc_num) or (not is_rc and t['rc'] is None and t['patch'] == patch))):
+            current_idx = i
+            break
+    
+    if current_idx is None:
+        if debug:
+            print(f"DEBUG: {repo} current_tag {tag} not in tag list.")
+        return None
+    
+    if current_idx == 0:
+        if debug:
+            print(f"DEBUG: {repo} current_tag {tag} is the first tag.")
+        return None
+    
+    # For RC tags
+    if is_rc:
+        # First try previous RC of same version
+        for t in reversed(valid_tags[:current_idx]):
+            if t['major'] == major and t['minor'] == minor and t['rc'] is not None:
+                if debug:
+                    print(f"DEBUG: {repo} previous RC tag for {tag}: {t['name']}")
+                return t['name'].replace('cmvm/', '')
+        
+        # Then try previous version's final release
+        for t in reversed(valid_tags[:current_idx]):
+            if t['rc'] is None:
+                if debug:
+                    print(f"DEBUG: {repo} previous release for {tag}: {t['name']}")
+                return t['name'].replace('cmvm/', '')
+        
+        # Finally try previous version's RCs
+        if valid_tags[:current_idx]:
+            prev_tag = valid_tags[current_idx - 1]['name']
+            if debug:
+                print(f"DEBUG: {repo} previous version RC for {tag}: {prev_tag}")
+            return prev_tag.replace('cmvm/', '')
+    
+    # For regular releases
+    else:
+        # First try previous regular release
+        for t in reversed(valid_tags[:current_idx]):
+            if t['rc'] is None:
+                if debug:
+                    print(f"DEBUG: {repo} previous non-RC tag for {tag}: {t['name']}")
+                return t['name'].replace('cmvm/', '')
+        
+        # Then try RCs of current version
+        for t in reversed(valid_tags[:current_idx]):
+            if t['major'] == major and t['minor'] == minor and t['rc'] is not None:
+                if debug:
+                    print(f"DEBUG: {repo} previous version RC for {tag}: {t['name']}")
+                return t['name'].replace('cmvm/', '')
+    
+    # Fallback to immediate previous tag if no better match found
+    if debug:
+        print(f"DEBUG: {repo} fallback previous tag for {tag}: {valid_tags[current_idx - 1]['name']}")
+    return valid_tags[current_idx - 1]['name'].replace('cmvm/', '')
+
+def get_commits_for_tag(repo, tag, debug=False):
+    """Get all PRs merged between the previous tag and this tag, excluding internal PRs.
+    If no previous tag is found, fall back to extracting PRs from the release or tag body.
+    """
+    try:
+        prev_tag = get_previous_tag(repo, tag, debug=debug)
+        if not prev_tag:
+            if debug:
+                print(f"DEBUG: No previous tag found for {tag} in {repo}, using tag/release body as fallback.")
+            # Try to fetch the release body first
+            cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
+            if debug:
+                print(f"DEBUG: Release API call: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if debug:
+                print(f"DEBUG: Release API call for {tag} returned code: {result.returncode}")
+                if result.returncode != 0:
+                    print(f"DEBUG: Release API call error: {result.stderr}")
+            body = ''
+            if result.returncode == 0:
+                try:
+                    release_data = json.loads(result.stdout)
+                    body = release_data.get('body', '')
+                    if debug:
+                        print(f"DEBUG: Release body length: {len(body)}")
+                except Exception as e:
+                    if debug:
+                        print(f"DEBUG: Could not parse release body for {tag} in {repo}: {e}")
+            if not body:
+                # If no release, try to fetch the annotated tag message
+                cmd = ['gh', 'api', f'repos/validmind/{repo}/git/tags/{tag}']
+                if debug:
+                    print(f"DEBUG: Tag API call: {' '.join(cmd)}")
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if debug:
+                    print(f"DEBUG: Tag API call for {tag} returned code: {result.returncode}")
+                    if result.returncode != 0:
+                        print(f"DEBUG: Tag API call error: {result.stderr}")
+                if result.returncode == 0:
+                    try:
+                        tag_data = json.loads(result.stdout)
+                        body = tag_data.get('message', '')
+                        if debug:
+                            print(f"DEBUG: Tag message length: {len(body)}")
+                    except Exception as e:
+                        if debug:
+                            print(f"DEBUG: Could not parse tag message for {tag} in {repo}: {e}")
+            pr_numbers = re.findall(r"https://github.com/validmind/.+/pull/(\d+)", body)
+            if debug:
+                print(f"DEBUG: Found {len(pr_numbers)} PR numbers in body")
+            commits = []
+            for pr_number in pr_numbers:
+                external_notes, pr_summary, labels, title, pr_body, image_urls = get_pr_content(pr_number, repo, debug=debug)
+                if 'internal' in labels:
+                    continue  # skip internal PRs
+                commits.append({
+                    'pr_number': pr_number,
+                    'external_notes': external_notes,
+                    'pr_summary': pr_summary,
+                    'labels': labels,
+                    'title': title,
+                    'pr_body': pr_body,
+                    'image_urls': image_urls
+                })
+            return commits
+        # If we have a previous tag, use the commit-range logic
+        # Get SHA for previous tag
+        prev_tag_with_prefix = f"cmvm/{prev_tag}" if not prev_tag.startswith('cmvm/') else prev_tag
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags/{prev_tag_with_prefix}']
+        if debug:
+            print(f"DEBUG: Previous tag SHA API call: {' '.join(cmd)}")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if debug:
+            print(f"DEBUG: Previous tag SHA API call for {prev_tag_with_prefix} returned code: {result.returncode}")
+            if result.returncode != 0:
+                print(f"DEBUG: Previous tag SHA API call error: {result.stderr}")
+        if result.returncode != 0:
+            if debug:
+                print(f"DEBUG: Could not get SHA for previous tag {prev_tag_with_prefix}")
+            return []
+        tag_data = json.loads(result.stdout)
+        base_sha = tag_data['object']['sha']
+        if debug:
+            print(f"DEBUG: Previous tag {prev_tag_with_prefix} SHA: {base_sha}")
+        # Get SHA for current tag
+        current_tag_with_prefix = f"cmvm/{tag}" if not tag.startswith('cmvm/') else tag
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags/{current_tag_with_prefix}']
+        if debug:
+            print(f"DEBUG: Current tag SHA API call: {' '.join(cmd)}")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if debug:
+            print(f"DEBUG: Current tag SHA API call for {current_tag_with_prefix} returned code: {result.returncode}")
+            if result.returncode != 0:
+                print(f"DEBUG: Current tag SHA API call error: {result.stderr}")
+        if result.returncode != 0:
+            if debug:
+                print(f"DEBUG: Could not get SHA for current tag {current_tag_with_prefix}")
+            return []
+        tag_data = json.loads(result.stdout)
+        head_sha = tag_data['object']['sha']
+        if debug:
+            print(f"DEBUG: Current tag {current_tag_with_prefix} SHA: {head_sha}")
+        # Get all commits in the range (exclusive of base, inclusive of head)
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/compare/{base_sha}...{head_sha}']
+        if debug:
+            print(f"DEBUG: Compare API call: {' '.join(cmd)}")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if debug:
+            print(f"DEBUG: Compare API call returned code: {result.returncode}")
+            if result.returncode != 0:
+                print(f"DEBUG: Compare API call error: {result.stderr}")
+        if result.returncode != 0:
+            if debug:
+                print(f"DEBUG: Could not get commits between {base_sha} and {head_sha}")
+            return []
+        compare_data = json.loads(result.stdout)
+        commit_shas = [c['sha'] for c in compare_data.get('commits', [])]
+        if debug:
+            print(f"DEBUG: Found {len(commit_shas)} commits between {prev_tag_with_prefix} and {current_tag_with_prefix}")
+            if commit_shas:
+                print(f"DEBUG: First commit SHA: {commit_shas[0]}")
+                print(f"DEBUG: Last commit SHA: {commit_shas[-1]}")
+        pr_numbers = set()
+        pr_info = {}
+        for sha in commit_shas:
+            # Find associated PRs for each commit
+            cmd = ['gh', 'api', f'repos/validmind/{repo}/commits/{sha}/pulls', '-H', 'Accept: application/vnd.github.groot-preview+json']
+            if debug:
+                print(f"DEBUG: PR lookup API call: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if debug and result.returncode != 0:
+                print(f"DEBUG: Could not get PRs for commit {sha}, code: {result.returncode}")
+                print(f"DEBUG: PR lookup API call error: {result.stderr}")
+            if result.returncode != 0:
+                continue
+            pulls = json.loads(result.stdout)
+            for pr in pulls:
+                pr_number = str(pr['number'])
+                if pr_number not in pr_numbers:
+                    pr_numbers.add(pr_number)
+                    pr_info[pr_number] = pr
+        if debug:
+            print(f"DEBUG: Found {len(pr_numbers)} PRs in commits")
+            if pr_numbers:
+                print(f"DEBUG: PR numbers found: {sorted(pr_numbers)}")
+        commits = []
+        for pr_number in pr_numbers:
+            try:
+                external_notes, pr_summary, labels, title, pr_body, image_urls = get_pr_content(pr_number, repo, debug=debug)
+                if 'internal' in labels:
+                    continue  # skip internal PRs
+                commits.append({
+                    'pr_number': pr_number,
+                    'external_notes': external_notes,
+                    'pr_summary': pr_summary,
+                    'labels': labels,
+                    'title': title,
+                    'pr_body': pr_body,
+                    'image_urls': image_urls
+                })
+            except Exception as e:
+                if debug:
+                    print(f"DEBUG: Error getting PR content for #{pr_number} in {repo}: {e}")
+                continue
+        if debug:
+            print(f"DEBUG: Processed {len(commits)} PRs for {current_tag_with_prefix}")
+            if commits:
+                print(f"DEBUG: PR numbers processed: {[c['pr_number'] for c in commits]}")
+        return commits
+    except Exception as e:
+        if debug:
+            print(f"DEBUG: Error getting commits for tag {tag} in {repo}: {e}")
+        return []
+
+def generate_changelog_content(repo, tag, commits, has_release):
+    """Generate changelog content for a repository and tag.
+
+    Args:
+        repo (str): Repository name
+        tag (str): Tag name
+        commits (List[dict]): List of commit information
+        has_release (bool): Whether a release exists for this tag
+
+    Returns:
+        str: Formatted changelog content
+    """
+    repo_name = repo.capitalize()
+    tag_url = f"https://github.com/validmind/{repo}/releases/tag/{tag}"
+    
+    # Get the commit SHA for the tag
+    try:
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags/{tag}']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            tag_data = json.loads(result.stdout)
+            sha = tag_data['object']['sha']
+            compare_url = f"Compare API call: gh api repos/validmind/{repo}/compare/{sha}...{sha}"
+        else:
+            # Fallback to tag-based URL if SHA lookup fails
+            compare_url = f"Compare API call: gh api repos/validmind/{repo}/compare/{tag}...{tag}"
+    except Exception:
+        # Fallback to tag-based URL if any error occurs
+        compare_url = f"Compare API call: gh api repos/validmind/{repo}/compare/{tag}...{tag}"
+    
+    # Filter out internal PRs (those with 'internal' in their labels)
+    public_commits = [c for c in commits if not (c.get('labels') and 'internal' in c['labels'])]
+    
+    if not public_commits:
+        # Comment out the heading and tag/release info if no public PRs
+        content = f"<!--- ## {repo_name} --->\n"
+        if has_release:
+            content += f"<!--- Release: [{tag}]({tag_url}) --->\n"
+            content += f"<!--- {compare_url} --->\n"
+        else:
+            content += f"<!--- Tag: [{tag}]({tag_url}) --->\n"
+            content += f"<!--- {compare_url} --->\n"
+        content += "<!-- No public PRs found for this release -->\n"
+        return content  # <-- EARLY RETURN, nothing else is executed!
+    
+    # If there are public PRs, proceed as before
+    content = f"## {repo_name}\n"
+    if has_release:
+        content += f"<!--- Release: [{tag}]({tag_url}) --->\n"
+        content += f"<!--- {compare_url} --->\n\n"
+    else:
+        content += f"<!--- Tag: [{tag}]({tag_url}) --->\n"
+        content += f"<!--- {compare_url} --->\n\n"
+    labeled_commits = defaultdict(list)
+    for commit in public_commits:
+        if commit['labels']:
+            for label in commit['labels']:
+                if label in label_to_category:
+                    labeled_commits[label].append(commit)
+                    break
+            else:
+                labeled_commits['other'].append(commit)
+        else:
+            labeled_commits['other'].append(commit)
+    for label in label_hierarchy + ['other']:
+        if label in labeled_commits and labeled_commits[label]:
+            # Skip Documentation heading if repository is documentation
+            if label == 'documentation' and repo == 'documentation':
+                content += "\n"
+            else:
+                content += f"{label_to_category.get(label, '<!-- ### Changes with no label -->')}\n\n"
+            for commit in labeled_commits[label]:
+                pr_url = f"https://github.com/validmind/{repo}/pull/{commit['pr_number']}"
+                pr_number = commit['pr_number']
+                title = commit.get('cleaned_title') or commit.get('title') or f"PR #{pr_number}"
+                has_content = bool(commit.get('external_notes') or commit.get('pr_summary') or commit.get('pr_body'))
+                if not has_content:
+                    # Comment out the entire PR section if no content
+                    content += f"<!--- PR #{pr_number}: {pr_url} --->\n"
+                    content += f"<!--- ### {title} (#{pr_number}) --->\n"
+                    content += f"<!-- No release notes or summary provided. -->\n\n"
+                    continue
+                content += f"<!--- PR #{pr_number}: {pr_url} --->\n"
+                content += f"### {title} (#{pr_number})\n\n"
+                if commit['external_notes']:
+                    content += f"{commit['external_notes']}\n\n"
+                if commit['pr_summary']:
+                    content += f"{commit['pr_summary']}\n\n"
+                # If no notes or summary, use PR body as fallback
+                if not commit['external_notes'] and not commit['pr_summary']:
+                    if commit.get('pr_body'):
+                        content += f"{commit['pr_body']}\n\n"
+                # Include image URLs as comments
+                if commit.get('image_urls'):
+                    for url in commit['image_urls']:
+                        content += f"<!-- Image: {url} -->\n"
+    return content
+
+def check_github_release(repo, version):
+    """Check if a GitHub release exists for a given repository and version.
+    
+    Args:
+        repo (str): Repository name (backend, frontend, agents, documentation)
+        version (str): Release version
+        
+    Returns:
+        bool: True if release exists, False otherwise
+    """
+    # Handle different version formats
+    if version.startswith('cmvm/'):
+        tag = version
+    else:
+        tag = f"cmvm/{version}"
+    
+    try:
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return result.returncode == 0
+    except Exception as e:
+        print(f"  WARN: Error checking release {tag} in {repo}: {e}")
+        return False
+
+def create_release_file(release, overwrite=False, debug=False):
+    """Create a release note file for a specific version.
+    
+    Args:
+        release: Dictionary containing release information
+        overwrite: Whether to overwrite existing files
+        debug: Whether to show debug output
+    """
+    version = release['version']
+    date = release['date']
+    
+    # Convert version to file name format (e.g., 25.03.02 -> 25_03_02.qmd)
+    file_version = version.replace('cmvm/', '').replace('.', '_')
+    file_name = f"{file_version}.qmd"
+    
+    # Determine the output directory based on whether the tag contains 'cmvm'
+    if 'cmvm' in version.lower():
+        output_dir = os.path.join(RELEASES_DIR, 'cmvm')
+    else:
+        output_dir = RELEASES_DIR
+        
+    file_path = os.path.join(output_dir, file_name)
+    
+    # Check if file exists and handle overwrite at the start
+    if os.path.exists(file_path) and not overwrite:
+        print(f"File {file_name} already exists. Use --overwrite to update it.")
+        return
+        
+    # Create releases directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Generate content for each repository
+    content = []
+    repo_contents = []
+    all_commits = []
+    any_validated = False
+    any_edited = False
+    
+    def process_pr(commit, repo):
+        """Process a single PR's content."""
+        if 'internal' not in commit.get('labels', []):
+            pr_obj = PR(repo_name=repo, pr_number=commit['pr_number'], title=commit.get('title'), body=commit.get('pr_body'), debug=debug)
+            validated = False
+            edited = False
+            
+            # Edit summary if present
+            if commit.get('pr_summary'):
+                if debug:
+                    print(f"DEBUG: [create_release_file] Editing summary for PR #{commit['pr_number']} in {repo}")
+                pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.")
+                commit['pr_summary'] = pr_obj.pr_interpreted_summary
+                if pr_obj.validated:
+                    validated = True
+                    edited = True
+            
+            # Edit notes if present
+            if commit.get('external_notes'):
+                if debug:
+                    print(f"DEBUG: [create_release_file] Editing notes for PR #{commit['pr_number']} in {repo}")
+                pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.")
+                commit['external_notes'] = pr_obj.edited_text
+                if pr_obj.validated:
+                    validated = True
+                    edited = True
+            
+            # Always edit title, using summary/notes as context if available
+            context = ''
+            if commit.get('pr_summary'):
+                context += f"\nPR Summary: {commit['pr_summary']}"
+            if commit.get('external_notes'):
+                context += f"\nExternal Notes: {commit['external_notes']}"
+            if debug:
+                print(f"DEBUG: [create_release_file] Editing title for PR #{commit['pr_number']} in {repo}")
+            title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
+            pr_obj.edit_content('title', commit.get('title', ''), title_prompt)
+            commit['cleaned_title'] = pr_obj.cleaned_title
+            if pr_obj.validated:
+                validated = True
+                edited = True
+            
+            return validated, edited
+        return False, False
+    
+    # Process PRs concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for repo in REPOS:
+            commits = get_commits_for_tag(repo, version, debug)
+            # Submit all PR processing tasks
+            future_to_commit = {executor.submit(process_pr, commit, repo): commit for commit in commits}
+            # Process results as they complete
+            for future in concurrent.futures.as_completed(future_to_commit):
+                validated, edited = future.result()
+                if validated:
+                    any_validated = True
+                if edited:
+                    any_edited = True
+            
+            all_commits.extend(commits)
+            has_release = check_github_release(repo, version)
+            repo_content = generate_changelog_content(repo, version, commits, has_release)
+            repo_contents.append(repo_content)
+            if repo_content:
+                filtered_content = []
+                for line in repo_content.split('\n'):
+                    if line.strip().startswith('<!---') and 'editor_note' in line:
+                        continue
+                    if line.strip().startswith('<!--') and 'editor_note' in line:
+                        continue
+                    filtered_content.append(line)
+                content.append('\n'.join(filtered_content))
+    
+    # Determine release type based on version format
+    version_parts = version.replace('cmvm/', '').split('.')
+    if '-rc' in version:
+        release_type = "release candidate"
+        title_version = version.replace('cmvm/', '')
+    elif len(version_parts) == 2:
+        release_type = "release"
+        title_version = version.replace('cmvm/', '')
+    else:
+        release_type = "hotfix release"
+        title_version = version.replace('cmvm/', '')
+    
+    # Check if all repo_contents are in the 'no public PRs' state
+    all_no_public_prs = all(
+        rc.strip().startswith('<!--- ##') and 'No public PRs found for this release' in rc
+        for rc in repo_contents
+    )
+    
+    # Write the file
+    with open(file_path, 'w') as f:
+        f.write("---\n")
+        f.write(f'title: "{title_version} {release_type} notes"\n')
+        if date:
+            f.write(f'date: "{date}"\n')
+        f.write("sidebar: validmind-installation\n")
+        f.write("toc-expand: true\n")
+        if overwrite:
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            f.write(f"# Content overwritten from an earlier version - {current_time}\n")
+        if any_edited:
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            f.write(f"# Content contains machine-generated information - {current_time}\n")
+        if any_validated:
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            f.write(f"# Content machine-edited and validated - {current_time}\n")
+        f.write("---\n\n")
+        if all_no_public_prs:
+            f.write('::: {.callout-info title="No user-facing changes in this release"}\n')
+            f.write('This release includes no public-facing updates to features, bug fixes, or documentation. If you\'re unsure whether any changes affect your deployment, contact <support@validmind.com>.\n')
+            f.write(':::\n\n')
+        f.write("\n".join(content))
+    print(f"\nCreated release file: {file_name} in {output_dir}")
+
+def parse_release_tables(qmd_file_path, version=None, debug=False):
+    """Parse release tables from the customer-managed-validmind-releases.qmd file.
+    
+    Args:
+        qmd_file_path (str): Path to the QMD file containing release tables
+        version (str, optional): Specific version to parse, if None parse all
+        debug (bool): Whether to show debug output
+        
+    Returns:
+        List[dict]: List of release information dictionaries
+        set: Set of seen versions
+    """
+    releases = []
+    seen_versions = set()  # Track seen versions for analysis
+    
+    print("Fetching releases from table ...")
+    
+    # Normalize version for comparison if provided
+    normalized_version = None
+    if version:
+        normalized_version = version.replace('cmvm/', '')
+    
+    try:
+        if debug:
+            print(f"DEBUG: Reading file: {qmd_file_path}")
+        with open(qmd_file_path, 'r') as f:
+            content = f.read()
+            
+        # Parse major releases
+        major_start = content.find('### Major releases')
+        if major_start == -1:
+            major_start = content.find('Major Releases:')
+        if major_start != -1:
+            # Find the next section or end of file
+            next_section = content.find('###', major_start + 1)
+            if next_section == -1:
+                next_section = len(content)
+            major_table = content[major_start:next_section]
+            if debug:
+                print(f"DEBUG: Found major table with length: {len(major_table)}")
+            for line in major_table.split('\n'):
+                # Skip commented lines and table separators
+                if line.strip().startswith('<!--') or line.strip().startswith('--'):
+                    continue
+                if '|' in line and not line.startswith('--') and not line.startswith('<!--'):
+                    parts = [p.strip() for p in line.split('|')]
+                    if len(parts) >= 8:
+                        version_str = parts[0]
+                        # Skip header row, non-version rows, and version 00.00
+                        if not version_str[0].isdigit() or version_str == '00.00':
+                            continue
+                        # Compare normalized versions if a specific version is requested
+                        if normalized_version and version_str != normalized_version:
+                            continue
+                        date = parts[1]
+                        git_sha = parts[6].strip('`').strip("'")
+                        is_hotfix = '**Yes**' in parts[4]
+                        is_rc = 'Yes' in parts[5]
+                        
+                        if version_str in seen_versions and not normalized_version:
+                            print(f"INFO: Version {version_str} appears in both major and hotfix & release candidate tables")
+                        seen_versions.add(version_str)
+                        
+                        if git_sha.lower() in ['n/a', 'tbd', 'xxx'] and not normalized_version:
+                            print(f"INFO: Version {version_str} has invalid Git SHA: {git_sha}")
+                        if date.lower() in ['n/a'] and not normalized_version:
+                            print(f"INFO: Version {version_str} has invalid date: {date}")
+                            
+                        release = create_release_object(
+                            version=version_str,
+                            date=date,
+                            git_sha=git_sha,
+                            is_hotfix=is_hotfix,
+                            is_rc=is_rc,
+                            table='major',
+                            add_prefix=True  # Always add cmvm/ prefix
+                        )
+                        releases.append(release)
+                        if debug:
+                            print(f"DEBUG: Added major release: {version_str}")
+        
+        # Parse hotfix & release candidate releases
+        hotfix_start = content.find('### Hotfix and release candidates')
+        if hotfix_start != -1:
+            # Find the next section or end of file
+            next_section = content.find('###', hotfix_start + 1)
+            if next_section == -1:
+                next_section = len(content)
+            hotfix_table = content[hotfix_start:next_section]
+            if debug:
+                print(f"DEBUG: Found hotfix table with length: {len(hotfix_table)}")
+            for line in hotfix_table.split('\n'):
+                # Skip commented lines and table separators
+                if line.strip().startswith('<!--') or line.strip().startswith('--'):
+                    continue
+                if '|' in line and not line.startswith('--') and not line.startswith('<!--'):
+                    parts = [p.strip() for p in line.split('|')]
+                    if len(parts) >= 8:
+                        version_str = parts[0]
+                        # Skip header row, non-version rows, and version 00.00
+                        if not version_str[0].isdigit() or version_str == '00.00':
+                            continue
+                        # Compare normalized versions if a specific version is requested
+                        if normalized_version and version_str != normalized_version:
+                            continue
+                        date = parts[1]
+                        git_sha = parts[6].strip('`').strip("'")
+                        is_hotfix = '**Yes**' in parts[4]
+                        is_rc = 'Yes' in parts[5]
+                        
+                        if version_str in seen_versions and not normalized_version:
+                            print(f"INFO: Version {version_str} appears in both major and hotfix & release candidate tables")
+                        seen_versions.add(version_str)
+                        
+                        if git_sha.lower() in ['n/a', 'tbd', 'xxx'] and not normalized_version:
+                            print(f"INFO: Version {version_str} has invalid Git SHA: {git_sha}")
+                        if date.lower() in ['n/a'] and not normalized_version:
+                            print(f"INFO: Version {version_str} has invalid date: {date}")
+                            
+                        release = create_release_object(
+                            version=version_str,
+                            date=date,
+                            git_sha=git_sha,
+                            is_hotfix=is_hotfix,
+                            is_rc=is_rc,
+                            table='hotfix',
+                            add_prefix=True  # Always add cmvm/ prefix
+                        )
+                        releases.append(release)
+                        if debug:
+                            print(f"DEBUG: Added hotfix release: {version_str}")
+    
+    except Exception as e:
+        print(f"Error parsing release tables: {e}")
+        if debug:
+            import traceback
+            print("DEBUG: Full traceback:")
+            print(traceback.format_exc())
+        return [], set()
+        
+    # Sort releases by date in descending order, with version_key as secondary sort
+    releases.sort(key=lambda x: (parse_date(x['date']), version_key(x['version'])), reverse=True)
+    
+    if debug:
+        print(f"DEBUG: Found {len(releases)} total releases")
+        print(f"DEBUG: Found {len(seen_versions)} unique version(s)")
+        if releases:
+            print("DEBUG: First few releases:")
+            for r in releases[:3]:
+                print(f"  - {r['version']} ({r['date']})")
+    
+    # Analyze the data only if no specific version requested
+    if not normalized_version and debug:
+        print("\nRelease Analysis:")
+        print("----------------")
+        print(f"Total releases found: {len(releases)}")
+        # Count releases by type
+        major_releases = [r for r in releases if r['table'] == 'major']
+        hotfix_releases = [r for r in releases if r['table'] == 'hotfix' and not r['is_rc']]
+        rc_releases = [r for r in releases if r['is_rc']]
+        print(f"Major releases: {len(major_releases)}")
+        print(f"Hotfix releases: {len(hotfix_releases)}")
+        print(f"Release candidates: {len(rc_releases)}\n")
+    
+    return releases, seen_versions
+
+def process_releases(releases, overwrite, seen_versions, debug=False, version=None):
+    """Process all releases and create release note files.
+    
+    Args:
+        releases: List of release dictionaries
+        overwrite: Whether to overwrite existing files
+        seen_versions: Set of versions that have been seen
+        debug: Whether to show debug output
+        version: Specific version to process (if any)
+    """
+    print("\nProcessing release(s) ...")
+      
+    # Group releases by version
+    releases_by_version = {}
+    for release in releases:
+        # Skip if this isn't the version we're looking for
+        if version:
+            # Remove cmvm/ prefix from both versions for comparison
+            release_version = release['version'].replace('cmvm/', '')
+            requested_version = version.replace('cmvm/', '')
+            if release_version != requested_version:
+                if debug:
+                    print(f"DEBUG: Skipping {release['version']} - not the requested version")
+                continue
+            if debug:
+                print(f"DEBUG: Found {release['version']} - our requested version")
+        
+        # Group releases by version
+        if release['version'] not in releases_by_version:
+            releases_by_version[release['version']] = []
+        releases_by_version[release['version']].append(release)
+        
+        # Add to seen versions
+        seen_versions.add(release['version'].replace('cmvm/', ''))
+    
+    print(f"Found {len(releases_by_version)} unique version(s) to process")
+    
+    # Process each version's releases
+    for version_key, version_releases in releases_by_version.items():
+        print(f"\nProcessing version {version_key} ...")
+        
+        # Check if the release exists in GitHub
+        # print("Checking for tags in repositories...")
+        tag_exists = False
+        for repo in REPOS:
+            if check_github_tag(repo, version_key):
+                tag_exists = True
+                # print(f"✓ Found tag in {repo}")
+                break
+                
+        if not tag_exists:
+            print(f"WARNING: Tag {version_key} not found in any repository")
+            continue
+            
+        print("Creating release file ...")
+        # Create the release file once per version
+        create_release_file(version_releases[0], overwrite, debug)
+        print(f"✓ Completed processing version {version_key}")
+        
+        # If a specific tag was requested by the user, we're done after processing it
+        if version is not None:
+            break
+    
+    print("✓ Finished processing all specified releases")
+
+def collect_github_urls():
+    """Collects release URLs from the release tables in customer-managed-validmind-releases.qmd.
+    
+    Returns:
+        List[ReleaseURL]: A list of ReleaseURL objects
+    """
+    qmd_file = "site/installation/customer-managed-validmind-releases.qmd"
+    releases, seen_versions = parse_release_tables(qmd_file)
+    
+    if not releases:
+        print("ERROR: No releases found in the release tables")
+        sys.exit(1)
+        
+    urls = []
+    repos = ["backend", "frontend", "agents", "documentation"]
+    
+    for release in releases:
+        # Construct GitHub URL based on the git_sha
+        # If git_sha starts with 'cmvm/', it's a tag, otherwise it's a commit SHA
+        if release['git_sha'].startswith('cmvm/'):
+            url = f"https://github.com/validmind/backend/releases/tag/{release['git_sha']}"
+        else:
+            url = f"https://github.com/validmind/backend/releases/tag/{release['version']}"
+        
+        urls.append(ReleaseURL(url))
+        print(f"Discovered release {release['version']} ({release['date']})")
+        
+        # Check for tags in all repos
+        print("Found tags:")
+        for repo in repos:
+            tag_url = f"https://github.com/validmind/{repo}/releases/tag/cmvm%2F{release['version']}"
+            print(f"  - {tag_url}")
+        print()
+    
+    return urls
+
+def count_repos(urls):
+    """Counts occurrences of each repository in the given URLs.
+
+    Args:
+        urls (List[ReleaseURL]): A list of ReleaseURL objects
+
+    Prints:
+        Repository counts in the format 'repo_name: count'
+    """
+    print("RELEASE TAGS ADDED BY REPO:\n")
+    repo_names = [url.extract_repo_name() for url in urls if url.extract_repo_name()]
+    
+    counts = Counter(repo_names)
+    for repo, count in counts.items():
+        print(f"{repo}: {count}")
+
+def get_release_date():
+    """Gets the release date from the release tables.
+    
+    Returns:
+        datetime: The release date
+    """
+    qmd_file = "site/installation/customer-managed-validmind-releases.qmd"
+    releases, _ = parse_release_tables(qmd_file)
+    
+    if not releases:
+        print("ERROR: No releases found in the release tables")
+        sys.exit(1)
+        
+    # Get the most recent release date
+    latest_release = releases[0]
+    date_str = latest_release['date']  # We'll need to add this to the parse_release_tables function
+    
+    try:
+        release_date = datetime.datetime.strptime(date_str, "%B %d, %Y")
+        print(f"Release date: {release_date}\n")
+        return release_date
+    except ValueError:
+        print(f"ERROR: Invalid date format in release tables: {date_str}")
+        sys.exit(1)
+    
+def create_release_folder(formatted_release_date):
+    """
+    Creates a directory for the release notes based on the provided release date
+    and returns the output file path.
+
+    Args:
+        formatted_release_date (str): The formatted release date string.
+
+    Returns:
+        str: The path to the release notes file.
+    """
+    # Parse the input date
+    parsed_date = datetime.datetime.strptime(formatted_release_date, "%Y-%b-%d")
+    year = parsed_date.year
+    formatted_date = parsed_date.strftime("%Y-%b-%d").lower()  # e.g., "2025-jan-17"
+    directory_path = f"../site/releases/{year}/{formatted_date}/"
+    output_file = f"{directory_path}release-notes.qmd"
+
+    # Create directory and output file
+    os.makedirs(directory_path, exist_ok=True)
+    print(f"Created release folder: {directory_path}")
+
+    return output_file, year
+
+def create_release_qmd(output_file, original_release_date):
+    """
+    Writes metadata to a file with a title set to the original release date.
+
+    Args:
+        output_file (str): The path to the file to write.
+        original_release_date (str): The title to include in the metadata.
+    """
+    with open(output_file, "w") as file:
+        file.write(f"---\ntitle: \"{original_release_date}\"\n---\n\n")
+    print(f"Created release notes file: {output_file}")
+
+def update_release_components(release_components, categories):
+    """
+    Updates a dictionary of release components with the given categories.
+
+    Parameters:
+        release_components (dict): The dictionary to update.
+        categories (dict): The categories to add to the release components.
+
+    Returns:
+        dict: The updated release components dictionary.
+    """
+    release_components.update(categories)
+    if get_ipython():  # Check if running in Jupyter Notebook
+        print(f"Set up {len(release_components)} components:")
+    else:
+        print(f"Set up {len(release_components)} components:\n" + "\n".join(release_components))
+    return release_components
+
+def set_names(github_urls):
+    """
+    Iterates over a list of URL objects, calling the `set_repo_and_tag_name` method on each.
+
+    Parameters:
+        github_urls (list): A list of objects, each having the method `set_repo_and_tag_name`.
+
+    Returns:
+        None
+    """
+    # Mapping of repo names to headers
+    repo_to_header = {
+        "validmind/frontend": "FRONTEND",
+        "validmind/documentation": "DOCUMENTATION",
+        "validmind/agents": "VALIDMIND LIBRARY",
+    }
+
+    print("Assigning repo and tag names ...\n")
+
+    # Group URLs by repo name for better formatting
+    grouped_urls = {}
+    for url_obj in github_urls:
+        url_obj.set_repo_and_tag_name()
+        if url_obj.repo_name not in grouped_urls:
+            grouped_urls[url_obj.repo_name] = []
+        grouped_urls[url_obj.repo_name].append(url_obj)
+
+    # Print output in the desired format
+    for repo_name, urls in grouped_urls.items():
+        header = repo_to_header.get(repo_name, repo_name.upper())
+        print(f"{header}:\n")
+        for url_obj in urls:
+            print(f"URL: {url_obj.url}\n Repo name: {url_obj.repo_name}\n Tag name: {url_obj.tag_name}\n")
+
+def extract_urls(github_urls):
+    """
+    Extracts pull request (PR) objects from a list of GitHub URLs.
+
+    Args:
+        github_urls (iterable): An iterable containing GitHub URL objects that 
+                               have an `extract_prs` method.
+
+    Returns:
+        None: The `extract_prs` method modifies the URL objects in-place.
+    """
+    for url in github_urls:
+        url.extract_prs()
+        print()
+
+def populate_data(urls):
+    """
+    Populates pull request data for a list of URLs.
+
+    Args:
+        urls (iterable): An iterable of objects with a `populate_pr_data` method.
+    """
+    for url in urls:
+        url.populate_pr_data()
+        print()
+
+def edit_release_notes(github_urls, editing_instructions_body, debug=False):
+    """
+    Processes a list of GitHub URLs to extract and edit release notes for pull requests.
+
+    Args:
+        github_urls (list): List of GitHub URL objects containing pull requests.
+        editing_instructions_body (str): Instructions for editing the text with OpenAI.
+        debug (bool): Whether to show debug output
+
+    Returns:
+        None
+    """
+
+    print("Editing release notes content ...")
+
+    if debug:
+        print(f"DEBUG: [edit_release_notes] Starting with {len(github_urls)} URLs")
+        print(f"DEBUG: [edit_release_notes] Editing instructions length: {len(editing_instructions_body)}")
+    for url in github_urls:
+        if debug:
+            print(f"DEBUG: [edit_release_notes] Processing URL: {url.url}")
+            print(f"DEBUG: [edit_release_notes] Number of PRs in URL: {len(url.prs)}")
+        for pr in url.prs:
+            if pr.data_json:
+                if debug:
+                    print(f"DEBUG: [edit_release_notes] Found data_json for PR #{pr.pr_number} in {pr.repo_name}")
+                print(f"Editing content of PR #{pr.pr_number} from {pr.repo_name} ...\n") 
+                if pr.extract_external_release_notes():
+                    if debug:
+                        print(f"DEBUG: [edit_release_notes] Successfully extracted external release notes for PR #{pr.pr_number}")
+                    pr.edit_content('notes', pr.pr_body, editing_instructions_body)
+                else:
+                    if debug:
+                        print(f"DEBUG: [edit_release_notes] No external release notes found for PR #{pr.pr_number}")
+        print()
+
+def auto_summary(github_urls, summary_instructions, debug=False):
+    """
+    Processes GitHub PRs by fetching comments, extracting summaries, and converting 
+    summaries to release notes based on given instructions.
+
+    Args:
+        github_urls (list): A list of GitHub URLs, each containing PR data.
+        summary_instructions (str): Instructions for converting summaries to release notes.
+        debug (bool): Whether to show debug output
+    """
+    for url in github_urls:
+        for pr in url.prs:
+            if pr.data_json:
+                print(f"Fetching GitHub comment from PR #{pr.pr_number} of {pr.repo_name}...\n")
+                pr.extract_pr_summary_comment()
+                if debug:
+                    print(f"DEBUG: [auto_summary] Editing summary for PR #{pr.pr_number} in {pr.repo_name}")
+                pr.edit_content('summary', pr.pr_auto_summary, summary_instructions)
+        print()
+
+def edit_titles(github_urls, debug=False):
+    """
+    Updates the titles of pull requests (PRs) based on provided JSON data and cleaning instructions.
+
+    Parameters:
+        github_urls (list): A list of GitHub URLs, each containing PRs to process.
+        debug (bool): Whether to show debug output
+    """
+    for url in github_urls:
+        for pr in url.prs:
+            if pr.data_json:
+                print(f"Editing title for PR #{pr.pr_number} in {pr.repo_name}...\n")
+                prompt = EDIT_TITLE_PROMPT.format(title=pr.data_json['title'], body=pr.data_json.get('body', ''))
+                if debug:
+                    print(f"DEBUG: [edit_titles] Editing title for PR #{pr.pr_number} in {pr.repo_name}")
+                pr.edit_content('title', pr.data_json['title'], prompt)
+                print()
+        print()
+
+def set_labels(github_urls):
+    """
+    Processes a list of GitHub URLs and extracts pull request labels, printing them.
+
+    Args:
+        github_urls (list): A list of GitHub URL objects, each containing pull requests (prs).
+    """
+    print(f"Attaching labels to PRs ...\n\n")
+    for url in github_urls:
+        for pr in url.prs:
+            if pr.data_json:
+                pr.labels = [label['name'] for label in pr.data_json['labels']]
+                print(f"PR #{pr.pr_number} from {pr.repo_name}: {pr.labels}\n")
+        print()
+
+def assign_details(github_urls):
+    """
+    Processes a list of GitHub URLs and extracts details for PRs with data in `data_json`.
+
+    Args:
+        github_urls (list): A list of objects representing GitHub URLs, each containing PRs.
+
+    Returns:
+        None
+    """
+    print(f"Compiling PR data ...\n\n")
+    for url in github_urls:
+        for pr in url.prs:
+            if pr.data_json:
+                pr.pr_details = {
+                    'pr_number': pr.pr_number,
+                    'title': pr.cleaned_title,
+                    'full_title': pr.data_json['title'],
+                    'url': pr.data_json['url'],
+                    'labels': ", ".join(pr.labels),
+                    'notes': pr.edited_text
+                }
+                print(f"PR #{pr.pr_number} from {pr.repo_name} compiled.\n")
+        print()
+
+def assemble_release(github_urls, label_hierarchy):
+    """
+    Assigns PRs from a list of GitHub release URLs to release components based on their labels.
+
+    Parameters:
+        github_urls (list): A list of GitHub URL objects, each containing PRs.
+        label_hierarchy (list): A prioritized list of labels to determine component assignment.
+
+    Returns:
+        dict: A dictionary where keys are labels from the hierarchy (or 'other') and values are lists of PR details.
+    """
+    # Initialize release_components as a defaultdict with lists
+    release_components = defaultdict(list)
+
+    # Process PRs and assign them to components based on label hierarchy
+    unassigned_prs = []  # Track PRs that do not match any label in the hierarchy
+
+    for url in github_urls:
+        for pr in url.prs:
+            if pr.data_json:
+                print(f"Assembling PR #{pr.pr_number} from {pr.repo_name} for release notes...\n")
+                assigned = False
+                for priority_label in label_hierarchy:
+                    if priority_label in pr.labels:
+                        release_components[priority_label].append(pr.pr_details)
+                        assigned = True
+                        break
+                if not assigned:
+                    unassigned_prs.append(pr.pr_details)
+        print()
+
+    # Add unassigned PRs to the 'other' category
+    release_components['other'].extend(unassigned_prs)
+
+    # Convert defaultdict to a regular dict and ensure 'other' is at the end
+    result = {label: release_components[label] for label in label_hierarchy if label in release_components}
+    if 'other' in release_components:
+        result['other'] = release_components['other']
+
+    return result
+
+def release_output(output_file, release_components, label_to_category):
+    """
+    Appends release notes to the specified file.
+
+    Args:
+        output_file (str): Path to the file to append.
+        release_components (dict): Release notes categorized by labels.
+        label_to_category (dict): Mapping of labels to formatted categories.
+
+    Returns:
+        None
+    """
+    try:
+        with open(output_file, "a") as file:
+            write_file(file, release_components, label_to_category)
+            print(f"Assembled release notes added to {file.name}\n")
+    except Exception as e:
+        print(f"Failed to write to {output_file}: {e}")
+
+def upgrade_info(output_file):
+    """
+    Appends the upgrade information single-source to the end of the new release notes.
+
+    Args:
+        output_file (str): Path to the file to append.
+
+    Returns:
+        None
+    """
+    include_directive = "\n\n{{< include /releases/_how-to-upgrade.qmd >}}\n"
+
+    try:
+        with open(output_file, "a") as file:
+            file.write(include_directive)
+            print(f"Include _how-to-upgrade.qmd added to {file.name}")
+    except Exception as e:
+        print(f"Failed to include _how-to-upgrade.qmd to {output_file}: {e}")
+
+def write_file(file, release_components, label_to_category):
+    """Writes each component of the release notes into a file
+    Args:
+        file - desired file path
+        release_components
+        label_to_category
+
+    Modifies: 
+        file
+    """
+    for label, release_component in release_components.items():
+        if release_component:  # Only write heading if there are PRs
+            output_lines = [f"{label_to_category.get(label, '### Unlabelled changes')}\n\n"]
+            last_line_was_blank = False
+
+            for pr in release_component:
+                pr_lines = [
+                    f"<!---\nPR #{pr['pr_number']}: {pr['full_title']}\n",
+                    f"URL: {pr['url']}\n",
+                    f"Labels: {pr['labels']}\n",
+                    f"--->\n### {pr['title']}\n",
+                    f"<!--- Source: {pr['url']} --->\n\n"
+                ]
+                
+                if pr['notes']:
+                    pr_lines.append(f"{pr['notes']}\n\n")
+                
+                for line in pr_lines:
+                    if line.strip() == "":
+                        if last_line_was_blank:
+                            continue
+                        last_line_was_blank = True
+                    else:
+                        last_line_was_blank = False
+                    output_lines.append(line)
+
+            # Write processed lines to file
+            file.writelines(output_lines)
+
+def create_release_object(version, date=None, git_sha=None, is_hotfix=False, is_rc=False, table='github', add_prefix=True):
+    """Create a release object with the given information.
+    
+    Args:
+        version (str): Release version
+        date (str, optional): Release date
+        git_sha (str, optional): Git SHA or tag
+        is_hotfix (bool): Whether this is a hotfix
+        is_rc (bool): Whether this is a release candidate
+        table (str): Source of the release ('github' or 'table')
+        add_prefix (bool): Whether to add cmvm/ prefix to version and git_sha
+        
+    Returns:
+        dict: Release object
+    """
+    # Only add prefix if requested and not already present
+    if add_prefix and not version.startswith('cmvm/'):
+        version = f"cmvm/{version}"
+        
+    # If git_sha is provided, ensure it has cmvm/ prefix if requested
+    if git_sha and add_prefix and not git_sha.startswith('cmvm/'):
+        git_sha = f"cmvm/{git_sha}"
+        
+    return {
+        'version': version,
+        'date': date or 'n/a',
+        'git_sha': git_sha or 'n/a',
+        'is_hotfix': is_hotfix,
+        'is_rc': is_rc,
+        'table': table
+    }
+
+def get_releases_from_github(version=None, debug=False):
+    """Get CMVM releases from GitHub.
+    
+    Args:
+        version (str, optional): Specific version to get, if None get all
+        debug (bool): Whether to print debug information
+        
+    Returns:
+        List[dict]: List of release information dictionaries
+        set: Set of seen versions
+    """
+    releases = []
+    seen_versions = set()
+    
+    print(f"Fetching tags and releases from GitHub ...")
+    
+    # Normalize version for comparison if provided
+    normalized_version = None
+    if version:
+        normalized_version = version.replace('cmvm/', '')
+    
+    # Get all CMVM tags from each repository
+    for repo in REPOS:
+        tags = get_all_cmvm_tags(repo, version=version, debug=debug)
+            
+        for tag in tags:
+            # Compare normalized versions if a specific version is requested
+            if normalized_version and tag.replace('cmvm/', '') != normalized_version:
+                continue
+                
+            print(f"Processing tag in {repo}: {tag} ...")
+                
+            # Parse version components
+            version_parts = tag.replace('cmvm/', '').split('.')
+            is_rc = len(version_parts) > 3 and version_parts[3].startswith('rc')
+            is_hotfix = len(version_parts) > 3 and version_parts[3].startswith('hf')
+            
+            # Create release object with just the tag
+            release = create_release_object(
+                version=tag,
+                is_hotfix=is_hotfix,
+                is_rc=is_rc,
+                table='github'
+            )
+            
+            # Try to get release date from GitHub
+            # Check all repositories for this tag/release in parallel
+            def check_repo_for_date(check_repo):
+                # First get the SHA from the ref
+                cmd = ['gh', 'api', f'repos/validmind/{check_repo}/git/refs/tags/{tag}']
+                if debug:
+                    print(f"DEBUG: Getting SHA for tag: {' '.join(cmd)}")
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                
+                if result.returncode == 0:
+                    try:
+                        ref_data = json.loads(result.stdout)
+                        sha = ref_data['object']['sha']
+                        if debug:
+                            print(f"DEBUG: Found SHA: {sha}")
+                            
+                        # Get the commit information
+                        cmd = ['gh', 'api', f'repos/validmind/{check_repo}/git/commits/{sha}']
+                        if debug:
+                            print(f"DEBUG: Getting commit info: {' '.join(cmd)}")
+                        result = subprocess.run(cmd, capture_output=True, text=True)
+                        
+                        if result.returncode == 0:
+                            if debug:
+                                print(f"DEBUG: Found commit in {check_repo}")
+                                print(f"DEBUG: Raw API response: {result.stdout}")
+                            try:
+                                # Parse the JSON response
+                                commit_data = json.loads(result.stdout)
+                                if 'committer' in commit_data:
+                                    date_str = commit_data['committer']['date']
+                                    if date_str:
+                                        # Convert GitHub ISO format to our preferred format
+                                        dt = datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                                        return dt.strftime("%B %d, %Y")
+                                    else:
+                                        if debug:
+                                            print(f"DEBUG: No date found in commit response")
+                                else:
+                                    if debug:
+                                        print(f"DEBUG: No committer information in commit response")
+                            except Exception as e:
+                                if debug:
+                                    print(f"DEBUG: Error parsing commit date: {e}")
+                                    print(f"DEBUG: Error details: {str(e)}")
+                        else:
+                            if debug:
+                                print(f"DEBUG: No commit found in {check_repo}, trying release")
+                    except Exception as e:
+                        if debug:
+                            print(f"DEBUG: Error getting SHA: {e}")
+                            print(f"DEBUG: Error details: {str(e)}")
+                else:
+                    if debug:
+                        print(f"DEBUG: No ref found in {check_repo}, trying release")
+                
+                # Fallback to releases/tags
+                cmd = ['gh', 'api', f'repos/validmind/{check_repo}/releases/tags/{tag}', '--jq', '.created_at,.published_at']
+                if debug:
+                    print(f"DEBUG: Checking {check_repo} for release: {' '.join(cmd)}")
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                
+                if result.returncode == 0:
+                    if debug:
+                        print(f"DEBUG: Found release in {check_repo}")
+                        print(f"DEBUG: Raw API response: {result.stdout}")
+                    try:
+                        # Split the output and clean up any whitespace
+                        dates = [d.strip() for d in result.stdout.strip().split('\n') if d.strip()]
+                        if debug:
+                            print(f"DEBUG: Parsed dates: {dates}")
+                        if dates:
+                            # Use published_at if available, otherwise created_at
+                            release_date = dates[1] if len(dates) > 1 else dates[0]
+                            if release_date:
+                                # Convert GitHub ISO format to our preferred format
+                                dt = datetime.datetime.fromisoformat(release_date.replace('Z', '+00:00'))
+                                return dt.strftime("%B %d, %Y")
+                            else:
+                                if debug:
+                                    print(f"DEBUG: No valid date found in release response")
+                        else:
+                            if debug:
+                                print(f"DEBUG: No dates found in release response")
+                    except Exception as e:
+                        if debug:
+                            print(f"DEBUG: Error parsing release date: {e}")
+                            print(f"DEBUG: Error details: {str(e)}")
+                else:
+                    if debug:
+                        print(f"DEBUG: No release found in {check_repo}")
+                return None
+            
+            # Check all repositories in parallel
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # Submit all tasks
+                future_to_repo = {executor.submit(check_repo_for_date, repo): repo for repo in REPOS}
+                # Wait for the first successful result
+                for future in concurrent.futures.as_completed(future_to_repo):
+                    date = future.result()
+                    if date:
+                        release['date'] = date
+                        if debug:
+                            print(f"DEBUG: Found date in {future_to_repo[future]}: {date}")
+                        break  # Found a valid date, no need to check other repos
+            
+            releases.append(release)
+            seen_versions.add(tag.replace('cmvm/', ''))  # Add normalized version to seen_versions
+            if debug:
+                print(f"DEBUG: Added release: {tag}\n")
+                
+    # Sort releases by date in descending order, with version_key as secondary sort
+    releases.sort(key=lambda x: (parse_date(x['date']), version_key(x['version'])), reverse=True)
+    
+    if debug:
+        print(f"DEBUG: Processed {len(releases)} total release(s), {len(seen_versions)} unique version(s)")
+                
+    return releases, seen_versions
+
+def main():
+    """Generate release notes for Customer-Managed ValidMind (CMVM) releases.
+    
+    This script generates release notes for CMVM releases by:
+    1. Reading release information from either GitHub or a release table
+    2. Processing each release to create a release note file
+    3. Handling both major releases and hotfixes
+    """
+    parser = argparse.ArgumentParser(description='Generate CMVM release notes')
+    parser.add_argument('--source', choices=['github', 'table'], default='table',
+                      help='Source of release information (github or table)')
+    parser.add_argument('--tag', help='Specific tag to process (examples: cmvm/25.05, 25.05.02, 25.05.02-rc1)')
+    parser.add_argument('--overwrite', action='store_true',
+                      help='Overwrite existing release note files')
+    parser.add_argument('--debug', action='store_true',
+                      help='Show debug output')
+    parser.add_argument('--release-table', required=False,
+                      help='Path to the release table file (required when --source table is used)')
+    args = parser.parse_args()
+
+    try:
+        # Show minimal startup info
+        print("Generating CMVM release notes...\n")
+        
+        # Use .env location in repository root
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        repo_root = os.path.dirname(script_dir)
+        env_location = os.path.join(repo_root, ".env")
+        api_key = setup_openai_api(env_location)
+        
+        # Initialize OpenAI client with API key
+        openai_client = openai.OpenAI(api_key=api_key)
+        
+        # Make client available globally
+        global client
+        client = openai_client
+
+        # Get release information based on source
+        if args.source == 'github':
+            # For GitHub source, use the tag exactly as provided
+            version = args.tag if args.tag else None
+            releases, _ = get_releases_from_github(version=version, debug=args.debug)
+        else:  # table
+            # Require release table path when using table source
+            if not args.release_table:
+                print("ERROR: --release-table is required when using --source table")
+                print("\nExample usage:")
+                print("python generate_release_notes.py --source table --release-table /path/to/release-table.qmd")
+                sys.exit(1)
+                
+            # Check if the release table file exists
+            if not os.path.exists(args.release_table):
+                print(f"ERROR: Release table file not found at: {args.release_table}")
+                print("\nTo fix this, you can:")
+                print("1. Clone the repository containing the release table file")
+                print("2. Use --release-table to specify the correct path to the file")
+                print("3. Or use --source github to generate release notes from GitHub instead")
+                sys.exit(1)
+                
+            # Get all releases from the table
+            releases, _ = parse_release_tables(args.release_table, debug=args.debug)
+            if not releases:
+                print("ERROR: No releases found in the release table")
+                sys.exit(1)
+                
+            # If a specific tag is requested, validate it exists in the table
+            if args.tag:
+                tag = args.tag
+                # Ensure tag has cmvm/ prefix for comparison
+                if not tag.startswith('cmvm/'):
+                    tag = f'cmvm/{tag}'
+                # Check if the tag exists in the table
+                tag_exists = any(r['version'] == tag for r in releases)
+                if not tag_exists:
+                    print(f"ERROR: Release '{tag}' not found in release table")
+                    sys.exit(1)
+        
+        if not releases:
+            print("ERROR: No releases found")
+            sys.exit(1)
+            
+        # Process releases (check tags and create files)
+        # Create a new empty set for seen_versions
+        seen_versions = set()
+        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag)
+            
+        sys.exit(0)
+        
+    except Exception as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
