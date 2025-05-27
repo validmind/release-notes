@@ -1,7 +1,6 @@
 # Static configuration
-RELEASE_TABLE_FILE = None  # Must be specified via --release-table when using table source
 RELEASES_DIR = "releases"
-REPOS = ["backend", "frontend", "agents", "documentation"]
+REPOS = ["backend", "frontend", "agents", "documentation", "validmind-library"]
 
 # Label hierarchy for organizing release notes
 label_hierarchy = ["highlight", "enhancement", "breaking-change", "deprecation", "bug", "documentation"]
@@ -509,16 +508,12 @@ def check_github_tag(repo, version):
     
     Args:
         repo (str): Repository name (backend, frontend, agents, documentation)
-        version (str): Release version (with or without cmvm/ prefix)
+        version (str): Release version
         
     Returns:
         bool: True if tag exists, False otherwise
     """
     try:
-        # Ensure version has cmvm/ prefix
-        if not version.startswith('cmvm/'):
-            version = f'cmvm/{version}'
-            
         # First check for git tags
         cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags/{version}']
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -562,7 +557,7 @@ def get_github_tag_url(repo, version):
     return f"https://github.com/validmind/{repo}/releases/tag/{version}"
 
 def get_all_cmvm_tags(repo, version=None, debug=False):
-    """Get all cmvm tags from a repository using /git/refs/tags for reliability.
+    """Get all tags from a repository using /git/refs/tags for reliability.
     
     Args:
         repo (str): Repository name (backend, frontend, agents, documentation)
@@ -570,7 +565,7 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
         debug (bool): Whether to show debug output
         
     Returns:
-        List[str]: List of cmvm tags found in the repository
+        List[str]: List of tags found in the repository
     """
     try:
         # Get all refs/tags (may require paging for large repos)
@@ -584,16 +579,15 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
             elif not isinstance(tags, list):
                 tags = []
                 
-            cmvm_tags = []
+            tag_names = []
             for t in tags:
                 ref = t.get('ref', '')
-                # ref is like 'refs/tags/cmvm/25.04'
-                if ref.startswith('refs/tags/cmvm/'):
+                if ref.startswith('refs/tags/'):
                     tag_name = ref.replace('refs/tags/', '')
-                    cmvm_tags.append(tag_name)
+                    tag_names.append(tag_name)
             if debug:
                 # Sort tags using version_key function
-                sorted_tags = sorted(cmvm_tags, key=version_key)
+                sorted_tags = sorted(tag_names, key=version_key)
                 print(f"DEBUG: {repo} tag list sorted: {sorted_tags}")
             
             # Check for releases in parallel
@@ -603,18 +597,18 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
                 cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 if result.returncode == 0:
-                    if debug and (not version or tag.replace('cmvm/', '') == version.replace('cmvm/', '')):
+                    if debug and (not version or tag == version):
                         print(f"DEBUG: Release exists for {tag}")
                 return tag
             
             # Use ThreadPoolExecutor to check releases in parallel
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 # Submit all tasks
-                future_to_tag = {executor.submit(check_release, tag): tag for tag in cmvm_tags}
+                future_to_tag = {executor.submit(check_release, tag): tag for tag in tag_names}
                 # Wait for all tasks to complete
                 concurrent.futures.wait(future_to_tag)
                 
-            return cmvm_tags
+            return tag_names
     except Exception as e:
         if debug:
             print(f"DEBUG: Error getting tags from {repo}: {e}")
@@ -735,9 +729,9 @@ def get_previous_tag(repo, tag, debug=False):
             tags = [tags]
         for t in tags:
             ref = t.get('ref', '')
-            if ref.startswith('refs/tags/cmvm/'):
+            if ref.startswith('refs/tags/'):
                 tag_names.add(ref.replace('refs/tags/', ''))
-    # Fallback to /tags if no cmvm/ tags found
+    # Fallback to /tags if no tags found
     if not tag_names:
         cmd = ['gh', 'api', f'repos/validmind/{repo}/tags']
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -745,11 +739,15 @@ def get_previous_tag(repo, tag, debug=False):
             tags = json.loads(result.stdout)
             for t in tags:
                 name = t.get('name', '')
-                if name.startswith('cmvm/'):
-                    tag_names.add(name)
+                tag_names.add(name)
 
     # Extract version info from current tag
-    match = re.match(r'cmvm/(\d+)\.(\d+)(?:\.(\d+))?(?:-rc(\d+))?$', tag)
+    # Handle both cmvm/ and v prefixes
+    if tag.startswith('cmvm/'):
+        match = re.match(r'cmvm/(\d+)\.(\d+)(?:\.(\d+))?(?:-rc(\d+))?$', tag)
+    else:
+        match = re.match(r'v(\d+)\.(\d+)(?:\.(\d+))?(?:-rc(\d+))?$', tag)
+        
     if not match:
         if debug:
             print(f"DEBUG: {repo} invalid tag format: {tag}")
@@ -764,7 +762,12 @@ def get_previous_tag(repo, tag, debug=False):
     # Filter and sort tags
     valid_tags = []
     for tag_name in tag_names:
-        match = re.match(r'cmvm/(\d+)\.(\d+)(?:\.(\d+))?(?:-rc(\d+))?$', tag_name)
+        # Handle both cmvm/ and v prefixes
+        if tag_name.startswith('cmvm/'):
+            match = re.match(r'cmvm/(\d+)\.(\d+)(?:\.(\d+))?(?:-rc(\d+))?$', tag_name)
+        else:
+            match = re.match(r'v(\d+)\.(\d+)(?:\.(\d+))?(?:-rc(\d+))?$', tag_name)
+            
         if not match:
             continue
         tag_major = int(match.group(1))
@@ -810,21 +813,21 @@ def get_previous_tag(repo, tag, debug=False):
             if t['major'] == major and t['minor'] == minor and t['rc'] is not None:
                 if debug:
                     print(f"DEBUG: {repo} previous RC tag for {tag}: {t['name']}")
-                return t['name'].replace('cmvm/', '')
+                return t['name']
         
         # Then try previous version's final release
         for t in reversed(valid_tags[:current_idx]):
             if t['rc'] is None:
                 if debug:
                     print(f"DEBUG: {repo} previous release for {tag}: {t['name']}")
-                return t['name'].replace('cmvm/', '')
+                return t['name']
         
         # Finally try previous version's RCs
         if valid_tags[:current_idx]:
             prev_tag = valid_tags[current_idx - 1]['name']
             if debug:
                 print(f"DEBUG: {repo} previous version RC for {tag}: {prev_tag}")
-            return prev_tag.replace('cmvm/', '')
+            return prev_tag
     
     # For regular releases
     else:
@@ -833,19 +836,19 @@ def get_previous_tag(repo, tag, debug=False):
             if t['rc'] is None:
                 if debug:
                     print(f"DEBUG: {repo} previous non-RC tag for {tag}: {t['name']}")
-                return t['name'].replace('cmvm/', '')
+                return t['name']
         
         # Then try RCs of current version
         for t in reversed(valid_tags[:current_idx]):
             if t['major'] == major and t['minor'] == minor and t['rc'] is not None:
                 if debug:
                     print(f"DEBUG: {repo} previous version RC for {tag}: {t['name']}")
-                return t['name'].replace('cmvm/', '')
+                return t['name']
     
     # Fallback to immediate previous tag if no better match found
     if debug:
         print(f"DEBUG: {repo} fallback previous tag for {tag}: {valid_tags[current_idx - 1]['name']}")
-    return valid_tags[current_idx - 1]['name'].replace('cmvm/', '')
+    return valid_tags[current_idx - 1]['name']
 
 def get_commits_for_tag(repo, tag, debug=False):
     """Get all PRs merged between the previous tag and this tag, excluding internal PRs.
@@ -1129,18 +1132,12 @@ def check_github_release(repo, version):
     Returns:
         bool: True if release exists, False otherwise
     """
-    # Handle different version formats
-    if version.startswith('cmvm/'):
-        tag = version
-    else:
-        tag = f"cmvm/{version}"
-    
     try:
-        cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{version}']
         result = subprocess.run(cmd, capture_output=True, text=True)
         return result.returncode == 0
     except Exception as e:
-        print(f"  WARN: Error checking release {tag} in {repo}: {e}")
+        print(f"  WARN: Error checking release {version} in {repo}: {e}")
         return False
 
 def create_release_file(release, overwrite=False, debug=False):
@@ -1154,8 +1151,8 @@ def create_release_file(release, overwrite=False, debug=False):
     version = release['version']
     date = release['date']
     
-    # Convert version to file name format (e.g., 25.03.02 -> 25_03_02.qmd)
-    file_version = version.replace('cmvm/', '').replace('.', '_')
+    # Convert version to file name format (e.g., cmvm/25.03.02 -> 25_03_02.qmd)
+    file_version = version.split('/')[-1].replace('.', '_')
     file_name = f"{file_version}.qmd"
     
     # Determine the output directory based on whether the tag contains 'cmvm'
@@ -1258,13 +1255,13 @@ def create_release_file(release, overwrite=False, debug=False):
     version_parts = version.replace('cmvm/', '').split('.')
     if '-rc' in version:
         release_type = "release candidate"
-        title_version = version.replace('cmvm/', '')
+        title_version = version
     elif len(version_parts) == 2:
         release_type = "release"
-        title_version = version.replace('cmvm/', '')
+        title_version = version
     else:
         release_type = "hotfix release"
-        title_version = version.replace('cmvm/', '')
+        title_version = version
     
     # Check if all repo_contents are in the 'no public PRs' state
     all_no_public_prs = all(
@@ -1529,20 +1526,19 @@ def process_releases(releases, overwrite, seen_versions, debug=False, version=No
     print("✓ Finished processing all specified releases")
 
 def collect_github_urls():
-    """Collects release URLs from the release tables in customer-managed-validmind-releases.qmd.
+    """Collects release URLs from GitHub.
     
     Returns:
         List[ReleaseURL]: A list of ReleaseURL objects
     """
-    qmd_file = "site/installation/customer-managed-validmind-releases.qmd"
-    releases, seen_versions = parse_release_tables(qmd_file)
+    releases, seen_versions = get_releases_from_github()
     
     if not releases:
-        print("ERROR: No releases found in the release tables")
+        print("ERROR: No releases found in GitHub")
         sys.exit(1)
         
     urls = []
-    repos = ["backend", "frontend", "agents", "documentation"]
+    repos = ["backend", "frontend", "agents", "documentation", "validmind-library"]
     
     for release in releases:
         # Construct GitHub URL based on the git_sha
@@ -1581,30 +1577,29 @@ def count_repos(urls):
         print(f"{repo}: {count}")
 
 def get_release_date():
-    """Gets the release date from the release tables.
+    """Gets the release date from GitHub.
     
     Returns:
         datetime: The release date
     """
-    qmd_file = "site/installation/customer-managed-validmind-releases.qmd"
-    releases, _ = parse_release_tables(qmd_file)
+    releases, _ = get_releases_from_github()
     
     if not releases:
-        print("ERROR: No releases found in the release tables")
+        print("ERROR: No releases found in GitHub")
         sys.exit(1)
         
     # Get the most recent release date
     latest_release = releases[0]
-    date_str = latest_release['date']  # We'll need to add this to the parse_release_tables function
+    date_str = latest_release['date']
     
     try:
         release_date = datetime.datetime.strptime(date_str, "%B %d, %Y")
         print(f"Release date: {release_date}\n")
         return release_date
     except ValueError:
-        print(f"ERROR: Invalid date format in release tables: {date_str}")
+        print(f"ERROR: Invalid date format in release: {date_str}")
         sys.exit(1)
-    
+
 def create_release_folder(formatted_release_date):
     """
     Creates a directory for the release notes based on the provided release date
@@ -1952,7 +1947,7 @@ def write_file(file, release_components, label_to_category):
             # Write processed lines to file
             file.writelines(output_lines)
 
-def create_release_object(version, date=None, git_sha=None, is_hotfix=False, is_rc=False, table='github', add_prefix=True):
+def create_release_object(version, date=None, git_sha=None, is_hotfix=False, is_rc=False, table=None):
     """Create a release object with the given information.
     
     Args:
@@ -1961,24 +1956,15 @@ def create_release_object(version, date=None, git_sha=None, is_hotfix=False, is_
         git_sha (str, optional): Git SHA or tag
         is_hotfix (bool): Whether this is a hotfix
         is_rc (bool): Whether this is a release candidate
-        table (str): Source of the release ('github' or 'table')
-        add_prefix (bool): Whether to add cmvm/ prefix to version and git_sha
+        table (str, optional): Source of release information ('github' or 'table')
         
     Returns:
         dict: Release object
     """
-    # Only add prefix if requested and not already present
-    if add_prefix and not version.startswith('cmvm/'):
-        version = f"cmvm/{version}"
-        
-    # If git_sha is provided, ensure it has cmvm/ prefix if requested
-    if git_sha and add_prefix and not git_sha.startswith('cmvm/'):
-        git_sha = f"cmvm/{git_sha}"
-        
     return {
         'version': version,
-        'date': date or 'n/a',
-        'git_sha': git_sha or 'n/a',
+        'date': date,
+        'git_sha': git_sha,
         'is_hotfix': is_hotfix,
         'is_rc': is_rc,
         'table': table
@@ -2003,21 +1989,21 @@ def get_releases_from_github(version=None, debug=False):
     # Normalize version for comparison if provided
     normalized_version = None
     if version:
-        normalized_version = version.replace('cmvm/', '')
+        normalized_version = version
     
     # Get all CMVM tags from each repository
     for repo in REPOS:
         tags = get_all_cmvm_tags(repo, version=version, debug=debug)
             
         for tag in tags:
-            # Compare normalized versions if a specific version is requested
-            if normalized_version and tag.replace('cmvm/', '') != normalized_version:
+            # Compare versions if a specific version is requested
+            if normalized_version and tag != normalized_version:
                 continue
                 
             print(f"Processing tag in {repo}: {tag} ...")
                 
             # Parse version components
-            version_parts = tag.replace('cmvm/', '').split('.')
+            version_parts = tag.split('.')
             is_rc = len(version_parts) > 3 and version_parts[3].startswith('rc')
             is_hotfix = len(version_parts) > 3 and version_parts[3].startswith('hf')
             
@@ -2136,7 +2122,7 @@ def get_releases_from_github(version=None, debug=False):
                         break  # Found a valid date, no need to check other repos
             
             releases.append(release)
-            seen_versions.add(tag.replace('cmvm/', ''))  # Add normalized version to seen_versions
+            seen_versions.add(tag)  # Add version to seen_versions
             if debug:
                 print(f"DEBUG: Added release: {tag}\n")
                 
@@ -2152,20 +2138,16 @@ def main():
     """Generate release notes for Customer-Managed ValidMind (CMVM) releases.
     
     This script generates release notes for CMVM releases by:
-    1. Reading release information from either GitHub or a release table
+    1. Reading release information from GitHub
     2. Processing each release to create a release note file
     3. Handling both major releases and hotfixes
     """
     parser = argparse.ArgumentParser(description='Generate CMVM release notes')
-    parser.add_argument('--source', choices=['github', 'table'], default='table',
-                      help='Source of release information (github or table)')
     parser.add_argument('--tag', help='Specific tag to process (examples: cmvm/25.05, 25.05.02, 25.05.02-rc1)')
     parser.add_argument('--overwrite', action='store_true',
                       help='Overwrite existing release note files')
     parser.add_argument('--debug', action='store_true',
                       help='Show debug output')
-    parser.add_argument('--release-table', required=False,
-                      help='Path to the release table file (required when --source table is used)')
     args = parser.parse_args()
 
     try:
@@ -2185,45 +2167,9 @@ def main():
         global client
         client = openai_client
 
-        # Get release information based on source
-        if args.source == 'github':
-            # For GitHub source, use the tag exactly as provided
-            version = args.tag if args.tag else None
-            releases, _ = get_releases_from_github(version=version, debug=args.debug)
-        else:  # table
-            # Require release table path when using table source
-            if not args.release_table:
-                print("ERROR: --release-table is required when using --source table")
-                print("\nExample usage:")
-                print("python generate_release_notes.py --source table --release-table /path/to/release-table.qmd")
-                sys.exit(1)
-                
-            # Check if the release table file exists
-            if not os.path.exists(args.release_table):
-                print(f"ERROR: Release table file not found at: {args.release_table}")
-                print("\nTo fix this, you can:")
-                print("1. Clone the repository containing the release table file")
-                print("2. Use --release-table to specify the correct path to the file")
-                print("3. Or use --source github to generate release notes from GitHub instead")
-                sys.exit(1)
-                
-            # Get all releases from the table
-            releases, _ = parse_release_tables(args.release_table, debug=args.debug)
-            if not releases:
-                print("ERROR: No releases found in the release table")
-                sys.exit(1)
-                
-            # If a specific tag is requested, validate it exists in the table
-            if args.tag:
-                tag = args.tag
-                # Ensure tag has cmvm/ prefix for comparison
-                if not tag.startswith('cmvm/'):
-                    tag = f'cmvm/{tag}'
-                # Check if the tag exists in the table
-                tag_exists = any(r['version'] == tag for r in releases)
-                if not tag_exists:
-                    print(f"ERROR: Release '{tag}' not found in release table")
-                    sys.exit(1)
+        # Get release information from GitHub
+        version = args.tag if args.tag else None
+        releases, _ = get_releases_from_github(version=version, debug=args.debug)
         
         if not releases:
             print("ERROR: No releases found")
