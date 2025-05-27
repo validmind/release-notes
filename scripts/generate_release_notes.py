@@ -23,10 +23,27 @@ categories = {
     "documentation": []
 }
 
+# --- Section definitions ---
+INCLUDED_SECTIONS = [
+    "What and why?",
+    "Dependencies, breaking changes, and deployment notes",
+    "Release notes",
+    "Screenshots/Videos"
+]
+
+EXCLUDED_SECTIONS = [
+    "Checklist",
+    "Deployment Notes",
+    "Areas Needing Special Review",
+    "Areas Requiring Special Attention",
+    "Testing Instructions",
+    "Additional Notes"
+]
+
 # --- Editing prompt and static editing info ---
 EDIT_TITLE_PROMPT = (
     "Edit the following PR title for release notes:\n"
-    "- Remove any ticket numbers, branch names, or prefixes (e.g., '9870:', 'hotfix:', 'nibz/cherry pick/1420', etc.).\n"
+    "- Remove any ticket numbers, branch names, prefixes our double quotes (e.g., '9870:', 'hotfix:', 'nibz/cherry pick/1420', etc.).\n"
     "- Enclose technical terms (words with underscores or file extensions like .py, .lock, etc.) in backticks.\n"
     "- Use sentence-style capitalization (capitalize only the first word and proper nouns).\n"
     "- Make the title clear and concise for end users.\n"
@@ -40,6 +57,7 @@ EDIT_TITLE_PROMPT = (
 EDIT_CONTENT_INSTRUCTIONS = (
     "When editing content:\n"
     "- DO NOT add any headings like 'Summary' or 'Release Notes' - just provide the content itself.\n"
+    "- Remove any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.).\n"
     "- Maintain the original meaning and technical accuracy.\n"
     "- Use clear, professional language suitable for end users.\n"
     "- Format technical terms and code references consistently, using backticks for code and file names.\n"
@@ -57,14 +75,15 @@ EDIT_CONTENT_INSTRUCTIONS = (
 VALIDATION_INSTRUCTIONS = (
     "You are a judge evaluating the quality of edited content.\n"
     "For {content_type}, check if the edit:\n"
-    "1. Maintains the core meaning and facts.\n"
     "1. Maintains the core meaning and facts\n"
     "2. Uses proper formatting and structure\n"
     "3. Is clear and professional\n"
     "4. Doesn't add unsupported information\n"
     "5. For titles: Is properly capitalized and punctuated\n"
     "6. For summaries/notes: Has proper paragraph structure\n"
-    "Respond with only 'PASS' or 'FAIL' followed by a brief reason."
+    "7. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.)\n"
+    "If any unwanted sections are found, respond with 'FAIL: Contains unwanted sections'.\n"
+    "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
 )
 
 import subprocess
@@ -83,6 +102,9 @@ import sys
 import requests
 import argparse
 import concurrent.futures
+import time
+import random
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
 
@@ -138,6 +160,32 @@ class PR:
             self.generated_lines - Converted string ready for ChatGPT
         """
         self.pr_body = self.data_json['body']
+        
+        # Extract only the sections we want to keep
+        sections = []
+        
+        # Split the body into sections
+        section_pattern = r"## ([^\n]+)\s*(.+?)(?=^## |\Z)"
+        matches = re.finditer(section_pattern, self.pr_body, re.DOTALL | re.MULTILINE)
+        
+        for match in matches:
+            section_title = match.group(1).strip()
+            section_content = match.group(2).strip()
+            
+            # Skip excluded sections
+            if any(excluded in section_title for excluded in EXCLUDED_SECTIONS):
+                continue
+                
+            # Only keep wanted sections
+            if any(wanted in section_title for wanted in INCLUDED_SECTIONS):
+                sections.append(f"## {section_title}\n{section_content}")
+        
+        # If we found any sections, combine them
+        if sections:
+            self.generated_lines = "\n\n".join(sections)
+            return True
+            
+        # Fallback to old format for backward compatibility
         match = re.search(r"## External Release Notes(.+)", self.pr_body, re.DOTALL)
         if match:
             extracted_text = match.group(1).strip()
@@ -185,13 +233,32 @@ class PR:
         else:
             print(f"Failed to fetch comments: {result.stderr}")
 
-    def edit_content(self, content_type, content, editing_instructions):
+    def extract_pr_summary(self):
+        """Extract the PR summary from the PR body
+        
+        Returns:
+            str: The PR summary or None if not found
+        """
+        # Try new template format first
+        match = re.search(r"## What and why\?\s*(.+?)(?=^## |\Z)", self.pr_body, re.DOTALL | re.MULTILINE)
+        if match:
+            return match.group(1).strip()
+            
+        # Fallback to old format
+        match = re.search(r"## Summary\s*(.+?)(?=^## |\Z)", self.pr_body, re.DOTALL | re.MULTILINE)
+        if match:
+            return match.group(1).strip()
+            
+        return None
+
+    def edit_content(self, content_type, content, editing_instructions, edit=False):
         """Unified function to edit PR content (summaries, titles, or release notes).
         
         Args:
             content_type (str): Type of content being edited ('title', 'summary', or 'notes')
             content (str): The content to edit
             editing_instructions (str): Instructions for the LLM editor
+            edit (bool): Whether to perform editing
             
         Modifies:
             self.cleaned_title: If content_type is 'title'
@@ -199,6 +266,17 @@ class PR:
             self.edited_text: If content_type is 'notes'
             self.validated: Set to True if validation passes
         """
+        if not edit:
+            # If not editing, just use the original content
+            if content_type == 'title':
+                self.cleaned_title = content.rstrip('.')
+            elif content_type == 'summary':
+                self.pr_interpreted_summary = content
+                self.edited_text = content
+            elif content_type == 'notes':
+                self.edited_text = content
+            return
+
         if self.debug:
             print(f"DEBUG: [edit_content] PR #{self.pr_number} in {self.repo_name} - Editing {content_type}")
             print(f"DEBUG: [edit_content] Original content (first 100 chars): {repr(content[:100]) if content else None}")
@@ -235,7 +313,7 @@ class PR:
             # Validate first attempt
             if self.debug:
                 print(f"DEBUG: [edit_content] Validating first attempt for PR #{self.pr_number}")
-            is_valid, validation_result = self.validate_edit(content_type, content, first_edit)
+            is_valid, validation_result = self.validate_edit(content_type, content, first_edit, edit)
             if self.debug:
                 print(f"DEBUG: [edit_content] First validation result: {is_valid}")
             
@@ -268,7 +346,7 @@ class PR:
                 # Validate second attempt
                 if self.debug:
                     print(f"DEBUG: [edit_content] Validating second attempt for PR #{self.pr_number}")
-                is_valid, validation_result = self.validate_edit(content_type, content, second_edit)
+                is_valid, validation_result = self.validate_edit(content_type, content, second_edit, edit)
                 if self.debug:
                     print(f"DEBUG: [edit_content] Second validation result: {is_valid}")
                 
@@ -304,17 +382,21 @@ class PR:
             print(f"\nFailed to edit {content_type} with OpenAI: {str(e)}")
             print(f"\n{content}\n")
 
-    def validate_edit(self, content_type, original_content, edited_content):
+    def validate_edit(self, content_type, original_content, edited_content, edit=False):
         """Uses LLM to validate edits by checking for common issues.
         
         Args:
             content_type (str): Type of content that was edited
             original_content (str): The original content before editing
             edited_content (str): The edited content to validate
+            edit (bool): Whether to perform validation
             
         Returns:
             tuple: (bool, str): True if the edit passes validation, False otherwise; and the raw PASS/FAIL string
         """
+        if not edit:
+            return True, "PASS: No validation performed (edit disabled)"
+
         if self.debug:
             print(f"DEBUG: [validate_edit] PR #{self.pr_number} - Validating {content_type}")
             print(f"DEBUG: [validate_edit] Original (first 100 chars): {repr(original_content[:100]) if original_content else None}")
@@ -343,6 +425,17 @@ class PR:
         except Exception as e:
             print(f"\nValidation failed: {str(e)}")
             return True, "FAIL: Exception during validation"
+
+    def extract_dependencies(self):
+        """Extract dependencies and breaking changes from the PR body
+        
+        Returns:
+            str: The dependencies and breaking changes or None if not found
+        """
+        match = re.search(r"## Dependencies, breaking changes, and deployment notes\s*(.+?)(?=^## |\Z)", self.pr_body, re.DOTALL | re.MULTILINE)
+        if match:
+            return match.group(1).strip()
+        return None
 
 class ReleaseURL:
     def __init__(self, url):
@@ -556,6 +649,36 @@ def get_github_tag_url(repo, version):
     """
     return f"https://github.com/validmind/{repo}/releases/tag/{version}"
 
+def rate_limited_api_call(cmd, max_retries=3, initial_delay=1):
+    """Make a rate-limited API call with exponential backoff.
+    
+    Args:
+        cmd (list): Command to run
+        max_retries (int): Maximum number of retries
+        initial_delay (int): Initial delay in seconds
+        
+    Returns:
+        tuple: (returncode, stdout, stderr)
+    """
+    delay = initial_delay
+    for attempt in range(max_retries):
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        # If successful or not a rate limit error, return immediately
+        if result.returncode == 0 or "API rate limit exceeded" not in result.stderr:
+            return result.returncode, result.stdout, result.stderr
+            
+        # If we hit rate limit, wait with exponential backoff
+        if attempt < max_retries - 1:
+            # Add jitter to prevent thundering herd
+            jitter = random.uniform(0, 0.1 * delay)
+            sleep_time = delay + jitter
+            print(f"Rate limit hit, waiting {sleep_time:.1f} seconds before retry...")
+            time.sleep(sleep_time)
+            delay *= 2  # Exponential backoff
+            
+    return result.returncode, result.stdout, result.stderr
+
 def get_all_cmvm_tags(repo, version=None, debug=False):
     """Get all tags from a repository using /git/refs/tags for reliability.
     
@@ -570,9 +693,10 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
     try:
         # Get all refs/tags (may require paging for large repos)
         cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags']
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode == 0:
-            tags = json.loads(result.stdout)
+        returncode, stdout, stderr = rate_limited_api_call(cmd)
+        
+        if returncode == 0:
+            tags = json.loads(stdout)
             # Handle both single tag and multiple tags cases
             if isinstance(tags, dict):
                 tags = [tags]
@@ -584,29 +708,35 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
                 ref = t.get('ref', '')
                 if ref.startswith('refs/tags/'):
                     tag_name = ref.replace('refs/tags/', '')
-                    tag_names.append(tag_name)
+                    # Only include tags that start with cmvm/
+                    if tag_name.startswith('cmvm/'):
+                        tag_names.append(tag_name)
             if debug:
                 # Sort tags using version_key function
                 sorted_tags = sorted(tag_names, key=version_key)
                 print(f"DEBUG: {repo} tag list sorted: {sorted_tags}")
             
-            # Check for releases in parallel
-            import concurrent.futures
-            
+            # Check for releases in parallel with rate limiting
             def check_release(tag):
                 cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                if result.returncode == 0:
+                returncode, stdout, stderr = rate_limited_api_call(cmd)
+                if returncode == 0:
                     if debug and (not version or tag == version):
                         print(f"DEBUG: Release exists for {tag}")
                 return tag
             
-            # Use ThreadPoolExecutor to check releases in parallel
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Use ThreadPoolExecutor with limited concurrency
+            max_workers = min(3, len(tag_names))  # Limit concurrent requests
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 # Submit all tasks
                 future_to_tag = {executor.submit(check_release, tag): tag for tag in tag_names}
-                # Wait for all tasks to complete
-                concurrent.futures.wait(future_to_tag)
+                # Process results as they complete
+                for future in as_completed(future_to_tag):
+                    try:
+                        future.result()
+                    except Exception as e:
+                        if debug:
+                            print(f"DEBUG: Error checking release for tag {future_to_tag[future]}: {e}")
                 
             return tag_names
     except Exception as e:
@@ -711,7 +841,7 @@ def get_previous_tag(repo, tag, debug=False):
     Uses /git/refs/tags as primary, /tags as fallback.
     
     For RC tags (e.g., 25.05-rc1):
-    1. First looks for previous RC of same version (e.g., looks for earlier RCs)
+    1. First looks for previous RC of same version (e.g., looks for edit_ RCs)
     2. Then tries previous version's final release
     3. Finally tries previous version's RCs in reverse order
     
@@ -900,21 +1030,33 @@ def get_commits_for_tag(repo, tag, debug=False):
             pr_numbers = re.findall(r"https://github.com/validmind/.+/pull/(\d+)", body)
             if debug:
                 print(f"DEBUG: Found {len(pr_numbers)} PR numbers in body")
-            commits = []
-            for pr_number in pr_numbers:
-                external_notes, pr_summary, labels, title, pr_body, image_urls = get_pr_content(pr_number, repo, debug=debug)
-                if 'internal' in labels:
-                    continue  # skip internal PRs
-                commits.append({
-                    'pr_number': pr_number,
-                    'external_notes': external_notes,
-                    'pr_summary': pr_summary,
-                    'labels': labels,
-                    'title': title,
-                    'pr_body': pr_body,
-                    'image_urls': image_urls
-                })
+            
+            # Parallelize PR content fetching
+            def fetch_pr_content(pr_number):
+                return get_pr_content(pr_number, repo, debug=debug)
+            
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future_to_pr = {executor.submit(fetch_pr_content, pr_number): pr_number for pr_number in pr_numbers}
+                commits = []
+                for future in concurrent.futures.as_completed(future_to_pr):
+                    pr_number = future_to_pr[future]
+                    try:
+                        external_notes, pr_summary, labels, title, pr_body, image_urls = future.result()
+                        if 'internal' not in labels:
+                            commits.append({
+                                'pr_number': pr_number,
+                                'external_notes': external_notes,
+                                'pr_summary': pr_summary,
+                                'labels': labels,
+                                'title': title,
+                                'pr_body': pr_body,
+                                'image_urls': image_urls
+                            })
+                    except Exception as e:
+                        if debug:
+                            print(f"DEBUG: Error processing PR #{pr_number}: {e}")
             return commits
+            
         # If we have a previous tag, use the commit-range logic
         # Get SHA for previous tag
         prev_tag_with_prefix = f"cmvm/{prev_tag}" if not prev_tag.startswith('cmvm/') else prev_tag
@@ -972,10 +1114,9 @@ def get_commits_for_tag(repo, tag, debug=False):
             if commit_shas:
                 print(f"DEBUG: First commit SHA: {commit_shas[0]}")
                 print(f"DEBUG: Last commit SHA: {commit_shas[-1]}")
-        pr_numbers = set()
-        pr_info = {}
-        for sha in commit_shas:
-            # Find associated PRs for each commit
+        
+        # Parallelize PR lookup for commits
+        def fetch_prs_for_commit(sha):
             cmd = ['gh', 'api', f'repos/validmind/{repo}/commits/{sha}/pulls', '-H', 'Accept: application/vnd.github.groot-preview+json']
             if debug:
                 print(f"DEBUG: PR lookup API call: {' '.join(cmd)}")
@@ -984,36 +1125,56 @@ def get_commits_for_tag(repo, tag, debug=False):
                 print(f"DEBUG: Could not get PRs for commit {sha}, code: {result.returncode}")
                 print(f"DEBUG: PR lookup API call error: {result.stderr}")
             if result.returncode != 0:
-                continue
+                return []
             pulls = json.loads(result.stdout)
-            for pr in pulls:
-                pr_number = str(pr['number'])
-                if pr_number not in pr_numbers:
-                    pr_numbers.add(pr_number)
-                    pr_info[pr_number] = pr
+            return [(str(pr['number']), pr) for pr in pulls]
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_sha = {executor.submit(fetch_prs_for_commit, sha): sha for sha in commit_shas}
+            pr_numbers = set()
+            pr_info = {}
+            for future in concurrent.futures.as_completed(future_to_sha):
+                sha = future_to_sha[future]
+                try:
+                    prs = future.result()
+                    for pr_number, pr in prs:
+                        if pr_number not in pr_numbers:
+                            pr_numbers.add(pr_number)
+                            pr_info[pr_number] = pr
+                except Exception as e:
+                    if debug:
+                        print(f"DEBUG: Error processing commit {sha}: {e}")
+        
         if debug:
             print(f"DEBUG: Found {len(pr_numbers)} PRs in commits")
             if pr_numbers:
                 print(f"DEBUG: PR numbers found: {sorted(pr_numbers)}")
-        commits = []
-        for pr_number in pr_numbers:
-            try:
-                external_notes, pr_summary, labels, title, pr_body, image_urls = get_pr_content(pr_number, repo, debug=debug)
-                if 'internal' in labels:
-                    continue  # skip internal PRs
-                commits.append({
-                    'pr_number': pr_number,
-                    'external_notes': external_notes,
-                    'pr_summary': pr_summary,
-                    'labels': labels,
-                    'title': title,
-                    'pr_body': pr_body,
-                    'image_urls': image_urls
-                })
-            except Exception as e:
-                if debug:
-                    print(f"DEBUG: Error getting PR content for #{pr_number} in {repo}: {e}")
-                continue
+        
+        # Parallelize PR content fetching
+        def fetch_pr_content(pr_number):
+            return get_pr_content(pr_number, repo, debug=debug)
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_pr = {executor.submit(fetch_pr_content, pr_number): pr_number for pr_number in pr_numbers}
+            commits = []
+            for future in concurrent.futures.as_completed(future_to_pr):
+                pr_number = future_to_pr[future]
+                try:
+                    external_notes, pr_summary, labels, title, pr_body, image_urls = future.result()
+                    if 'internal' not in labels:
+                        commits.append({
+                            'pr_number': pr_number,
+                            'external_notes': external_notes,
+                            'pr_summary': pr_summary,
+                            'labels': labels,
+                            'title': title,
+                            'pr_body': pr_body,
+                            'image_urls': image_urls
+                        })
+                except Exception as e:
+                    if debug:
+                        print(f"DEBUG: Error processing PR #{pr_number}: {e}")
+        
         if debug:
             print(f"DEBUG: Processed {len(commits)} PRs for {current_tag_with_prefix}")
             if commits:
@@ -1140,13 +1301,14 @@ def check_github_release(repo, version):
         print(f"  WARN: Error checking release {version} in {repo}: {e}")
         return False
 
-def create_release_file(release, overwrite=False, debug=False):
+def create_release_file(release, overwrite=False, debug=False, edit=False):
     """Create a release note file for a specific version.
     
     Args:
         release: Dictionary containing release information
         overwrite: Whether to overwrite existing files
         debug: Whether to show debug output
+        edit: Whether to edit content using OpenAI
     """
     version = release['version']
     date = release['date']
@@ -1185,40 +1347,46 @@ def create_release_file(release, overwrite=False, debug=False):
             validated = False
             edited = False
             
-            # Edit summary if present
-            if commit.get('pr_summary'):
+            if edit:
+                # Edit summary if present
+                if commit.get('pr_summary'):
+                    if debug:
+                        print(f"DEBUG: [create_release_file] Editing summary for PR #{commit['pr_number']} in {repo}")
+                    pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.")
+                    commit['pr_summary'] = pr_obj.pr_interpreted_summary
+                    if pr_obj.validated:
+                        validated = True
+                        edited = True
+                
+                # Edit notes if present
+                if commit.get('external_notes'):
+                    if debug:
+                        print(f"DEBUG: [create_release_file] Editing notes for PR #{commit['pr_number']} in {repo}")
+                    pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.")
+                    commit['external_notes'] = pr_obj.edited_text
+                    if pr_obj.validated:
+                        validated = True
+                        edited = True
+                
+                # Always edit title, using summary/notes as context if available
+                context = ''
+                if commit.get('pr_summary'):
+                    context += f"\nPR Summary: {commit['pr_summary']}"
+                if commit.get('external_notes'):
+                    context += f"\nExternal Notes: {commit['external_notes']}"
                 if debug:
-                    print(f"DEBUG: [create_release_file] Editing summary for PR #{commit['pr_number']} in {repo}")
-                pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.")
-                commit['pr_summary'] = pr_obj.pr_interpreted_summary
+                    print(f"DEBUG: [create_release_file] Editing title for PR #{commit['pr_number']} in {repo}")
+                title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
+                pr_obj.edit_content('title', commit.get('title', ''), title_prompt)
+                commit['cleaned_title'] = pr_obj.cleaned_title
                 if pr_obj.validated:
                     validated = True
                     edited = True
-            
-            # Edit notes if present
-            if commit.get('external_notes'):
-                if debug:
-                    print(f"DEBUG: [create_release_file] Editing notes for PR #{commit['pr_number']} in {repo}")
-                pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.")
-                commit['external_notes'] = pr_obj.edited_text
-                if pr_obj.validated:
-                    validated = True
-                    edited = True
-            
-            # Always edit title, using summary/notes as context if available
-            context = ''
-            if commit.get('pr_summary'):
-                context += f"\nPR Summary: {commit['pr_summary']}"
-            if commit.get('external_notes'):
-                context += f"\nExternal Notes: {commit['external_notes']}"
-            if debug:
-                print(f"DEBUG: [create_release_file] Editing title for PR #{commit['pr_number']} in {repo}")
-            title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
-            pr_obj.edit_content('title', commit.get('title', ''), title_prompt)
-            commit['cleaned_title'] = pr_obj.cleaned_title
-            if pr_obj.validated:
-                validated = True
-                edited = True
+            else:
+                # If not editing, just use the original content
+                commit['cleaned_title'] = commit.get('title', '')
+                commit['pr_summary'] = commit.get('pr_summary', '')
+                commit['external_notes'] = commit.get('external_notes', '')
             
             return validated, edited
         return False, False
@@ -1280,10 +1448,10 @@ def create_release_file(release, overwrite=False, debug=False):
         if overwrite:
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             f.write(f"# Content overwritten from an earlier version - {current_time}\n")
-        if any_edited:
+        if edit and any_edited:
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             f.write(f"# Content contains machine-generated information - {current_time}\n")
-        if any_validated:
+        if edit and any_validated:
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             f.write(f"# Content machine-edited and validated - {current_time}\n")
         f.write("---\n\n")
@@ -1460,7 +1628,7 @@ def parse_release_tables(qmd_file_path, version=None, debug=False):
     
     return releases, seen_versions
 
-def process_releases(releases, overwrite, seen_versions, debug=False, version=None):
+def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False):
     """Process all releases and create release note files.
     
     Args:
@@ -1469,6 +1637,7 @@ def process_releases(releases, overwrite, seen_versions, debug=False, version=No
         seen_versions: Set of versions that have been seen
         debug: Whether to show debug output
         version: Specific version to process (if any)
+        edit: Whether to edit content using OpenAI
     """
     print("\nProcessing release(s) ...")
       
@@ -1501,14 +1670,23 @@ def process_releases(releases, overwrite, seen_versions, debug=False, version=No
     for version_key, version_releases in releases_by_version.items():
         print(f"\nProcessing version {version_key} ...")
         
-        # Check if the release exists in GitHub
-        # print("Checking for tags in repositories...")
-        tag_exists = False
-        for repo in REPOS:
-            if check_github_tag(repo, version_key):
-                tag_exists = True
-                # print(f"✓ Found tag in {repo}")
-                break
+        # Check if the release exists in GitHub - parallelize across repos
+        def check_repo_for_tag(repo):
+            return check_github_tag(repo, version_key)
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_repo = {executor.submit(check_repo_for_tag, repo): repo for repo in REPOS}
+            tag_exists = False
+            for future in concurrent.futures.as_completed(future_to_repo):
+                repo = future_to_repo[future]
+                try:
+                    if future.result():
+                        tag_exists = True
+                        if debug:
+                            print(f"DEBUG: Found tag in {repo}")
+                except Exception as e:
+                    if debug:
+                        print(f"DEBUG: Error checking tag in {repo}: {e}")
                 
         if not tag_exists:
             print(f"WARNING: Tag {version_key} not found in any repository")
@@ -1516,7 +1694,7 @@ def process_releases(releases, overwrite, seen_versions, debug=False, version=No
             
         print("Creating release file ...")
         # Create the release file once per version
-        create_release_file(version_releases[0], overwrite, debug)
+        create_release_file(version_releases[0], overwrite, debug, edit)
         print(f"✓ Completed processing version {version_key}")
         
         # If a specific tag was requested by the user, we're done after processing it
@@ -1989,143 +2167,51 @@ def get_releases_from_github(version=None, debug=False):
     # Normalize version for comparison if provided
     normalized_version = None
     if version:
-        normalized_version = version
+        normalized_version = version  # Keep the full version including cmvm/ prefix
     
-    # Get all CMVM tags from each repository
-    for repo in REPOS:
+    # Get all CMVM tags from each repository in parallel with rate limiting
+    def get_repo_tags(repo):
         tags = get_all_cmvm_tags(repo, version=version, debug=debug)
-            
-        for tag in tags:
-            # Compare versions if a specific version is requested
-            if normalized_version and tag != normalized_version:
-                continue
-                
-            print(f"Processing tag in {repo}: {tag} ...")
-                
-            # Parse version components
-            version_parts = tag.split('.')
-            is_rc = len(version_parts) > 3 and version_parts[3].startswith('rc')
-            is_hotfix = len(version_parts) > 3 and version_parts[3].startswith('hf')
-            
-            # Create release object with just the tag
-            release = create_release_object(
-                version=tag,
-                is_hotfix=is_hotfix,
-                is_rc=is_rc,
-                table='github'
-            )
-            
-            # Try to get release date from GitHub
-            # Check all repositories for this tag/release in parallel
-            def check_repo_for_date(check_repo):
-                # First get the SHA from the ref
-                cmd = ['gh', 'api', f'repos/validmind/{check_repo}/git/refs/tags/{tag}']
+        # Filter tags if a specific version is requested
+        if normalized_version:
+            tags = [tag for tag in tags if tag == normalized_version]
+        return [(repo, tag) for tag in tags]
+    
+    # Use ThreadPoolExecutor with limited concurrency
+    max_workers = max(1, min(3, len(REPOS)))  # Ensure at least 1 worker
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_repo = {executor.submit(get_repo_tags, repo): repo for repo in REPOS}
+        repo_tags = []
+        for future in as_completed(future_to_repo):
+            repo = future_to_repo[future]
+            try:
+                repo_tags.extend(future.result())
+            except Exception as e:
                 if debug:
-                    print(f"DEBUG: Getting SHA for tag: {' '.join(cmd)}")
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                
-                if result.returncode == 0:
-                    try:
-                        ref_data = json.loads(result.stdout)
-                        sha = ref_data['object']['sha']
-                        if debug:
-                            print(f"DEBUG: Found SHA: {sha}")
-                            
-                        # Get the commit information
-                        cmd = ['gh', 'api', f'repos/validmind/{check_repo}/git/commits/{sha}']
-                        if debug:
-                            print(f"DEBUG: Getting commit info: {' '.join(cmd)}")
-                        result = subprocess.run(cmd, capture_output=True, text=True)
-                        
-                        if result.returncode == 0:
-                            if debug:
-                                print(f"DEBUG: Found commit in {check_repo}")
-                                print(f"DEBUG: Raw API response: {result.stdout}")
-                            try:
-                                # Parse the JSON response
-                                commit_data = json.loads(result.stdout)
-                                if 'committer' in commit_data:
-                                    date_str = commit_data['committer']['date']
-                                    if date_str:
-                                        # Convert GitHub ISO format to our preferred format
-                                        dt = datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-                                        return dt.strftime("%B %d, %Y")
-                                    else:
-                                        if debug:
-                                            print(f"DEBUG: No date found in commit response")
-                                else:
-                                    if debug:
-                                        print(f"DEBUG: No committer information in commit response")
-                            except Exception as e:
-                                if debug:
-                                    print(f"DEBUG: Error parsing commit date: {e}")
-                                    print(f"DEBUG: Error details: {str(e)}")
-                        else:
-                            if debug:
-                                print(f"DEBUG: No commit found in {check_repo}, trying release")
-                    except Exception as e:
-                        if debug:
-                            print(f"DEBUG: Error getting SHA: {e}")
-                            print(f"DEBUG: Error details: {str(e)}")
-                else:
+                    print(f"DEBUG: Error getting tags from {repo}: {e}")
+    
+    if debug:
+        print(f"DEBUG: Found {len(repo_tags)} tags across all repos")
+        for repo, tag in repo_tags:
+            print(f"DEBUG: Tag {tag} in {repo}")
+    
+    # Process tags in parallel with rate limiting
+    max_workers = max(1, min(3, len(repo_tags)))  # Ensure at least 1 worker
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_tag = {executor.submit(process_tag, repo_tag): repo_tag for repo_tag in repo_tags}
+        for future in as_completed(future_to_tag):
+            repo, tag = future_to_tag[future]
+            try:
+                release = future.result()
+                if release:
+                    releases.append(release)
+                    seen_versions.add(tag)  # Add version to seen_versions
                     if debug:
-                        print(f"DEBUG: No ref found in {check_repo}, trying release")
-                
-                # Fallback to releases/tags
-                cmd = ['gh', 'api', f'repos/validmind/{check_repo}/releases/tags/{tag}', '--jq', '.created_at,.published_at']
+                        print(f"DEBUG: Added release: {tag}\n")
+            except Exception as e:
                 if debug:
-                    print(f"DEBUG: Checking {check_repo} for release: {' '.join(cmd)}")
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                
-                if result.returncode == 0:
-                    if debug:
-                        print(f"DEBUG: Found release in {check_repo}")
-                        print(f"DEBUG: Raw API response: {result.stdout}")
-                    try:
-                        # Split the output and clean up any whitespace
-                        dates = [d.strip() for d in result.stdout.strip().split('\n') if d.strip()]
-                        if debug:
-                            print(f"DEBUG: Parsed dates: {dates}")
-                        if dates:
-                            # Use published_at if available, otherwise created_at
-                            release_date = dates[1] if len(dates) > 1 else dates[0]
-                            if release_date:
-                                # Convert GitHub ISO format to our preferred format
-                                dt = datetime.datetime.fromisoformat(release_date.replace('Z', '+00:00'))
-                                return dt.strftime("%B %d, %Y")
-                            else:
-                                if debug:
-                                    print(f"DEBUG: No valid date found in release response")
-                        else:
-                            if debug:
-                                print(f"DEBUG: No dates found in release response")
-                    except Exception as e:
-                        if debug:
-                            print(f"DEBUG: Error parsing release date: {e}")
-                            print(f"DEBUG: Error details: {str(e)}")
-                else:
-                    if debug:
-                        print(f"DEBUG: No release found in {check_repo}")
-                return None
-            
-            # Check all repositories in parallel
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                # Submit all tasks
-                future_to_repo = {executor.submit(check_repo_for_date, repo): repo for repo in REPOS}
-                # Wait for the first successful result
-                for future in concurrent.futures.as_completed(future_to_repo):
-                    date = future.result()
-                    if date:
-                        release['date'] = date
-                        if debug:
-                            print(f"DEBUG: Found date in {future_to_repo[future]}: {date}")
-                        break  # Found a valid date, no need to check other repos
-            
-            releases.append(release)
-            seen_versions.add(tag)  # Add version to seen_versions
-            if debug:
-                print(f"DEBUG: Added release: {tag}\n")
-                
+                    print(f"DEBUG: Error processing tag {tag} in {repo}: {e}")
+    
     # Sort releases by date in descending order, with version_key as secondary sort
     releases.sort(key=lambda x: (parse_date(x['date']), version_key(x['version'])), reverse=True)
     
@@ -2148,6 +2234,8 @@ def main():
                       help='Overwrite existing release note files')
     parser.add_argument('--debug', action='store_true',
                       help='Show debug output')
+    parser.add_argument('--edit', action='store_true',
+                      help='Edit content using OpenAI')
     args = parser.parse_args()
 
     try:
@@ -2158,14 +2246,15 @@ def main():
         script_dir = os.path.dirname(os.path.abspath(__file__))
         repo_root = os.path.dirname(script_dir)
         env_location = os.path.join(repo_root, ".env")
-        api_key = setup_openai_api(env_location)
         
-        # Initialize OpenAI client with API key
-        openai_client = openai.OpenAI(api_key=api_key)
-        
-        # Make client available globally
-        global client
-        client = openai_client
+        # Only setup OpenAI if editing is enabled
+        if args.edit:
+            api_key = setup_openai_api(env_location)
+            # Initialize OpenAI client with API key
+            openai_client = openai.OpenAI(api_key=api_key)
+            # Make client available globally
+            global client
+            client = openai_client
 
         # Get release information from GitHub
         version = args.tag if args.tag else None
@@ -2178,7 +2267,7 @@ def main():
         # Process releases (check tags and create files)
         # Create a new empty set for seen_versions
         seen_versions = set()
-        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag)
+        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit)
             
         sys.exit(0)
         
