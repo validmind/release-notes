@@ -55,8 +55,7 @@ EDIT_TITLE_PROMPT = (
 # --- Content editing instructions ---
 EDIT_CONTENT_INSTRUCTIONS = (
     "When editing content:\n"
-    "- DO NOT add any headings like 'Summary' or 'Release Notes' - just provide the content itself.\n"
-    "- Remove bolded text like **What and why** or **Release notes** - just provide the content itself.\n"
+    "- Remove all template headings (e.g., 'What', 'Why', 'External Release Notes', 'Breaking Changes', 'Screenshots/Videos', 'PR Summary')\n"
     "- Maintain the original meaning and technical accuracy.\n"
     "- Use clear, professional language suitable for end users.\n"
     "- Format technical terms and code references consistently, using backticks for code and file names.\n"
@@ -424,11 +423,11 @@ class PR:
                 messages=[
                     {
                         "role": "system",
-                        "content": full_instructions
+                        "content": "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes. Follow the instructions exactly."
                     },
                     {
                         "role": "user",
-                        "content": content
+                        "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content}"
                     }
                 ],
                 max_tokens=4096,
@@ -436,7 +435,7 @@ class PR:
                 frequency_penalty=0.0,
                 presence_penalty=0.0
             )
-            first_edit = response.choices[0].message.content
+            first_edit = response.choices[0].message.content.strip()
             if self.debug:
                 print(f"DEBUG: [edit_content] First attempt content (first 100 chars): {repr(first_edit[:100]) if first_edit else None}")
             
@@ -457,11 +456,11 @@ class PR:
                     messages=[
                         {
                             "role": "system",
-                            "content": full_instructions
+                            "content": "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes. Follow the instructions exactly."
                         },
                         {
                             "role": "user",
-                            "content": content
+                            "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content}"
                         }
                     ],
                     max_tokens=4096,
@@ -469,7 +468,7 @@ class PR:
                     frequency_penalty=0.0,
                     presence_penalty=0.0
                 )
-                second_edit = response.choices[0].message.content
+                second_edit = response.choices[0].message.content.strip()
                 if self.debug:
                     print(f"DEBUG: [edit_content] Second attempt content (first 100 chars): {repr(second_edit[:100]) if second_edit else None}")
                 
@@ -1613,6 +1612,8 @@ def create_release_file(release, overwrite=False, debug=False, edit=False):
     def process_pr(commit, repo):
         """Process a single PR's content."""
         if 'internal' not in commit.get('labels', []):
+            if debug:
+                print(f"DEBUG: [process_pr] Processing PR #{commit['pr_number']} in {repo}")
             pr_obj = PR(repo_name=repo, pr_number=commit['pr_number'], title=commit.get('title'), body=commit.get('pr_body'), debug=debug)
             validated = False
             edited = False
@@ -1621,8 +1622,9 @@ def create_release_file(release, overwrite=False, debug=False, edit=False):
                 # Edit summary if present
                 if commit.get('pr_summary'):
                     if debug:
-                        print(f"DEBUG: [create_release_file] Editing summary for PR #{commit['pr_number']} in {repo}")
-                    pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.")
+                        print(f"DEBUG: [process_pr] Editing summary for PR #{commit['pr_number']} in {repo}")
+                        print(f"DEBUG: [process_pr] Summary content: {commit['pr_summary'][:200]}...")
+                    pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.", edit=True)
                     commit['pr_summary'] = pr_obj.pr_interpreted_summary
                     if pr_obj.validated:
                         validated = True
@@ -1631,8 +1633,9 @@ def create_release_file(release, overwrite=False, debug=False, edit=False):
                 # Edit notes if present
                 if commit.get('external_notes'):
                     if debug:
-                        print(f"DEBUG: [create_release_file] Editing notes for PR #{commit['pr_number']} in {repo}")
-                    pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.")
+                        print(f"DEBUG: [process_pr] Editing notes for PR #{commit['pr_number']} in {repo}")
+                        print(f"DEBUG: [process_pr] Notes content: {commit['external_notes'][:200]}...")
+                    pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.", edit=True)
                     commit['external_notes'] = pr_obj.edited_text
                     if pr_obj.validated:
                         validated = True
@@ -1645,9 +1648,11 @@ def create_release_file(release, overwrite=False, debug=False, edit=False):
                 if commit.get('external_notes'):
                     context += f"\nExternal Notes: {commit['external_notes']}"
                 if debug:
-                    print(f"DEBUG: [create_release_file] Editing title for PR #{commit['pr_number']} in {repo}")
+                    print(f"DEBUG: [process_pr] Editing title for PR #{commit['pr_number']} in {repo}")
+                    print(f"DEBUG: [process_pr] Title: {commit.get('title', '')}")
+                    print(f"DEBUG: [process_pr] Context: {context[:200]}...")
                 title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
-                pr_obj.edit_content('title', commit.get('title', ''), title_prompt)
+                pr_obj.edit_content('title', commit.get('title', ''), title_prompt, edit=True)
                 commit['cleaned_title'] = pr_obj.cleaned_title
                 if pr_obj.validated:
                     validated = True
