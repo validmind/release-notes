@@ -902,12 +902,66 @@ def get_pr_content(pr_number, repo, debug=False):
             if debug:
                 print(f"DEBUG: PR #{pr_number} in {repo} is internal, skipping.")
             return None, None, ['internal'], pr_data.get('title'), None, []
-        # Extract external release notes
+
+        # Extract external release notes using section classification
         external_notes = None
         if pr_data.get('body'):
-            match = re.search(r"## External Release Notes(.+)", pr_data['body'], re.DOTALL)
-            if match:
-                external_notes = match.group(1).strip()
+            if debug:
+                print("\nDEBUG: Extracting external release notes")
+                print(f"DEBUG: PR body length: {len(pr_data['body'])}")
+            
+            # Extract only the sections we want to keep
+            sections = []
+            
+            # Split the body into sections with more flexible matching
+            section_pattern = r"##\s*([^\n]+)\s*(.+?)(?=^##\s*|\Z)"
+            matches = re.finditer(section_pattern, pr_data['body'], re.DOTALL | re.MULTILINE)
+            
+            for match in matches:
+                section_title = match.group(1).strip()
+                section_content = match.group(2).strip()
+                
+                if debug:
+                    print(f"\nDEBUG: Found section: {section_title}")
+                    print(f"DEBUG: Section content (first 200 chars): {section_content[:200]}")
+                
+                # Use OpenAI to classify the section
+                if classify_section(section_title, section_content, debug):
+                    if debug:
+                        print(f"DEBUG: Including section: {section_title}")
+                    sections.append(f"## {section_title}\n{section_content}")
+                else:
+                    if debug:
+                        print(f"DEBUG: Excluding section: {section_title}")
+            
+            # If we found any sections, combine them
+            if sections:
+                if debug:
+                    print(f"\nDEBUG: Found {len(sections)} sections to include")
+                external_notes = "\n\n".join(sections)
+            else:
+                if debug:
+                    print("\nDEBUG: No sections found, trying fallback patterns")
+                    
+                # Fallback to old format with more robust matching
+                old_format_patterns = [
+                    r"##\s*External\s+Release\s+Notes\s*(.+)",
+                    r"##\s*Release\s+Notes\s*(.+)",
+                    r"##\s*Notes\s*(.+)",
+                    r"##\s*What's\s+New\s*(.+)",
+                    r"##\s*Changes\s*(.+)",
+                    r"##\s*Overview\s*(.+)"
+                ]
+                
+                for pattern in old_format_patterns:
+                    match = re.search(pattern, pr_data['body'], re.DOTALL | re.IGNORECASE)
+                    if match:
+                        if debug:
+                            print(f"DEBUG: Found match with pattern: {pattern}")
+                        extracted_text = match.group(1).strip()
+                        external_notes = '\n'.join(''.join(['#', line]) if line.lstrip().startswith('###') else line for line in extracted_text.split('\n'))
+                        break
+
         # Extract PR summary (robust: search all comments for '# PR Summary')
         pr_summary = None
         comments = pr_data.get('comments', [])
@@ -2046,13 +2100,15 @@ def edit_release_notes(github_urls, editing_instructions_body, debug=False):
                 if debug:
                     print(f"DEBUG: [edit_release_notes] Found data_json for PR #{pr.pr_number} in {pr.repo_name}")
                 print(f"Editing content of PR #{pr.pr_number} from {pr.repo_name} ...\n") 
-                if pr.extract_external_release_notes():
+                # Get the external notes that were already classified in get_pr_content
+                external_notes, pr_summary, labels, title, pr_body, image_urls = get_pr_content(pr.pr_number, pr.repo_name, debug)
+                if external_notes:
                     if debug:
-                        print(f"DEBUG: [edit_release_notes] Successfully extracted external release notes for PR #{pr.pr_number}")
-                    pr.edit_content('notes', pr.pr_body, editing_instructions_body)
+                        print(f"DEBUG: [edit_release_notes] Editing external notes for PR #{pr.pr_number}")
+                    pr.edit_content('notes', external_notes, editing_instructions_body)
                 else:
                     if debug:
-                        print(f"DEBUG: [edit_release_notes] No external release notes found for PR #{pr.pr_number}")
+                        print(f"DEBUG: [edit_release_notes] No external notes found for PR #{pr.pr_number}")
         print()
 
 def auto_summary(github_urls, summary_instructions, debug=False):
