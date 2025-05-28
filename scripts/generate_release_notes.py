@@ -101,10 +101,12 @@ SECTION_CLASSIFICATION_PROMPT = (
 
 # --- Heading level adjustment prompt ---
 HEADING_LEVEL_PROMPT = (
-    "Adjust all heading levels in the following markdown content to be at least level {min_level} (i.e., use at least {min_level} # symbols).\n"
-    "Preserve all other formatting, indentation, and content exactly as is.\n"
-    "Only modify the number of # symbols at the start of headings.\n"
-    "Make sure to handle all heading formats, including those with HTML comments.\n\n"
+    "Fix heading levels in the markdown content while maintaining proper hierarchy:\n"
+    "1. The main PR title should be level 3 (###)\n"
+    "2. All other headings should be at least level 4 (####)\n"
+    "3. Preserve the relative hierarchy between headings (e.g., if heading A was above heading B, keep it that way)\n"
+    "4. Only change the number of # symbols at the start of headings\n"
+    "5. Keep everything else exactly the same\n\n"
     "Content:\n"
     "{content}"
 )
@@ -904,18 +906,22 @@ def adjust_heading_levels(content, min_level=4, debug=False):
         return content
         
     if debug:
-        print(f"\nDEBUG: [adjust_heading_levels] Adjusting headings to minimum level {min_level}")
+        print(f"\nDEBUG: [adjust_heading_levels] Adjusting headings to maintain hierarchy")
         print(f"DEBUG: [adjust_heading_levels] Input content (first 200 chars): {content[:200]}")
         
     try:
-        prompt = HEADING_LEVEL_PROMPT.format(min_level=min_level, content=content)
+        prompt = HEADING_LEVEL_PROMPT.format(content=content)
         
         response = client.chat.completions.create(
-            model="gpt-4-turbo",  # Use smaller model for this simple task
+            model="gpt-4-turbo",
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a markdown heading level adjuster. Your job is to ensure all headings are at the specified minimum level while preserving all other content exactly as is. Handle all heading formats, including those with HTML comments."
+                    "content": "You are a markdown heading level adjuster. Your job is to ensure proper heading hierarchy:\n"
+                              "1. Main PR title should be level 3 (###)\n"
+                              "2. All other headings should be at least level 4 (####)\n"
+                              "3. Preserve relative hierarchy between headings\n"
+                              "4. Only modify the number of # symbols at the start of headings"
                 },
                 {
                     "role": "user",
@@ -923,12 +929,20 @@ def adjust_heading_levels(content, min_level=4, debug=False):
                 }
             ],
             temperature=0.0,
-            max_tokens=len(content) * 2  # Ensure we have enough tokens for the response
+            max_tokens=len(content) * 2
         )
         
         result = response.choices[0].message.content.strip()
         if debug:
             print(f"DEBUG: [adjust_heading_levels] Result (first 200 chars): {result[:200]}")
+            print("\nDEBUG: [adjust_heading_levels] Heading changes:")
+            input_lines = content.split('\n')
+            output_lines = result.split('\n')
+            for i, (in_line, out_line) in enumerate(zip(input_lines, output_lines)):
+                if in_line != out_line and ('#' in in_line or '#' in out_line):
+                    print(f"  Line {i+1}:")
+                    print(f"    Input:  {in_line}")
+                    print(f"    Output: {out_line}")
         return result
         
     except Exception as e:
