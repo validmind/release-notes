@@ -25,19 +25,18 @@ categories = {
 
 # --- Section definitions ---
 INCLUDED_SECTIONS = [
-    "What and why?",
-    "Dependencies, breaking changes, and deployment notes",
+    "What and why",
     "Release notes",
-    "Screenshots/Videos"
+    "Dependencies",
+    "Screenshots"
 ]
 
 EXCLUDED_SECTIONS = [
     "Checklist",
-    "Deployment Notes",
-    "Areas Needing Special Review",
-    "Areas Requiring Special Attention",
-    "Testing Instructions",
-    "Additional Notes"
+    "Deployment",
+    "Review",
+    "Testing",
+    "Internal"
 ]
 
 # --- Editing prompt and static editing info ---
@@ -57,7 +56,6 @@ EDIT_TITLE_PROMPT = (
 EDIT_CONTENT_INSTRUCTIONS = (
     "When editing content:\n"
     "- DO NOT add any headings like 'Summary' or 'Release Notes' - just provide the content itself.\n"
-    "- Remove any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.).\n"
     "- Maintain the original meaning and technical accuracy.\n"
     "- Use clear, professional language suitable for end users.\n"
     "- Format technical terms and code references consistently, using backticks for code and file names.\n"
@@ -86,6 +84,21 @@ VALIDATION_INSTRUCTIONS = (
     "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
 )
 
+# --- Section classification prompt ---
+SECTION_CLASSIFICATION_PROMPT = (
+    "Classify if this section should be included in public release notes.\n"
+    "Section title: {title}\n"
+    "Section content: {content}\n\n"
+    "Rules:\n"
+    "1. Include sections that describe user-facing changes, features, or improvements\n"
+    "2. Include sections about dependencies, breaking changes, or upgrade notes\n"
+    "3. Include sections with screenshots or media\n"
+    "4. Exclude internal notes, checklists, deployment steps, or review points\n"
+    "5. Exclude sections about testing, QA, or development processes\n"
+    "6. Exclude sections marked as internal or for team use only\n\n"
+    "Respond with only 'INCLUDE' or 'EXCLUDE'."
+)
+
 import subprocess
 import json
 import re
@@ -107,6 +120,82 @@ import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+
+def classify_section(section_title, section_content, debug=False):
+    """Use OpenAI to classify whether a section should be included in release notes.
+    
+    Args:
+        section_title (str): The section title
+        section_content (str): The section content
+        debug (bool): Whether to show debug output
+        
+    Returns:
+        bool: True if section should be included, False if excluded
+    """
+    if debug:
+        print(f"\nDEBUG: Classifying section:")
+        print(f"Title: {section_title}")
+        print(f"Content: {section_content[:200]}...")  # Show first 200 chars of content
+    
+    try:
+        prompt = SECTION_CLASSIFICATION_PROMPT.format(
+            title=section_title,
+            content=section_content
+        )
+        
+        if debug:
+            print("DEBUG: Sending prompt to OpenAI...")
+            
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a release notes classifier. Your job is to determine if a section should be included in public release notes."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            max_tokens=10,
+            temperature=0.0
+        )
+        
+        result = response.choices[0].message.content.strip().upper()
+        if debug:
+            print(f"DEBUG: OpenAI response: {result}")
+        return result == 'INCLUDE'
+        
+    except Exception as e:
+        if debug:
+            print(f"DEBUG: Error in OpenAI classification: {e}")
+            print("DEBUG: Falling back to pattern matching...")
+            
+        # Fallback to basic pattern matching if OpenAI fails
+        normalized_title = section_title.lower()
+        normalized_title = re.sub(r'[^\w\s]', '', normalized_title)
+        
+        if debug:
+            print(f"DEBUG: Normalized title: {normalized_title}")
+        
+        # Check excluded patterns first
+        for excluded in EXCLUDED_SECTIONS:
+            if excluded.lower() in normalized_title:
+                if debug:
+                    print(f"DEBUG: Matched excluded pattern: {excluded}")
+                return False
+                
+        # Then check included patterns
+        for included in INCLUDED_SECTIONS:
+            if included.lower() in normalized_title:
+                if debug:
+                    print(f"DEBUG: Matched included pattern: {included}")
+                return True
+                
+        if debug:
+            print("DEBUG: No patterns matched, excluding section")
+        return False
 
 class PR:
     def __init__(self, repo_name=None, pr_number=None, title=None, body=None, url=None, labels=None, debug=False):
@@ -161,39 +250,66 @@ class PR:
         """
         self.pr_body = self.data_json['body']
         
+        if self.debug:
+            print("\nDEBUG: Extracting external release notes")
+            print(f"DEBUG: PR body length: {len(self.pr_body)}")
+        
         # Extract only the sections we want to keep
         sections = []
         
-        # Split the body into sections
-        section_pattern = r"## ([^\n]+)\s*(.+?)(?=^## |\Z)"
+        # Split the body into sections with more flexible matching
+        section_pattern = r"##\s*([^\n]+)\s*(.+?)(?=^##\s*|\Z)"
         matches = re.finditer(section_pattern, self.pr_body, re.DOTALL | re.MULTILINE)
         
         for match in matches:
             section_title = match.group(1).strip()
             section_content = match.group(2).strip()
             
-            # Skip excluded sections
-            if any(excluded in section_title for excluded in EXCLUDED_SECTIONS):
-                continue
-                
-            # Only keep wanted sections
-            if any(wanted in section_title for wanted in INCLUDED_SECTIONS):
+            if self.debug:
+                print(f"\nDEBUG: Found section: {section_title}")
+                print(f"DEBUG: Section content (first 200 chars): {section_content[:200]}")
+            
+            # Use OpenAI to classify the section
+            if classify_section(section_title, section_content, self.debug):
+                if self.debug:
+                    print(f"DEBUG: Including section: {section_title}")
                 sections.append(f"## {section_title}\n{section_content}")
+            else:
+                if self.debug:
+                    print(f"DEBUG: Excluding section: {section_title}")
         
         # If we found any sections, combine them
         if sections:
+            if self.debug:
+                print(f"\nDEBUG: Found {len(sections)} sections to include")
             self.generated_lines = "\n\n".join(sections)
             return True
             
-        # Fallback to old format for backward compatibility
-        match = re.search(r"## External Release Notes(.+)", self.pr_body, re.DOTALL)
-        if match:
-            extracted_text = match.group(1).strip()
-            # Process each line to add an extra '#' if the line starts with three or more '#'
-            self.generated_lines = '\n'.join(''.join(['#', line]) if line.lstrip().startswith('###') else line for line in extracted_text.split('\n'))  
-            return True
-        else:
-            return None
+        if self.debug:
+            print("\nDEBUG: No sections found, trying fallback patterns")
+            
+        # Fallback to old format with more robust matching
+        old_format_patterns = [
+            r"##\s*External\s+Release\s+Notes\s*(.+)",
+            r"##\s*Release\s+Notes\s*(.+)",
+            r"##\s*Notes\s*(.+)",
+            r"##\s*What's\s+New\s*(.+)",
+            r"##\s*Changes\s*(.+)",
+            r"##\s*Overview\s*(.+)"
+        ]
+        
+        for pattern in old_format_patterns:
+            match = re.search(pattern, self.pr_body, re.DOTALL | re.IGNORECASE)
+            if match:
+                if self.debug:
+                    print(f"DEBUG: Found match with pattern: {pattern}")
+                extracted_text = match.group(1).strip()
+                self.generated_lines = '\n'.join(''.join(['#', line]) if line.lstrip().startswith('###') else line for line in extracted_text.split('\n'))
+                return True
+                
+        if self.debug:
+            print("DEBUG: No sections found in fallback patterns")
+        return None
         
     def extract_pr_summary_comment(self):
         """Takes the github bot's comment containing an auto-generated summary of the PR.
@@ -380,7 +496,8 @@ class PR:
                 
         except Exception as e:
             print(f"\nFailed to edit {content_type} with OpenAI: {str(e)}")
-            print(f"\n{content}\n")
+            if self.debug:
+                print(f"\n{content}\n")
 
     def validate_edit(self, content_type, original_content, edited_content, edit=False):
         """Uses LLM to validate edits by checking for common issues.
@@ -506,15 +623,20 @@ class ReleaseURL:
 
 def get_env_location():
     """
-    Asks the user for the location of their .env file.
+    Gets the location of the .env file, using the default if it exists.
 
     Returns:
-        str: The provided location or a default value (../.env).
+        str: The path to the .env file.
     """
     # Default location of the .env file
-    default_env_location = "../.env"
-
-    # Prompt the user for input
+    default_env_location = "./.env"
+    
+    # If default location exists, use it without any output
+    if os.path.exists(default_env_location):
+        return default_env_location
+        
+    # Only prompt and print if default location doesn't exist
+    print(f"WARNING: .env file not found at {default_env_location}")
     env_location = input(
         f"Enter the location of your .env file (leave empty for default [{default_env_location}]): "
     ) or default_env_location
@@ -556,6 +678,11 @@ def setup_openai_api(env_location):
     # If we get here, no API key was found
     print("ERROR: OPENAI_API_KEY not found in environment variables or .env file")
     sys.exit(1)
+
+# Initialize OpenAI client
+env_location = get_env_location()
+api_key = setup_openai_api(env_location)
+client = openai.OpenAI(api_key=api_key)
 
 def display_list(array):
     """
@@ -2171,46 +2298,63 @@ def get_releases_from_github(version=None, debug=False):
     
     # Get all CMVM tags from each repository in parallel with rate limiting
     def get_repo_tags(repo):
-        tags = get_all_cmvm_tags(repo, version=version, debug=debug)
-        # Filter tags if a specific version is requested
-        if normalized_version:
-            tags = [tag for tag in tags if tag == normalized_version]
-        return [(repo, tag) for tag in tags]
+        try:
+            tags = get_all_cmvm_tags(repo, version=version, debug=debug)
+            # Filter tags if a specific version is requested
+            if normalized_version:
+                tags = [tag for tag in tags if tag == normalized_version]
+            return [(repo, tag) for tag in tags]
+        except Exception as e:
+            if debug:
+                print(f"DEBUG: Error getting tags from {repo}: {e}")
+            return []
     
     # Use ThreadPoolExecutor with limited concurrency
-    max_workers = max(1, min(3, len(REPOS)))  # Ensure at least 1 worker
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with ThreadPoolExecutor(max_workers=3) as executor:
         future_to_repo = {executor.submit(get_repo_tags, repo): repo for repo in REPOS}
         repo_tags = []
         for future in as_completed(future_to_repo):
             repo = future_to_repo[future]
             try:
-                repo_tags.extend(future.result())
+                tags = future.result()
+                if tags:
+                    repo_tags.extend(tags)
+                    if debug:
+                        print(f"DEBUG: Found {len(tags)} tags in {repo}")
             except Exception as e:
                 if debug:
-                    print(f"DEBUG: Error getting tags from {repo}: {e}")
+                    print(f"DEBUG: Error processing tags from {repo}: {e}")
     
     if debug:
         print(f"DEBUG: Found {len(repo_tags)} tags across all repos")
         for repo, tag in repo_tags:
             print(f"DEBUG: Tag {tag} in {repo}")
     
+    if not repo_tags:
+        print(f"ERROR: No tags found for version {version if version else 'any'}")
+        return [], set()
+    
     # Process tags in parallel with rate limiting
-    max_workers = max(1, min(3, len(repo_tags)))  # Ensure at least 1 worker
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with ThreadPoolExecutor(max_workers=3) as executor:
         future_to_tag = {executor.submit(process_tag, repo_tag): repo_tag for repo_tag in repo_tags}
         for future in as_completed(future_to_tag):
             repo, tag = future_to_tag[future]
             try:
                 release = future.result()
                 if release:
-                    releases.append(release)
-                    seen_versions.add(tag)  # Add version to seen_versions
-                    if debug:
-                        print(f"DEBUG: Added release: {tag}\n")
+                    # Only add if we haven't seen this version before
+                    if release['version'] not in seen_versions:
+                        releases.append(release)
+                        seen_versions.add(release['version'])
+                        if debug:
+                            print(f"DEBUG: Added release: {release['version']} from {repo}")
             except Exception as e:
                 if debug:
                     print(f"DEBUG: Error processing tag {tag} in {repo}: {e}")
+    
+    if not releases:
+        print(f"ERROR: No releases found for version {version if version else 'any'}")
+        return [], set()
     
     # Sort releases by date in descending order, with version_key as secondary sort
     releases.sort(key=lambda x: (parse_date(x['date']), version_key(x['version'])), reverse=True)
@@ -2219,6 +2363,72 @@ def get_releases_from_github(version=None, debug=False):
         print(f"DEBUG: Processed {len(releases)} total release(s), {len(seen_versions)} unique version(s)")
                 
     return releases, seen_versions
+
+def process_tag(repo_tag):
+    """Process a tag to extract release information.
+    
+    Args:
+        repo_tag (tuple): Tuple of (repo, tag) to process
+        
+    Returns:
+        dict: Release information or None if processing fails
+    """
+    repo, tag = repo_tag
+    try:
+        # Get tag data first (more fundamental, always exists)
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags/{tag}']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            tag_data = json.loads(result.stdout)
+            # Get the commit SHA from the tag reference
+            commit_sha = tag_data.get('object', {}).get('sha')
+            if not commit_sha:
+                print(f"  WARN: No commit SHA found for tag {tag} in {repo}")
+                return None
+                
+            # Get the commit data to get the date
+            cmd = ['gh', 'api', f'repos/validmind/{repo}/git/commits/{commit_sha}']
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                commit_data = json.loads(result.stdout)
+                date = commit_data.get('committer', {}).get('date')
+                if date:
+                    # Convert ISO format to desired format
+                    date = datetime.datetime.fromisoformat(date.replace('Z', '+00:00')).strftime("%B %d, %Y")
+                else:
+                    date = "N/A"
+                    
+                # Get release data only if needed (for additional metadata)
+                release_data = None
+                cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if result.returncode == 0:
+                    release_data = json.loads(result.stdout)
+                    # Use release date if available (more accurate for actual release)
+                    release_date = release_data.get('published_at')
+                    if release_date:
+                        date = datetime.datetime.fromisoformat(release_date.replace('Z', '+00:00')).strftime("%B %d, %Y")
+                
+                return create_release_object(
+                    version=tag,
+                    date=date,
+                    git_sha=commit_sha,  # Use actual commit SHA
+                    is_hotfix=False,  # Default to False, will be updated if found in table
+                    is_rc='-rc' in tag,  # Check if it's an RC based on tag name
+                    table='github'
+                )
+            else:
+                print(f"  WARN: Could not get commit data for {tag} in {repo}")
+                return None
+        else:
+            print(f"  WARN: Could not get tag data for {tag} in {repo}")
+            return None
+            
+    except Exception as e:
+        print(f"  WARN: Error processing tag {tag} in {repo}: {e}")
+        return None
 
 def main():
     """Generate release notes for Customer-Managed ValidMind (CMVM) releases.
@@ -2247,7 +2457,7 @@ def main():
         repo_root = os.path.dirname(script_dir)
         env_location = os.path.join(repo_root, ".env")
         
-        # Only setup OpenAI if editing is enabled
+        # Setup OpenAI if editing is enabled
         if args.edit:
             api_key = setup_openai_api(env_location)
             # Initialize OpenAI client with API key
