@@ -56,6 +56,7 @@ EDIT_TITLE_PROMPT = (
 EDIT_CONTENT_INSTRUCTIONS = (
     "When editing content:\n"
     "- DO NOT add any headings like 'Summary' or 'Release Notes' - just provide the content itself.\n"
+    "- Remove bolded text like **What and why** or **Release notes** - just provide the content itself.\n"
     "- Maintain the original meaning and technical accuracy.\n"
     "- Use clear, professional language suitable for end users.\n"
     "- Format technical terms and code references consistently, using backticks for code and file names.\n"
@@ -102,11 +103,12 @@ SECTION_CLASSIFICATION_PROMPT = (
 # --- Heading level adjustment prompt ---
 HEADING_LEVEL_PROMPT = (
     "Fix heading levels in the markdown content while maintaining proper hierarchy:\n"
-    "1. The main PR title should be level 3 (###)\n"
-    "2. All other headings should be at least level 4 (####)\n"
-    "3. Preserve the relative hierarchy between headings (e.g., if heading A was above heading B, keep it that way)\n"
-    "4. Only change the number of # symbols at the start of headings\n"
-    "5. Keep everything else exactly the same\n\n"
+    "1. The first heading (PR title) should be level 3 (###)\n"
+    "2. Section headings (like 'External Release Notes', 'Breaking Changes', etc.) should be level 4 (####)\n"
+    "3. All other headings should be at least level 5 (#####)\n"
+    "4. Preserve the relative hierarchy between headings\n"
+    "5. Only change the number of # symbols at the start of headings\n"
+    "6. Keep everything else exactly the same\n\n"
     "Content:\n"
     "{content}"
 )
@@ -890,11 +892,11 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
     return []
 
 def adjust_heading_levels(content, min_level=4, debug=False):
-    """Adjust heading levels in content to be at least min_level.
+    """Increase heading levels in content until they reach min_level.
     
     Args:
         content (str): The content to adjust
-        min_level (int): Minimum heading level (1-6)
+        min_level (int): Minimum heading level (default: 4)
         debug (bool): Whether to show debug output
         
     Returns:
@@ -906,49 +908,49 @@ def adjust_heading_levels(content, min_level=4, debug=False):
         return content
         
     if debug:
-        print(f"\nDEBUG: [adjust_heading_levels] Adjusting headings to maintain hierarchy")
+        print(f"\nDEBUG: [adjust_heading_levels] Adjusting heading levels to minimum {min_level}")
         print(f"DEBUG: [adjust_heading_levels] Input content (first 200 chars): {content[:200]}")
-        
-    try:
-        prompt = HEADING_LEVEL_PROMPT.format(content=content)
-        
-        response = client.chat.completions.create(
-            model="gpt-4-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a markdown heading level adjuster. Your job is to ensure proper heading hierarchy:\n"
-                              "1. Main PR title should be level 3 (###)\n"
-                              "2. All other headings should be at least level 4 (####)\n"
-                              "3. Preserve relative hierarchy between headings\n"
-                              "4. Only modify the number of # symbols at the start of headings"
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.0,
-            max_tokens=len(content) * 2
-        )
-        
-        result = response.choices[0].message.content.strip()
-        if debug:
-            print(f"DEBUG: [adjust_heading_levels] Result (first 200 chars): {result[:200]}")
-            print("\nDEBUG: [adjust_heading_levels] Heading changes:")
-            input_lines = content.split('\n')
-            output_lines = result.split('\n')
-            for i, (in_line, out_line) in enumerate(zip(input_lines, output_lines)):
-                if in_line != out_line and ('#' in in_line or '#' in out_line):
-                    print(f"  Line {i+1}:")
-                    print(f"    Input:  {in_line}")
-                    print(f"    Output: {out_line}")
-        return result
-        
-    except Exception as e:
-        if debug:
-            print(f"DEBUG: [adjust_heading_levels] Adjustment failed: {e}")
-        return content  # Return original content if adjustment fails
+    
+    # Process line by line
+    lines = content.split('\n')
+    result_lines = []
+    
+    for line in lines:
+        # Skip empty lines
+        if not line.strip():
+            result_lines.append(line)
+            continue
+            
+        # Strip leading whitespace before checking for #
+        stripped = line.lstrip()
+        if stripped.startswith('#'):
+            # Count leading #s
+            heading_level = len(stripped) - len(stripped.lstrip('#'))
+            # Get the text after the #s and any whitespace
+            text = stripped[heading_level:].strip()
+            if text:  # Only adjust if there's actual text
+                # Add #s until we reach min_level
+                new_level = max(heading_level, min_level)
+                # Preserve original indentation
+                indent = line[:len(line) - len(line.lstrip())]
+                result_lines.append(indent + '#' * new_level + ' ' + text)
+            else:
+                result_lines.append(line)
+        else:
+            result_lines.append(line)
+    
+    result = '\n'.join(result_lines)
+    
+    if debug:
+        print(f"DEBUG: [adjust_heading_levels] Result (first 200 chars): {result[:200]}")
+        print("\nDEBUG: [adjust_heading_levels] Heading changes:")
+        for i, (in_line, out_line) in enumerate(zip(lines, result_lines)):
+            if in_line != out_line and '#' in in_line:
+                print(f"  Line {i+1}:")
+                print(f"    Input:  {in_line}")
+                print(f"    Output: {out_line}")
+    
+    return result
 
 def get_pr_content(pr_number, repo, debug=False):
     """Get content from a PR's external release notes, PR summary, title, and image URLs.
@@ -1001,14 +1003,15 @@ def get_pr_content(pr_number, repo, debug=False):
                 if debug:
                     print(f"\nDEBUG: Found section: {section_title}")
                     print(f"DEBUG: Section content (first 200 chars): {section_content[:200]}")
-                
+                    print(f"DEBUG: Passing to adjust_heading_levels (section_content):\n{section_content}")
                 # Use OpenAI to classify the section
                 if classify_section(section_title, section_content, debug):
                     if debug:
                         print(f"DEBUG: Including section: {section_title}")
                     # Adjust heading levels in section content to be at least level 4
                     adjusted_content = adjust_heading_levels(section_content, min_level=4, debug=debug)
-                    sections.append(f"## {section_title}\n{adjusted_content}")
+                    # Add the section with adjusted heading level
+                    sections.append(f"#### {section_title}\n{adjusted_content}")
                 else:
                     if debug:
                         print(f"DEBUG: Excluding section: {section_title}")
@@ -1021,7 +1024,7 @@ def get_pr_content(pr_number, repo, debug=False):
             else:
                 if debug:
                     print("\nDEBUG: No sections found, trying fallback patterns")
-                    
+                
                 # Fallback to old format with more robust matching
                 old_format_patterns = [
                     r"##\s*External\s+Release\s+Notes\s*(.+)",
@@ -1037,6 +1040,7 @@ def get_pr_content(pr_number, repo, debug=False):
                     if match:
                         if debug:
                             print(f"DEBUG: Found match with pattern: {pattern}")
+                            print(f"DEBUG: Passing to adjust_heading_levels (extracted_text):\n{match.group(1).strip()}")
                         extracted_text = match.group(1).strip()
                         # Adjust heading levels in extracted text
                         adjusted_text = adjust_heading_levels(extracted_text, min_level=4, debug=debug)
@@ -1056,6 +1060,8 @@ def get_pr_content(pr_number, repo, debug=False):
                 match = re.search(r"(# PR Summary\s*.+?)(?=^## |\Z)", body, re.DOTALL | re.MULTILINE)
                 if match:
                     pr_summary = match.group(1).strip()
+                    if debug:
+                        print(f"DEBUG: Passing to adjust_heading_levels (pr_summary):\n{pr_summary}")
                     # Adjust heading levels in PR summary
                     pr_summary = adjust_heading_levels(pr_summary, min_level=4, debug=debug)
                     if debug:
@@ -1709,15 +1715,18 @@ def create_release_file(release, overwrite=False, debug=False, edit=False):
             f.write(f'date: "{date}"\n')
         f.write("sidebar: validmind-installation\n")
         f.write("toc-expand: true\n")
+        
+        # Add metadata about editing and validation
+        if edit:
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            if any_edited:
+                f.write(f'# Content edited by AI - {current_time}\n')
+            if any_validated:
+                f.write(f'# Content validated by AI - {current_time}\n')
         if overwrite:
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            f.write(f"# Content overwritten from an earlier version - {current_time}\n")
-        if edit and any_edited:
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            f.write(f"# Content contains machine-generated information - {current_time}\n")
-        if edit and any_validated:
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            f.write(f"# Content machine-edited and validated - {current_time}\n")
+            f.write(f'# Content overwritten from an earlier version - {current_time}\n')
+            
         f.write("---\n\n")
         if all_no_public_prs:
             f.write('::: {.callout-info title="No user-facing changes in this release"}\n')
@@ -2568,6 +2577,47 @@ def process_tag(repo_tag):
     except Exception as e:
         print(f"  WARN: Error processing tag {tag} in {repo}: {e}")
         return None
+
+def test_heading_conversion():
+    """Test the heading conversion logic with a real PR body sample and print only changed lines."""
+    test_content = """## What
+This PR introduces offline feature flag support and improves the feature flags codebase by:
+- Adding offline feature flag functionality through environment variables
+- Adding comprehensive docstrings to all feature flag functions
+- Refactoring feature flag access to use a new centralized context-aware function
+- Removing unused feature flags (FLAG_REDIS_ENABLED, FLAG_CASBIN_RELOAD_ENABLED, FLAG_AUTH_CONFIG)
+- Adding type hints to improve code maintainability
+
+Before: Feature flags were only accessible through LaunchDarkly and required an active connection.
+After: Feature flags can be configured through environment variables when LaunchDarkly integration is not available, with improved code documentation and type safety.
+
+## Why
+- Enables feature flag functionality in environments where LaunchDarkly integration is not possible (e.g., VM deployments)
+- Improves code maintainability through better documentation and type hints
+- Centralizes feature flag access through a single function to reduce code duplication
+- Removes technical debt by cleaning up unused feature flags
+
+## External Release Notes
+Added support for offline feature flags configuration through environment variables, enabling feature flag functionality in environments without LaunchDarkly integration."""
+    
+    print("Testing heading conversion with real PR body sample...")
+    print("\nInput:")
+    print(test_content)
+    print("\nInput lines (repr):")
+    for i, line in enumerate(test_content.split('\n')):
+        print(f"{i+1}: {repr(line)}")
+    print("\nOutput:")
+    result = adjust_heading_levels(test_content, debug=False)
+    print(result)
+    print("\nChanged lines:")
+    input_lines = test_content.split('\n')
+    output_lines = result.split('\n')
+    for i, (in_line, out_line) in enumerate(zip(input_lines, output_lines)):
+        if in_line != out_line:
+            print(f"Line {i+1}:")
+            print(f"  Input:  {in_line}")
+            print(f"  Output: {out_line}")
+    return result
 
 def main():
     """Generate release notes for Customer-Managed ValidMind (CMVM) releases.
