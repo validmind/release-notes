@@ -99,6 +99,16 @@ SECTION_CLASSIFICATION_PROMPT = (
     "Respond with only 'INCLUDE' or 'EXCLUDE'."
 )
 
+# --- Heading level adjustment prompt ---
+HEADING_LEVEL_PROMPT = (
+    "Adjust all heading levels in the following markdown content to be at least level {min_level} (i.e., use at least {min_level} # symbols).\n"
+    "Preserve all other formatting, indentation, and content exactly as is.\n"
+    "Only modify the number of # symbols at the start of headings.\n"
+    "Make sure to handle all heading formats, including those with HTML comments.\n\n"
+    "Content:\n"
+    "{content}"
+)
+
 import subprocess
 import json
 import re
@@ -843,27 +853,31 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
                 sorted_tags = sorted(tag_names, key=version_key)
                 print(f"DEBUG: {repo} tag list sorted: {sorted_tags}")
             
-            # Check for releases in parallel with rate limiting
-            def check_release(tag):
-                cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
-                returncode, stdout, stderr = rate_limited_api_call(cmd)
-                if returncode == 0:
-                    if debug and (not version or tag == version):
-                        print(f"DEBUG: Release exists for {tag}")
-                return tag
-            
-            # Use ThreadPoolExecutor with limited concurrency
-            max_workers = min(3, len(tag_names))  # Limit concurrent requests
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                # Submit all tasks
-                future_to_tag = {executor.submit(check_release, tag): tag for tag in tag_names}
-                # Process results as they complete
-                for future in as_completed(future_to_tag):
-                    try:
-                        future.result()
-                    except Exception as e:
-                        if debug:
-                            print(f"DEBUG: Error checking release for tag {future_to_tag[future]}: {e}")
+            # Only check releases if we have tags
+            if tag_names:
+                # Check for releases in parallel with rate limiting
+                def check_release(tag):
+                    cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
+                    returncode, stdout, stderr = rate_limited_api_call(cmd)
+                    if returncode == 0:
+                        if debug and (not version or tag == version):
+                            print(f"DEBUG: Release exists for {tag}")
+                    return tag
+                
+                # Use ThreadPoolExecutor with limited concurrency
+                max_workers = min(3, len(tag_names))  # Limit concurrent requests
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    # Submit all tasks
+                    future_to_tag = {executor.submit(check_release, tag): tag for tag in tag_names}
+                    # Process results as they complete
+                    for future in as_completed(future_to_tag):
+                        try:
+                            future.result()
+                        except Exception as e:
+                            if debug:
+                                print(f"DEBUG: Error checking release for tag {future_to_tag[future]}: {e}")
+            elif debug:
+                print(f"DEBUG: No tags found in {repo}")
                 
             return tag_names
     except Exception as e:
@@ -872,6 +886,55 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
         else:
             print(f"  WARN: Error getting tags from {repo}: {e}")
     return []
+
+def adjust_heading_levels(content, min_level=4, debug=False):
+    """Adjust heading levels in content to be at least min_level.
+    
+    Args:
+        content (str): The content to adjust
+        min_level (int): Minimum heading level (1-6)
+        debug (bool): Whether to show debug output
+        
+    Returns:
+        str: Content with adjusted heading levels
+    """
+    if not content:
+        if debug:
+            print("DEBUG: [adjust_heading_levels] Empty content, returning as is")
+        return content
+        
+    if debug:
+        print(f"\nDEBUG: [adjust_heading_levels] Adjusting headings to minimum level {min_level}")
+        print(f"DEBUG: [adjust_heading_levels] Input content (first 200 chars): {content[:200]}")
+        
+    try:
+        prompt = HEADING_LEVEL_PROMPT.format(min_level=min_level, content=content)
+        
+        response = client.chat.completions.create(
+            model="gpt-4-turbo",  # Use smaller model for this simple task
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a markdown heading level adjuster. Your job is to ensure all headings are at the specified minimum level while preserving all other content exactly as is. Handle all heading formats, including those with HTML comments."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.0,
+            max_tokens=len(content) * 2  # Ensure we have enough tokens for the response
+        )
+        
+        result = response.choices[0].message.content.strip()
+        if debug:
+            print(f"DEBUG: [adjust_heading_levels] Result (first 200 chars): {result[:200]}")
+        return result
+        
+    except Exception as e:
+        if debug:
+            print(f"DEBUG: [adjust_heading_levels] Adjustment failed: {e}")
+        return content  # Return original content if adjustment fails
 
 def get_pr_content(pr_number, repo, debug=False):
     """Get content from a PR's external release notes, PR summary, title, and image URLs.
@@ -929,7 +992,9 @@ def get_pr_content(pr_number, repo, debug=False):
                 if classify_section(section_title, section_content, debug):
                     if debug:
                         print(f"DEBUG: Including section: {section_title}")
-                    sections.append(f"## {section_title}\n{section_content}")
+                    # Adjust heading levels in section content to be at least level 4
+                    adjusted_content = adjust_heading_levels(section_content, min_level=4, debug=debug)
+                    sections.append(f"## {section_title}\n{adjusted_content}")
                 else:
                     if debug:
                         print(f"DEBUG: Excluding section: {section_title}")
@@ -959,7 +1024,9 @@ def get_pr_content(pr_number, repo, debug=False):
                         if debug:
                             print(f"DEBUG: Found match with pattern: {pattern}")
                         extracted_text = match.group(1).strip()
-                        external_notes = '\n'.join(''.join(['#', line]) if line.lstrip().startswith('###') else line for line in extracted_text.split('\n'))
+                        # Adjust heading levels in extracted text
+                        adjusted_text = adjust_heading_levels(extracted_text, min_level=4, debug=debug)
+                        external_notes = adjusted_text
                         break
 
         # Extract PR summary (robust: search all comments for '# PR Summary')
@@ -972,9 +1039,11 @@ def get_pr_content(pr_number, repo, debug=False):
             if debug:
                 print(f"DEBUG: PR #{pr_number} in {repo} - Comment {i} full body: {body!r}")
             if "# PR Summary" in body:
-                match = re.search(r"# PR Summary\s*(.+?)(?=^## |\Z)", body, re.DOTALL | re.MULTILINE)
+                match = re.search(r"(# PR Summary\s*.+?)(?=^## |\Z)", body, re.DOTALL | re.MULTILINE)
                 if match:
                     pr_summary = match.group(1).strip()
+                    # Adjust heading levels in PR summary
+                    pr_summary = adjust_heading_levels(pr_summary, min_level=4, debug=debug)
                     if debug:
                         print(f"DEBUG: PR #{pr_number} in {repo} - Found PR summary: {pr_summary[:80]!r}")
                     break
