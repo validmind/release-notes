@@ -420,6 +420,7 @@ class PR:
             delay = initial_delay
             last_validation_result = None
             failure_patterns = {}  # Track patterns in failures
+            content_for_reedit = None
             
             for attempt in range(max_attempts):
                 # Calculate temperature based on attempt number and failure patterns
@@ -473,7 +474,7 @@ class PR:
                     print(f"DEBUG: [edit_content] Attempt {attempt + 1} content (first 100 chars): {repr(current_edit[:100]) if current_edit else None}")
                 
                 # Validate current attempt
-                is_valid, validation_result = self.validate_edit(content_type, content, current_edit, edit)
+                is_valid, validation_result, content_for_reedit = self.validate_edit(content_type, content, current_edit, edit)
                 if self.debug:
                     print(f"DEBUG: [edit_content] Attempt {attempt + 1} validation result: {is_valid}")
                 
@@ -496,6 +497,8 @@ class PR:
                     print(f"WARN: All {max_attempts} content edit attempts failed for {content_type} in PR #{self.pr_number}")
                     print(f"Validation result: {validation_result}")
                     print(f"Failure patterns: {failure_patterns}")
+                    if content_for_reedit:
+                        print(f"Content available for reedit with validation message: {content_for_reedit['validation_message']}")
                     edited_content = content  # Use original content if all attempts fail
                     self.last_validation_result = validation_result
             
@@ -540,39 +543,136 @@ class PR:
             edit (bool): Whether to perform validation
             
         Returns:
-            tuple: (bool, str): True if the edit passes validation, False otherwise; and the raw PASS/FAIL string
+            tuple: (bool, str, dict): (is_valid, validation_message, content_for_reedit)
+                - is_valid: True if the edit passes validation, False otherwise
+                - validation_message: Detailed validation result message
+                - content_for_reedit: Dict with content to reedit if validation fails
         """
+        # Always perform basic validation
+        validation_info = {
+            'content_type': content_type,
+            'original_length': len(original_content) if original_content else 0,
+            'edited_length': len(edited_content) if edited_content else 0,
+            'validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
         if not edit:
-            return True, "PASS: No validation performed (edit disabled)"
+            print(f"Validation skipped for {content_type} (edit disabled)")
+            return True, "PASS: No validation performed (edit disabled)", None
+
+        # Cache key for validation results
+        cache_key = f"{content_type}:{hash(original_content)}:{hash(edited_content)}"
+        if hasattr(self, '_validation_cache') and cache_key in self._validation_cache:
+            cached_result = self._validation_cache[cache_key]
+            print(f"Using cached validation result for {content_type}: {cached_result[1]}")
+            return cached_result
+
+        # Print validation start message
+        print(f"Validating {content_type} edit for PR #{self.pr_number} in {self.repo_name}...")
 
         if self.debug:
             print(f"DEBUG: [validate_edit] PR #{self.pr_number} - Validating {content_type}")
             print(f"DEBUG: [validate_edit] Original (first 100 chars): {repr(original_content[:100]) if original_content else None}")
             print(f"DEBUG: [validate_edit] Edited (first 100 chars): {repr(edited_content[:100]) if edited_content else None}")
+
+        # Structured validation criteria based on content type
+        validation_criteria = {
+            'title': [
+                "Is properly capitalized and punctuated",
+                "Does not contain ticket numbers or branch names",
+                "Is clear and concise for end users",
+                "Is 80 characters or less"
+            ],
+            'summary': [
+                "Maintains core meaning and facts",
+                "Uses proper formatting and structure",
+                "Is clear and professional",
+                "Does not contain unwanted sections"
+            ],
+            'notes': [
+                "Maintains technical accuracy",
+                "Uses consistent formatting",
+                "Is user-focused",
+                "Does not contain internal notes"
+            ]
+        }
+
+        # Build detailed validation prompt
         validation_prompt = VALIDATION_INSTRUCTIONS.format(content_type=content_type)
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": validation_prompt
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Original content: {original_content}\n\nEdited content: {edited_content}"
+        if content_type in validation_criteria:
+            validation_prompt += "\n\nSpecific criteria to check:\n"
+            for criterion in validation_criteria[content_type]:
+                validation_prompt += f"- {criterion}\n"
+
+        max_retries = 10
+        retry_delay = 1
+        max_delay = 10  # Cap maximum delay at 10 seconds
+        last_error = None
+
+        for attempt in range(max_retries):
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": validation_prompt
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Original content: {original_content}\n\nEdited content: {edited_content}"
+                        }
+                    ],
+                    max_tokens=100,
+                    temperature=0.0
+                )
+                result = response.choices[0].message.content.strip()
+                
+                if self.debug:
+                    print(f"DEBUG: [validate_edit] Validation LLM response: {result}")
+                
+                # Add validation result to info
+                validation_info['validation_result'] = result
+                validation_info['attempt_number'] = attempt + 1
+                
+                # Determine if validation passed
+                is_valid = result.startswith('PASS')
+                
+                # Always print validation result
+                print(f"Validation result for {content_type}: {result}")
+                
+                # Prepare content for reedit if validation fails
+                content_for_reedit = None
+                if not is_valid:
+                    content_for_reedit = {
+                        'original': original_content,
+                        'edited': edited_content,
+                        'validation_message': result,
+                        'content_type': content_type
                     }
-                ],
-                max_tokens=100,
-                temperature=0.0
-            )
-            result = response.choices[0].message.content.strip()
-            if self.debug:
-                print(f"DEBUG: [validate_edit] Validation LLM response: {result}")
-            return result.startswith('PASS'), result
-        except Exception as e:
-            print(f"\nValidation failed: {str(e)}")
-            return True, "FAIL: Exception during validation"
+                
+                # Cache the result
+                if not hasattr(self, '_validation_cache'):
+                    self._validation_cache = {}
+                self._validation_cache[cache_key] = (is_valid, result, content_for_reedit)
+                
+                return is_valid, result, content_for_reedit
+
+            except Exception as e:
+                last_error = str(e)
+                validation_info['error'] = last_error
+                if attempt < max_retries - 1:
+                    # Use a more moderate growth rate (1.5x instead of 2x)
+                    retry_delay = min(max_delay, retry_delay * 1.5)
+                    # Add small random jitter (±20%)
+                    jitter = random.uniform(-0.2, 0.2) * retry_delay
+                    sleep_time = max(0.5, retry_delay + jitter)  # Ensure minimum 0.5s delay
+                    print(f"\nValidation attempt {attempt + 1} failed: {last_error}")
+                    print(f"Retrying in {sleep_time:.1f} seconds...")
+                    time.sleep(sleep_time)
+                else:
+                    print(f"\nAll validation attempts failed. Last error: {last_error}")
+                    return True, f"FAIL: Exception during validation - {last_error}", None
 
     def extract_dependencies(self):
         """Extract dependencies and breaking changes from the PR body
@@ -1798,7 +1898,8 @@ def create_release_file(release, overwrite=False, debug=False, edit=False):
     # Write the file
     with open(file_path, 'w') as f:
         f.write("---\n")
-        f.write(f'title: "{title_version} {release_type} notes"\n')
+        clean_title = title_version.replace('cmvm/', '')
+        f.write(f'title: "{clean_title} {release_type} notes"\n')
         if date:
             f.write(f'date: "{date}"\n')
         f.write("sidebar: validmind-installation\n")
@@ -1821,7 +1922,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False):
             f.write('This release includes no public-facing updates to features, bug fixes, or documentation. If you\'re unsure whether any changes affect your deployment, contact <support@validmind.com>.\n')
             f.write(':::\n\n')
         f.write("\n".join(content))
-    print(f"\nCreated release file: {file_name} in {output_dir}")
+    print(f"\nCreated release file: {output_dir}/{file_name}")
 
 def parse_release_tables(qmd_file_path, version=None, debug=False):
     """Parse release tables from the customer-managed-validmind-releases.qmd file.
