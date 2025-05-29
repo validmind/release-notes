@@ -5,6 +5,12 @@ REPOS = ["backend", "frontend", "agents", "documentation", "validmind-library"]
 # Label hierarchy for organizing release notes
 label_hierarchy = ["highlight", "enhancement", "breaking-change", "deprecation", "bug", "documentation"]
 
+# Labels that should exclude PRs from release notes
+EXCLUDED_LABELS = ["internal", "auto-merge"]
+
+# Keywords that indicate a PR is an automatic merge
+MERGE_KEYWORDS = ["main branch", "branch merged", "merged into", "merge main", "merge staging"]
+
 label_to_category = {
     "highlight": "### Release highlights",
     "enhancement": "### Enhancements",
@@ -42,14 +48,15 @@ EXCLUDED_SECTIONS = [
 # --- Editing prompt and static editing info ---
 EDIT_TITLE_PROMPT = (
     "Edit the following PR title for release notes:\n"
-    "- Remove any ticket numbers, branch names, prefixes our double quotes (e.g., '9870:', 'hotfix:', 'nibz/cherry pick/1420', etc.).\n"
+    "- Remove any ticket numbers, branch names, prefixes or double quotes (e.g., '9870:', 'hotfix:', 'nibz/cherry pick/1420', etc.).\n"
+    "- Remove any 'Title:' prefix if present.\n"
     "- Enclose technical terms (words with underscores or file extensions like .py, .lock, etc.) in backticks.\n"
     "- Use sentence-style capitalization (capitalize only the first word and proper nouns).\n"
     "- Make the title clear and concise for end users.\n"
     "- Limit the title to 80 characters or less.\n"
     "- Use the PR body for context if needed.\n\n"
-    "Title: {title}\n"
-    "PR Body: {body}"
+    "{title}\n"
+    "{body}"
 )
 
 # --- Content editing instructions ---
@@ -66,6 +73,7 @@ EDIT_CONTENT_INSTRUCTIONS = (
     "- Ensure a space after each list marker (e.g., '- Item').\n"
     "- Start each list item with a capital letter and use appropriate punctuation.\n"
     "- Do not leave empty sections or headings without a clear placeholder comment.\n"
+    "- Do not refer to the 'PR body' or 'PR summary' in the content.\n"
     "- DO NOT add, remove, or modify any comment tags (<!-- ... --> or <!--- ... --->), and ensure they remain on their own lines."
 )
 
@@ -381,20 +389,7 @@ class PR:
         return None
 
     def edit_content(self, content_type, content, editing_instructions, edit=False):
-        """Unified function to edit PR content (summaries, titles, or release notes).
-        
-        Args:
-            content_type (str): Type of content being edited ('title', 'summary', or 'notes')
-            content (str): The content to edit
-            editing_instructions (str): Instructions for the LLM editor
-            edit (bool): Whether to perform editing
-            
-        Modifies:
-            self.cleaned_title: If content_type is 'title'
-            self.pr_interpreted_summary: If content_type is 'summary'
-            self.edited_text: If content_type is 'notes'
-            self.validated: Set to True if validation passes
-        """
+        """Unified function to edit PR content (summaries, titles, or release notes)."""
         if not edit:
             # If not editing, just use the original content
             if content_type == 'title':
@@ -411,52 +406,56 @@ class PR:
             print(f"DEBUG: [edit_content] Original content (first 100 chars): {repr(content[:100]) if content else None}")
             print(f"DEBUG: [edit_content] Editing instructions (first 100 chars): {repr(editing_instructions[:100]) if editing_instructions else None}")
         print(f"Editing {content_type} for PR #{self.pr_number} in {self.repo_name} ...")
+        
         try:
             if self.debug:
                 print(f"DEBUG: [edit_content] Making OpenAI API call for PR #{self.pr_number}")
+            
             # Combine the specific editing instructions with the general content instructions
-            full_instructions = f"{editing_instructions}\n\n{EDIT_CONTENT_INSTRUCTIONS}"
+            full_instructions = f"{editing_instructions}\n\n{EDIT_CONTENT_INSTRUCTIONS}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
             
-            # First attempt at editing
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes. Follow the instructions exactly."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content}"
-                    }
-                ],
-                max_tokens=4096,
-                temperature=0.2,
-                frequency_penalty=0.0,
-                presence_penalty=0.0
-            )
-            first_edit = response.choices[0].message.content.strip()
-            if self.debug:
-                print(f"DEBUG: [edit_content] First attempt content (first 100 chars): {repr(first_edit[:100]) if first_edit else None}")
+            # Initialize variables for retry loop
+            max_attempts = 10
+            initial_delay = 1
+            delay = initial_delay
+            last_validation_result = None
+            failure_patterns = {}  # Track patterns in failures
             
-            # Validate first attempt
-            if self.debug:
-                print(f"DEBUG: [edit_content] Validating first attempt for PR #{self.pr_number}")
-            is_valid, validation_result = self.validate_edit(content_type, content, first_edit, edit)
-            if self.debug:
-                print(f"DEBUG: [edit_content] First validation result: {is_valid}")
-            
-            # If first attempt fails, try again
-            if not is_valid:
-                if self.debug:
-                    print(f"INFO: First validation failed for {content_type} in PR #{self.pr_number} - trying again")
-                # Second attempt with slightly different temperature
+            for attempt in range(max_attempts):
+                # Calculate temperature based on attempt number and failure patterns
+                base_temp = 0.2
+                if 'formatting' in failure_patterns:
+                    base_temp += 0.1  # Increase temperature for formatting issues
+                if 'meaning' in failure_patterns:
+                    base_temp -= 0.05  # Decrease temperature for meaning preservation issues
+                temperature = min(0.7, base_temp + (attempt * 0.05))  # Gradual increase with cap
+                
+                # Add feedback from previous attempt if available
+                if last_validation_result and attempt > 0:
+                    # Analyze failure pattern
+                    if 'formatting' in last_validation_result.lower():
+                        failure_patterns['formatting'] = failure_patterns.get('formatting', 0) + 1
+                    if 'meaning' in last_validation_result.lower():
+                        failure_patterns['meaning'] = failure_patterns.get('meaning', 0) + 1
+                    
+                    # Add specific guidance based on failure patterns
+                    guidance = []
+                    if failure_patterns.get('formatting', 0) > 1:
+                        guidance.append("Pay special attention to markdown formatting and structure.")
+                    if failure_patterns.get('meaning', 0) > 1:
+                        guidance.append("Focus on preserving the exact meaning and technical details.")
+                    
+                    full_instructions += f"\n\nPrevious attempt failed: {last_validation_result}"
+                    if guidance:
+                        full_instructions += f"\nPlease address these specific issues:\n" + "\n".join(f"- {g}" for g in guidance)
+                
+                # Make API call
                 response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
                         {
                             "role": "system",
-                            "content": "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes. Follow the instructions exactly."
+                            "content": "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes while maintaining the original PR's scope. Follow the instructions exactly."
                         },
                         {
                             "role": "user",
@@ -464,30 +463,41 @@ class PR:
                         }
                     ],
                     max_tokens=4096,
-                    temperature=0.3,  # Slightly higher temperature for variation
+                    temperature=temperature,
                     frequency_penalty=0.0,
                     presence_penalty=0.0
                 )
-                second_edit = response.choices[0].message.content.strip()
-                if self.debug:
-                    print(f"DEBUG: [edit_content] Second attempt content (first 100 chars): {repr(second_edit[:100]) if second_edit else None}")
                 
-                # Validate second attempt
+                current_edit = response.choices[0].message.content.strip()
                 if self.debug:
-                    print(f"DEBUG: [edit_content] Validating second attempt for PR #{self.pr_number}")
-                is_valid, validation_result = self.validate_edit(content_type, content, second_edit, edit)
-                if self.debug:
-                    print(f"DEBUG: [edit_content] Second validation result: {is_valid}")
+                    print(f"DEBUG: [edit_content] Attempt {attempt + 1} content (first 100 chars): {repr(current_edit[:100]) if current_edit else None}")
                 
-                if not is_valid:
-                    print(f"WARN: A content edit or edit validation failed twice for {content_type} in PR #{self.pr_number}")
-                    edited_content = first_edit  # Use the first edit if both fail
+                # Validate current attempt
+                is_valid, validation_result = self.validate_edit(content_type, content, current_edit, edit)
+                if self.debug:
+                    print(f"DEBUG: [edit_content] Attempt {attempt + 1} validation result: {is_valid}")
+                
+                if is_valid:
+                    edited_content = current_edit
                     self.last_validation_result = validation_result
+                    break
+                
+                last_validation_result = validation_result
+                
+                # If not the last attempt, wait with exponential backoff
+                if attempt < max_attempts - 1:
+                    # Add jitter to prevent thundering herd
+                    jitter = random.uniform(0, 0.1 * delay)
+                    sleep_time = delay + jitter
+                    print(f"Validation failed, waiting {sleep_time:.1f} seconds before retry...")
+                    time.sleep(sleep_time)
+                    delay *= 2  # Exponential backoff
                 else:
-                    edited_content = second_edit  # Use the second edit if it passes
+                    print(f"WARN: All {max_attempts} content edit attempts failed for {content_type} in PR #{self.pr_number}")
+                    print(f"Validation result: {validation_result}")
+                    print(f"Failure patterns: {failure_patterns}")
+                    edited_content = content  # Use original content if all attempts fail
                     self.last_validation_result = validation_result
-            else:
-                edited_content = first_edit  # Use the first edit if it passes
             
             # Set the content based on type
             if content_type == 'title':
@@ -511,6 +521,14 @@ class PR:
             print(f"\nFailed to edit {content_type} with OpenAI: {str(e)}")
             if self.debug:
                 print(f"\n{content}\n")
+            # Use original content if editing fails
+            if content_type == 'title':
+                self.cleaned_title = content.rstrip('.')
+            elif content_type == 'summary':
+                self.pr_interpreted_summary = content
+                self.edited_text = content
+            elif content_type == 'notes':
+                self.edited_text = content
 
     def validate_edit(self, content_type, original_content, edited_content, edit=False):
         """Uses LLM to validate edits by checking for common issues.
@@ -891,7 +909,7 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
     return []
 
 def adjust_heading_levels(content, min_level=4, debug=False):
-    """Increase heading levels in content until they reach min_level.
+    """Adjust heading levels in content using LLM or fallback to basic adjustment.
     
     Args:
         content (str): The content to adjust
@@ -910,7 +928,43 @@ def adjust_heading_levels(content, min_level=4, debug=False):
         print(f"\nDEBUG: [adjust_heading_levels] Adjusting heading levels to minimum {min_level}")
         print(f"DEBUG: [adjust_heading_levels] Input content (first 200 chars): {content[:200]}")
     
-    # Process line by line
+    # Try LLM-based adjustment first
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a markdown heading level adjuster. Your job is to adjust heading levels while maintaining proper hierarchy. Follow these rules:\n1. The first heading should be level 3 (###)\n2. Section headings should be level 4 (####)\n3. Subsection headings should be level 5 (#####)\n4. Preserve the relative hierarchy between headings\n5. Only change the number of # symbols at the start of headings\n6. Keep everything else exactly the same"
+                },
+                {
+                    "role": "user",
+                    "content": content
+                }
+            ],
+            max_tokens=4096,
+            temperature=0.0
+        )
+        
+        result = response.choices[0].message.content.strip()
+        
+        if debug:
+            print(f"DEBUG: [adjust_heading_levels] LLM result (first 200 chars): {result[:200]}")
+            print("\nDEBUG: [adjust_heading_levels] Heading changes:")
+            for i, (in_line, out_line) in enumerate(zip(content.split('\n'), result.split('\n'))):
+                if in_line != out_line and '#' in in_line:
+                    print(f"  Line {i+1}:")
+                    print(f"    Input:  {in_line}")
+                    print(f"    Output: {out_line}")
+        
+        return result
+        
+    except Exception as e:
+        if debug:
+            print(f"DEBUG: [adjust_heading_levels] LLM adjustment failed: {e}")
+            print("DEBUG: [adjust_heading_levels] Falling back to basic adjustment")
+    
+    # Fall back to basic adjustment
     lines = content.split('\n')
     result_lines = []
     
@@ -941,7 +995,7 @@ def adjust_heading_levels(content, min_level=4, debug=False):
     result = '\n'.join(result_lines)
     
     if debug:
-        print(f"DEBUG: [adjust_heading_levels] Result (first 200 chars): {result[:200]}")
+        print(f"DEBUG: [adjust_heading_levels] Basic adjustment result (first 200 chars): {result[:200]}")
         print("\nDEBUG: [adjust_heading_levels] Heading changes:")
         for i, (in_line, out_line) in enumerate(zip(lines, result_lines)):
             if in_line != out_line and '#' in in_line:
@@ -950,6 +1004,20 @@ def adjust_heading_levels(content, min_level=4, debug=False):
                 print(f"    Output: {out_line}")
     
     return result
+
+def is_merge_pr(title):
+    """Check if a PR title indicates it's an automatic merge PR.
+    
+    Args:
+        title (str): The PR title to check
+        
+    Returns:
+        bool: True if the PR appears to be an automatic merge
+    """
+    if not title:
+        return False
+    title_lower = title.lower()
+    return any(keyword in title_lower for keyword in MERGE_KEYWORDS)
 
 def get_pr_content(pr_number, repo, debug=False):
     """Get content from a PR's external release notes, PR summary, title, and image URLs.
@@ -973,8 +1041,21 @@ def get_pr_content(pr_number, repo, debug=False):
         if debug:
             print(f"DEBUG: PR #{pr_number} in {repo} - Title: {pr_data.get('title')}")
             print(f"DEBUG: PR #{pr_number} in {repo} - Labels: {[label['name'] for label in pr_data.get('labels', [])]}")
+        
+        # Get the title and check if it's a merge PR
+        title = pr_data.get('title')
+        if is_merge_pr(title):
+            if debug:
+                print(f"DEBUG: PR #{pr_number} in {repo} appears to be an automatic merge, skipping.")
+            return None, None, [], title, None, []
+            
         # Always build a list of label names
         labels = [label['name'] for label in pr_data.get('labels', [])]
+        # Skip PRs with excluded labels but return the title
+        if any(label in EXCLUDED_LABELS for label in labels):
+            if debug:
+                print(f"DEBUG: PR #{pr_number} in {repo} has excluded label, skipping.")
+            return None, None, labels, title, None, []
         # Skip internal PRs but return the title
         if 'internal' in labels:
             if debug:
@@ -1532,11 +1613,13 @@ def generate_changelog_content(repo, tag, commits, has_release):
                 has_content = bool(commit.get('external_notes') or commit.get('pr_summary') or commit.get('pr_body'))
                 if not has_content:
                     # Comment out the entire PR section if no content
-                    content += f"<!--- PR #{pr_number}: {pr_url} --->\n"
+                    content += f"\n<!--- PR #{pr_number}: {pr_url} --->\n"
+                    content += f"<!--- Labels: {', '.join(commit['labels']) if commit['labels'] else 'none'} --->\n"
                     content += f"<!--- ### {title} (#{pr_number}) --->\n"
                     content += f"<!-- No release notes or summary provided. -->\n\n"
                     continue
-                content += f"<!--- PR #{pr_number}: {pr_url} --->\n"
+                content += f"\n<!--- PR #{pr_number}: {pr_url} --->\n"
+                content += f"<!--- Labels: {', '.join(commit['labels']) if commit['labels'] else 'none'} --->\n"
                 content += f"### {title} (#{pr_number})\n\n"
                 if commit['external_notes']:
                     content += f"{commit['external_notes']}\n\n"
@@ -2385,7 +2468,7 @@ def write_file(file, release_components, label_to_category):
                 pr_lines = [
                     f"<!---\nPR #{pr['pr_number']}: {pr['full_title']}\n",
                     f"URL: {pr['url']}\n",
-                    f"Labels: {pr['labels']}\n",
+                    f"Labels: {pr['labels'] if pr['labels'] else 'none'}\n",
                     f"--->\n### {pr['title']}\n",
                     f"<!--- Source: {pr['url']} --->\n\n"
                 ]
