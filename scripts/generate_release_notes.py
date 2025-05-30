@@ -74,7 +74,8 @@ EDIT_CONTENT_INSTRUCTIONS = (
     "- Start each list item with a capital letter and use appropriate punctuation.\n"
     "- Do not leave empty sections or headings without a clear placeholder comment.\n"
     "- Do not refer to the 'PR body' or 'PR summary' in the content.\n"
-    "- DO NOT add, remove, or modify any comment tags (<!-- ... --> or <!--- ... --->), and ensure they remain on their own lines."
+    "- DO NOT add, remove, or modify any comment tags (<!-- ... --> or <!--- ... --->), and ensure they remain on their own lines.\n"
+    "- Do not add any new sections, images, or headings that are not present in the original content. Only rephrase or clarify existing content; do not invent or supplement with additional examples, screenshots, or headings."
 )
 
 # --- Content validation instructions ---
@@ -88,7 +89,8 @@ VALIDATION_INSTRUCTIONS = (
     "5. For titles: Is properly capitalized and punctuated\n"
     "6. For summaries/notes: Has proper paragraph structure\n"
     "7. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.)\n"
-    "If any unwanted sections are found, respond with 'FAIL: Contains unwanted sections'.\n"
+    "8. Does not add any new sections, images, or headings that are not present in the original content.\n"
+    "If any unwanted sections or new content are found, respond with 'FAIL: Contains unwanted or invented sections/images/headings'.\n"
     "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
 )
 
@@ -1150,6 +1152,8 @@ def get_pr_content(pr_number, repo, debug=False):
         if debug:
             print(f"DEBUG: PR #{pr_number} in {repo} - Title: {pr_data.get('title')}")
             print(f"DEBUG: PR #{pr_number} in {repo} - Labels: {[label['name'] for label in pr_data.get('labels', [])]}")
+            pr_url = f"https://github.com/validmind/{repo}/pull/{pr_number}"
+            print(f"DEBUG: PR #{pr_number} in {repo} - URL: {pr_url}")
         
         # Get the title and check if it's a merge PR
         title = pr_data.get('title')
@@ -1576,7 +1580,9 @@ def get_commits_for_tag(repo, tag, debug=False):
         
         # Parallelize PR lookup for commits
         def fetch_prs_for_commit(sha):
-            cmd = ['gh', 'api', f'repos/validmind/{repo}/commits/{sha}/pulls', '-H', 'Accept: application/vnd.github.groot-preview+json']
+            cmd = ['gh', 'api', '-H', 'Accept: application/vnd.github.groot-preview+json', f'repos/validmind/{repo}/commits/{sha}/pulls']
+            # In subprocess, pass header as a single string to match shell quoting
+            cmd = ['gh', 'api', '-H', 'Accept: application/vnd.github.groot-preview+json', f'repos/validmind/{repo}/commits/{sha}/pulls']
             if debug:
                 print(f"DEBUG: PR lookup API call: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True)
