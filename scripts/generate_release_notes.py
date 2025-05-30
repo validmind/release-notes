@@ -139,6 +139,7 @@ import concurrent.futures
 import time
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urlparse
 
 ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
 
@@ -418,6 +419,7 @@ class PR:
             max_attempts = 10
             initial_delay = 1
             delay = initial_delay
+            max_delay = 30  # Cap maximum delay at 30 seconds
             last_validation_result = None
             failure_patterns = {}  # Track patterns in failures
             content_for_reedit = None
@@ -489,13 +491,14 @@ class PR:
                 if attempt < max_attempts - 1:
                     # Add jitter to prevent thundering herd
                     jitter = random.uniform(0, 0.1 * delay)
-                    sleep_time = delay + jitter
+                    sleep_time = min(max_delay, delay + jitter)
                     print(f"Validation failed, waiting {sleep_time:.1f} seconds before retry...")
                     time.sleep(sleep_time)
-                    delay *= 2  # Exponential backoff
+                    delay = min(max_delay, delay * 2)  # Exponential backoff with cap
                 else:
                     print(f"WARN: All {max_attempts} content edit attempts failed for {content_type} in PR #{self.pr_number}")
-                    print(f"Validation result: {validation_result}")
+                    if self.debug:
+                        print(f"Validation result: {validation_result}")
                     print(f"Failure patterns: {failure_patterns}")
                     if content_for_reedit:
                         print(f"Content available for reedit with validation message: {content_for_reedit['validation_message']}")
@@ -557,14 +560,14 @@ class PR:
         }
 
         if not edit:
-            print(f"Validation skipped for {content_type} (edit disabled)")
+            print(f"Validation skipped for {content_type} edit in PR #{self.pr_number} (edit disabled)")
             return True, "PASS: No validation performed (edit disabled)", None
 
         # Cache key for validation results
         cache_key = f"{content_type}:{hash(original_content)}:{hash(edited_content)}"
         if hasattr(self, '_validation_cache') and cache_key in self._validation_cache:
             cached_result = self._validation_cache[cache_key]
-            print(f"Using cached validation result for {content_type}: {cached_result[1]}")
+            print(f"Using cached validation result for {content_type} edit in PR #{self.pr_number}: {cached_result[1]}")
             return cached_result
 
         # Print validation start message
@@ -606,7 +609,7 @@ class PR:
 
         max_retries = 10
         retry_delay = 1
-        max_delay = 10  # Cap maximum delay at 10 seconds
+        max_delay = 30  # Cap maximum delay at 30 seconds
         last_error = None
 
         for attempt in range(max_retries):
@@ -638,8 +641,14 @@ class PR:
                 # Determine if validation passed
                 is_valid = result.startswith('PASS')
                 
-                # Always print validation result
-                print(f"Validation result for {content_type}: {result}")
+                # Print validation result with appropriate detail level
+                if is_valid:
+                    if self.debug:
+                        print(f"Validation result for {content_type} edit in PR #{self.pr_number}: {result}")
+                    else:
+                        print(f"Validation PASS for {content_type} edit in PR #{self.pr_number}")
+                else:
+                    print(f"Validation FAIL for {content_type} edit in PR #{self.pr_number}: {result}")
                 
                 # Prepare content for reedit if validation fails
                 content_for_reedit = None
@@ -667,11 +676,11 @@ class PR:
                     # Add small random jitter (±20%)
                     jitter = random.uniform(-0.2, 0.2) * retry_delay
                     sleep_time = max(0.5, retry_delay + jitter)  # Ensure minimum 0.5s delay
-                    print(f"\nValidation attempt {attempt + 1} failed: {last_error}")
+                    print(f"\nValidation attempt {attempt + 1} failed for {content_type} edit in PR #{self.pr_number}: {last_error}")
                     print(f"Retrying in {sleep_time:.1f} seconds...")
                     time.sleep(sleep_time)
                 else:
-                    print(f"\nAll validation attempts failed. Last error: {last_error}")
+                    print(f"\nAll validation attempts failed for {content_type} edit in PR #{self.pr_number}. Last error: {last_error}")
                     return True, f"FAIL: Exception during validation - {last_error}", None
 
     def extract_dependencies(self):
@@ -1846,6 +1855,14 @@ def create_release_file(release, overwrite=False, debug=False, edit=False):
                 commit['pr_summary'] = commit.get('pr_summary', '')
                 commit['external_notes'] = commit.get('external_notes', '')
             
+            # Update image links in content
+            if commit.get('pr_summary'):
+                commit['pr_summary'] = update_image_links(commit['pr_summary'], version, debug)
+            if commit.get('external_notes'):
+                commit['external_notes'] = update_image_links(commit['external_notes'], version, debug)
+            if commit.get('pr_body'):
+                commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
+            
             return validated, edited
         return False, False
     
@@ -2807,6 +2824,97 @@ Added support for offline feature flags configuration through environment variab
             print(f"  Input:  {in_line}")
             print(f"  Output: {out_line}")
     return result
+
+def download_image(url, tag, debug=False):
+    """Download an image from a URL and save it to a tag-specific folder.
+    
+    Args:
+        url (str): URL of the image to download
+        tag (str): Tag name to use for folder organization
+        debug (bool): Whether to show debug output
+        
+    Returns:
+        str: Local path to the downloaded image, or None if download failed
+    """
+    try:
+        # Create releases directory if it doesn't exist
+        releases_dir = os.path.join('releases', tag)
+        os.makedirs(releases_dir, exist_ok=True)
+        
+        # Get filename from URL and ensure it has an extension
+        parsed_url = urlparse(url)
+        filename = os.path.basename(parsed_url.path)
+        if not filename:
+            filename = f"image_{hash(url)}.png"
+        elif not any(filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp']):
+            # Add .png extension if no extension is present
+            filename = f"{filename}.png"
+            
+        # Full path for the image
+        local_path = os.path.join(releases_dir, filename)
+        
+        # Handle GitHub user-attachments URLs
+        if 'github.com/user-attachments' in url:
+            # Extract the asset ID from the URL
+            asset_id = url.split('/')[-1]
+            # Construct the raw URL
+            raw_url = f"https://raw.githubusercontent.com/validmind/user-attachments/main/{asset_id}"
+            url = raw_url
+            
+        # Download the image
+        headers = {}
+        # Add GitHub token if available
+        github_token = os.getenv('GITHUB_TOKEN')
+        if github_token:
+            headers['Authorization'] = f'token {github_token}'
+            
+        response = requests.get(url, headers=headers, stream=True)
+        response.raise_for_status()
+        
+        with open(local_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+                
+        if debug:
+            print(f"DEBUG: Downloaded image from {url} to {local_path}")
+            
+        return local_path
+        
+    except Exception as e:
+        if debug:
+            print(f"DEBUG: Failed to download image from {url}: {e}")
+        return None
+
+def update_image_links(content, tag, debug=False):
+    """Update image links in markdown content to use local paths.
+    
+    Args:
+        content (str): Markdown content containing image links
+        tag (str): Tag name to use for folder organization
+        debug (bool): Whether to show debug output
+        
+    Returns:
+        str: Updated markdown content with local image paths
+    """
+    if not content:
+        return content
+        
+    def replace_image_link(match):
+        alt_text = match.group(1)
+        url = match.group(2)
+        
+        local_path = download_image(url, tag, debug)
+        if local_path:
+            # Convert path to use forward slashes and make it relative
+            relative_path = local_path.replace('\\', '/')
+            return f"![{alt_text}]({relative_path})"
+        return match.group(0)
+        
+    # Find and replace image links
+    pattern = r'!\[([^\]]*)\]\((https?://[^)]+)\)'
+    updated_content = re.sub(pattern, replace_image_link, content)
+    
+    return updated_content
 
 def main():
     """Generate release notes for Customer-Managed ValidMind (CMVM) releases.
