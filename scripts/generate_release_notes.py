@@ -454,6 +454,17 @@ class PR:
                     if guidance:
                         full_instructions += f"\nPlease address these specific issues:\n" + "\n".join(f"- {g}" for g in guidance)
                 
+                # Add deduplication instruction to the editing prompt
+                dedup_instruction = ("If content from the PR body and PR summary is duplicated or very similar, "
+                                    "keep only the most clear and concise version and remove the duplicate.")
+                full_instructions_with_dedup = f"{full_instructions}\n\n{dedup_instruction}"
+
+                # Use content_for_reedit['edited'] if available from previous validation failure
+                if attempt > 0 and content_for_reedit and 'edited' in content_for_reedit:
+                    content_to_edit = content_for_reedit['edited']
+                else:
+                    content_to_edit = content
+
                 # Make API call
                 response = client.chat.completions.create(
                     model="gpt-4",
@@ -464,7 +475,7 @@ class PR:
                         },
                         {
                             "role": "user",
-                            "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content}"
+                            "content": f"Instructions:\n{full_instructions_with_dedup}\n\nContent to edit:\n{content_to_edit}"
                         }
                     ],
                     max_tokens=4096,
