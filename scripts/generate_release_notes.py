@@ -1278,10 +1278,16 @@ def get_pr_content(pr_number, repo, debug=False):
         # Extract image URLs from PR body and comments
         image_urls = []
         if pr_body:
+            # Markdown images
             image_urls += re.findall(r'!\[[^\]]*\]\((https?://[^)]+)\)', pr_body)
+            # HTML <img> tags
+            image_urls += re.findall(r'<img [^>]*src="([^"]+)"', pr_body)
         for comment in comments:
             cbody = comment.get('body', '')
+            # Markdown images
             image_urls += re.findall(r'!\[[^\]]*\]\((https?://[^)]+)\)', cbody)
+            # HTML <img> tags
+            image_urls += re.findall(r'<img [^>]*src="([^"]+)"', cbody)
         if debug:
             print(f"DEBUG: PR #{pr_number} in {repo} - Image URLs: {image_urls}")
         return external_notes, pr_summary, labels, title, pr_body, image_urls
