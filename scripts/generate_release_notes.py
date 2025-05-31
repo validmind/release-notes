@@ -1277,19 +1277,25 @@ def get_pr_content(pr_number, repo, debug=False):
         pr_body = pr_data.get('body')
         # Extract image URLs from PR body and comments
         image_urls = []
+        video_urls = []
         if pr_body:
             # Markdown images
             image_urls += re.findall(r'!\[[^\]]*\]\((https?://[^)]+)\)', pr_body)
             # HTML <img> tags
             image_urls += re.findall(r'<img [^>]*src="([^"]+)"', pr_body)
+            # Loom videos (https://www.loom.com/share/...) and embed links
+            video_urls += re.findall(r'https://www\.loom\.com/(?:share|embed)/[a-zA-Z0-9\-]+', pr_body)
         for comment in comments:
             cbody = comment.get('body', '')
             # Markdown images
             image_urls += re.findall(r'!\[[^\]]*\]\((https?://[^)]+)\)', cbody)
             # HTML <img> tags
             image_urls += re.findall(r'<img [^>]*src="([^"]+)"', cbody)
+            # Loom videos
+            video_urls += re.findall(r'https://www\.loom\.com/(?:share|embed)/[a-zA-Z0-9\-]+', cbody)
         if debug:
             print(f"DEBUG: PR #{pr_number} in {repo} - Image URLs: {image_urls}")
+            print(f"DEBUG: PR #{pr_number} in {repo} - Loom video URLs: {video_urls}")
         return external_notes, pr_summary, labels, title, pr_body, image_urls
     except Exception as e:
         if debug:
@@ -2849,63 +2855,74 @@ Added support for offline feature flags configuration through environment variab
     return result
 
 def download_image(url, tag, debug=False):
-    """Download an image from a URL and save it to a tag-specific folder.
-    
-    Args:
-        url (str): URL of the image to download
-        tag (str): Tag name to use for folder organization
-        debug (bool): Whether to show debug output
-        
-    Returns:
-        str: Local path to the downloaded image, or None if download failed
+    """Download an image or video from a URL and save it to a tag-specific folder.
+    If the file is a .qt video, convert it to .mp4 using ffmpeg if available.
     """
     try:
         # Create releases directory if it doesn't exist
         releases_dir = os.path.join('releases', tag)
         os.makedirs(releases_dir, exist_ok=True)
-        
+
         # Get filename from URL and ensure it has an extension
         parsed_url = urlparse(url)
         filename = os.path.basename(parsed_url.path)
         if not filename:
             filename = f"image_{hash(url)}.png"
-        elif not any(filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp']):
+        elif not any(filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.mov', '.qt']):
             # Add .png extension if no extension is present
             filename = f"{filename}.png"
-            
-        # Full path for the image
-        local_path = os.path.join(releases_dir, filename)
-        
-        # Handle GitHub user-attachments URLs
-        if 'github.com/user-attachments' in url:
-            # Extract the asset ID from the URL
+
+        # Handle GitHub user-attachments URLs (old and new patterns)
+        if (
+            'github.com/user-attachments/' in url or
+            'github.com/user-attachments/assets/' in url
+        ):
+            # Extract the asset ID from the URL (last part)
             asset_id = url.split('/')[-1]
             # Construct the raw URL
             raw_url = f"https://raw.githubusercontent.com/validmind/user-attachments/main/{asset_id}"
             url = raw_url
-            
-        # Download the image
+
+        # Full path for the image/video
+        local_path = os.path.join(releases_dir, filename)
+
+        # Download the file
         headers = {}
-        # Add GitHub token if available
         github_token = os.getenv('GITHUB_TOKEN')
         if github_token:
             headers['Authorization'] = f'token {github_token}'
-            
+
         response = requests.get(url, headers=headers, stream=True)
         response.raise_for_status()
-        
+
         with open(local_path, 'wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
-                
+
+        # If the file is a .qt video, convert to .mp4 using ffmpeg
+        if local_path.lower().endswith('.qt'):
+            mp4_path = local_path[:-3] + 'mp4'
+            import subprocess
+            try:
+                subprocess.run([
+                    'ffmpeg', '-y', '-i', local_path, mp4_path
+                ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if debug:
+                    print(f"DEBUG: Converted {local_path} to {mp4_path}")
+                os.remove(local_path)
+                local_path = mp4_path
+            except Exception as e:
+                if debug:
+                    print(f"DEBUG: Failed to convert {local_path} to mp4: {e}")
+
         if debug:
-            print(f"DEBUG: Downloaded image from {url} to {local_path}")
-            
+            print(f"DEBUG: Downloaded image/video from {url} to {local_path}")
+
         return local_path
-        
+
     except Exception as e:
         if debug:
-            print(f"DEBUG: Failed to download image from {url}: {e}")
+            print(f"DEBUG: Failed to download image/video from {url}: {e}")
         return None
 
 def update_image_links(content, tag, debug=False):
