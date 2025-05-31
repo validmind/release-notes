@@ -2892,12 +2892,25 @@ def download_image(url, tag, debug=False):
         if github_token:
             headers['Authorization'] = f'token {github_token}'
 
-        response = requests.get(url, headers=headers, stream=True)
-        response.raise_for_status()
+        if debug:
+            print(f"DEBUG: Downloading file from {url}")
 
-        with open(local_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
+        try:
+            response = requests.get(url, headers=headers, stream=True)
+            response.raise_for_status()
+
+            with open(local_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+
+            if debug:
+                print(f"DEBUG: Successfully downloaded file to {local_path}")
+        except requests.exceptions.RequestException as e:
+            if debug:
+                print(f"DEBUG: Failed to download file: {str(e)}")
+                print(f"DEBUG: Response status code: {e.response.status_code if hasattr(e, 'response') else 'N/A'}")
+                print(f"DEBUG: Response headers: {e.response.headers if hasattr(e, 'response') else 'N/A'}")
+            raise
 
         # If the file is a .qt video, convert to .mp4 using ffmpeg
         if local_path.lower().endswith('.qt'):
