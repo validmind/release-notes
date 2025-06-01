@@ -2884,7 +2884,6 @@ def download_with_playwright(url, output_path, browser_profile_dir=None, headles
         # --- Authentication check ---
         page.goto("https://github.com/")
         page.wait_for_load_state("networkidle")
-        # Check for 'Sign in' button (not authenticated) or user avatar (authenticated)
         if page.query_selector("text=Sign in") is not None:
             print("WARNING: [download_with_playwright] Playwright browser is not authenticated. Please log in to GitHub using the .pw-profile before running this script.")
             browser.close()
@@ -2912,16 +2911,16 @@ def download_with_playwright(url, output_path, browser_profile_dir=None, headles
         from urllib.parse import urljoin
         img_url = urljoin(url, img_src)
         print(f"DEBUG: [download_with_playwright] Downloading image from: {img_url}")
-        img_response = page.request.get(img_url)
-        print(f"DEBUG: [download_with_playwright] Image response status: {img_response.status}")
-        if img_response.status == 200:
+        # --- Use authenticated browser context to download image ---
+        img_page = browser.new_page()
+        response = img_page.goto(img_url)
+        if response and response.status == 200:
             with open(output_path, 'wb') as f:
-                f.write(img_response.body())
+                f.write(response.body())
             print(f"DEBUG: [download_with_playwright] Image saved to {output_path}")
         else:
-            body = img_response.body()
-            print(f"DEBUG: [download_with_playwright] Failed to download image, status: {img_response.status}")
-            print(f"DEBUG: [download_with_playwright] Response body (first 200 chars): {body[:200]}")
+            print(f"DEBUG: [download_with_playwright] Failed to download image, status: {response.status if response else 'No response'}")
+        img_page.close()
         browser.close()
         print(f"DEBUG: [download_with_playwright] Checking if file exists: {os.path.abspath(output_path)}")
         print(f"DEBUG: [download_with_playwright] File exists: {os.path.exists(output_path)}")
@@ -2929,6 +2928,7 @@ def download_with_playwright(url, output_path, browser_profile_dir=None, headles
 
 def download_image(url, tag, debug=False):
     """Download an image or video from a URL and save it to a tag-specific folder."""
+    import subprocess
     try:
         releases_dir = os.path.join('releases', tag)
         os.makedirs(releases_dir, exist_ok=True)
@@ -2939,77 +2939,73 @@ def download_image(url, tag, debug=False):
         elif not any(filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.mov', '.qt']):
             filename = f"{filename}.png"
         local_path = os.path.join(releases_dir, filename)
-        headers = {}
-        github_token = os.getenv('GITHUB_TOKEN')
-        # --- Improved authentication for direct download ---
-        if github_token:
-            headers['Authorization'] = f'token {github_token}'
-            # Also try as a session cookie for github.com
-            headers['Cookie'] = f'user_session={github_token}'
-        # Try original URL first
-        if debug:
-            print(f"DEBUG: [download_image] Trying original URL: {url}")
-            print(f"DEBUG: [download_image] Target file: {os.path.abspath(local_path)}")
-        try:
-            response = requests.get(url, headers=headers, stream=True)
-            if debug:
-                print(f"DEBUG: [download_image] Response status code: {response.status_code}")
-            response.raise_for_status()
-            with open(local_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            if debug:
-                print(f"DEBUG: [download_image] Successfully downloaded file to {local_path}")
-                print(f"DEBUG: [download_image] File exists after write: {os.path.exists(local_path)}")
-            return local_path
-        except requests.exceptions.RequestException as e:
-            if debug:
-                print(f"DEBUG: [download_image] Failed to download with original URL: {e}")
-        # Fallback: try rewriting old user-attachments URLs
-        if 'github.com/user-attachments/' in url and '/assets/' not in url:
-            asset_id = url.split('/')[-1]
-            raw_url = f"https://raw.githubusercontent.com/validmind/user-attachments/main/{asset_id}"
-            if debug:
-                print(f"DEBUG: [download_image] Trying fallback raw URL: {raw_url}")
-            try:
-                response = requests.get(raw_url, headers=headers, stream=True)
-                if debug:
-                    print(f"DEBUG: [download_image] Fallback response status code: {response.status_code}")
-                response.raise_for_status()
-                with open(local_path, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
-                if debug:
-                    print(f"DEBUG: [download_image] Successfully downloaded file to {local_path} (fallback)")
-                    print(f"DEBUG: [download_image] File exists after fallback write: {os.path.exists(local_path)}")
-                return local_path
-            except requests.exceptions.RequestException as e:
-                if debug:
-                    print(f"DEBUG: [download_image] Fallback also failed: {e}")
-        # Playwright fallback for user-attachments URLs
+        # Try GitHub REST API first
         if 'github.com/user-attachments/' in url:
-            if debug:
-                print(f"DEBUG: [download_image] Trying Playwright fallback for {url}")
-            output_path = local_path
-            # --- Playwright profile setup ---
-            profile_dir = os.path.abspath("./.pw-profile")
-            # NOTE: To use an authenticated session, you must first log in manually with Playwright using this profile.
-            # To refresh the session: run a manual login with headless=False using .pw-profile, then rerun automated downloads.
-            success = download_with_playwright(
-                url, output_path,
-                browser_profile_dir=profile_dir,
-                headless=False
-            )
-            if debug:
-                print(f"DEBUG: [download_image] Playwright download result: {success}")
-                print(f"DEBUG: [download_image] File exists after Playwright: {os.path.exists(output_path)}")
-            if success:
+            asset_id = url.split('/')[-1]
+            api_url = f"https://api.github.com/user-attachments/assets/{asset_id}"
+            headers = {}
+            github_token = os.getenv('GITHUB_TOKEN')
+            if github_token:
+                headers['Authorization'] = f'token {github_token}'
+            try:
+                response = requests.get(api_url, headers=headers, stream=True)
                 if debug:
-                    print(f"DEBUG: [download_image] Playwright successfully downloaded file to {output_path}")
-                return output_path
-            else:
+                    print(f"DEBUG: [download_image] GitHub API response status: {response.status_code}")
+                if response.status_code == 200:
+                    with open(local_path, 'wb') as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            f.write(chunk)
+                    if debug:
+                        print(f"DEBUG: [download_image] Successfully downloaded file to {local_path} via GitHub API")
+                    return local_path
+            except Exception as e:
                 if debug:
-                    print(f"DEBUG: [download_image] Playwright failed for {url}")
+                    print(f"DEBUG: [download_image] GitHub API download failed: {e}")
+            # If API fails, try GitHub CLI
+            try:
+                if debug:
+                    print(f"DEBUG: [download_image] Trying GitHub CLI for asset {asset_id}")
+                cmd = [
+                    'gh', 'api', f'/user-attachments/assets/{asset_id}',
+                    '--output', local_path
+                ]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if debug:
+                    print(f"DEBUG: [download_image] gh api return code: {result.returncode}")
+                    if result.stdout:
+                        print(f"DEBUG: [download_image] gh api stdout: {result.stdout[:200]}")
+                    if result.stderr:
+                        print(f"DEBUG: [download_image] gh api stderr: {result.stderr[:200]}")
+                if os.path.exists(local_path):
+                    if debug:
+                        print(f"DEBUG: [download_image] Successfully downloaded file to {local_path} via gh CLI")
+                    return local_path
+            except Exception as e:
+                if debug:
+                    print(f"DEBUG: [download_image] gh CLI download failed: {e}")
+        # Fallback: comment out Playwright fallback
+        # if 'github.com/user-attachments/' in url:
+        #     if debug:
+        #         print(f"DEBUG: [download_image] Trying Playwright fallback for {url}")
+        #     output_path = local_path
+        #     profile_dir = os.path.abspath("./.pw-profile")
+        #     # NOTE: To use an authenticated session, you must first log in manually with Playwright using this profile.
+        #     # To refresh the session: run a manual login with headless=False using .pw-profile, then rerun automated downloads.
+        #     # success = download_with_playwright(
+        #     #     url, output_path,
+        #     #     browser_profile_dir=profile_dir,
+        #     #     headless=True
+        #     # )
+        #     # if debug:
+        #     #     print(f"DEBUG: [download_image] Playwright download result: {success}")
+        #     #     print(f"DEBUG: [download_image] File exists after Playwright: {os.path.exists(output_path)}")
+        #     # if success:
+        #     #     if debug:
+        #     #         print(f"DEBUG: [download_image] Playwright successfully downloaded file to {output_path}")
+        #     #     return output_path
+        #     # else:
+        #     #     if debug:
+        #     #         print(f"DEBUG: [download_image] Playwright failed for {url}")
         return None
     except Exception as e:
         if debug:
