@@ -141,7 +141,9 @@ import concurrent.futures
 import time
 import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
+from playwright.sync_api import sync_playwright
+import base64
 
 ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
 
@@ -1161,16 +1163,16 @@ def get_pr_content(pr_number, repo, debug=False):
             return None, None, [], None, None, []
         pr_data = json.loads(result.stdout)
         if debug:
-            print(f"DEBUG: PR #{pr_number} in {repo} - Title: {pr_data.get('title')}")
-            print(f"DEBUG: PR #{pr_number} in {repo} - Labels: {[label['name'] for label in pr_data.get('labels', [])]}")
+            print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Title: {pr_data.get('title')}")
+            print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Labels: {[label['name'] for label in pr_data.get('labels', [])]}")
             pr_url = f"https://github.com/validmind/{repo}/pull/{pr_number}"
-            print(f"DEBUG: PR #{pr_number} in {repo} - URL: {pr_url}")
+            print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - URL: {pr_url}")
         
         # Get the title and check if it's a merge PR
         title = pr_data.get('title')
         if is_merge_pr(title):
             if debug:
-                print(f"DEBUG: PR #{pr_number} in {repo} appears to be an automatic merge, skipping.")
+                print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} appears to be an automatic merge, skipping.")
             return None, None, [], title, None, []
             
         # Always build a list of label names
@@ -1178,20 +1180,20 @@ def get_pr_content(pr_number, repo, debug=False):
         # Skip PRs with excluded labels but return the title
         if any(label in EXCLUDED_LABELS for label in labels):
             if debug:
-                print(f"DEBUG: PR #{pr_number} in {repo} has excluded label, skipping.")
+                print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} has excluded label, skipping.")
             return None, None, labels, title, None, []
         # Skip internal PRs but return the title
         if 'internal' in labels:
             if debug:
-                print(f"DEBUG: PR #{pr_number} in {repo} is internal, skipping.")
+                print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} is internal, skipping.")
             return None, None, ['internal'], pr_data.get('title'), None, []
 
         # Extract external release notes using section classification
         external_notes = None
         if pr_data.get('body'):
             if debug:
-                print("\nDEBUG: Extracting external release notes")
-                print(f"DEBUG: PR body length: {len(pr_data['body'])}")
+                print("\nDEBUG: [get_pr_content] Extracting external release notes")
+                print(f"DEBUG: [get_pr_content] PR body length: {len(pr_data['body'])}")
             
             # Extract only the sections we want to keep
             sections = []
@@ -1205,29 +1207,29 @@ def get_pr_content(pr_number, repo, debug=False):
                 section_content = match.group(2).strip()
                 
                 if debug:
-                    print(f"\nDEBUG: Found section: {section_title}")
-                    print(f"DEBUG: Section content (first 200 chars): {section_content[:200]}")
-                    print(f"DEBUG: Passing to adjust_heading_levels (section_content):\n{section_content}")
+                    print(f"\nDEBUG: [get_pr_content] Found section: {section_title}")
+                    print(f"DEBUG: [get_pr_content] Section content (first 200 chars): {section_content[:200]}")
+                    print(f"DEBUG: [get_pr_content] Passing to adjust_heading_levels (section_content):\n{section_content}")
                 # Use OpenAI to classify the section
                 if classify_section(section_title, section_content, debug):
                     if debug:
-                        print(f"DEBUG: Including section: {section_title}")
+                        print(f"DEBUG: [get_pr_content] Including section: {section_title}")
                     # Adjust heading levels in section content to be at least level 4
                     adjusted_content = adjust_heading_levels(section_content, min_level=4, debug=debug)
                     # Add the section with adjusted heading level
                     sections.append(f"#### {section_title}\n{adjusted_content}")
                 else:
                     if debug:
-                        print(f"DEBUG: Excluding section: {section_title}")
+                        print(f"DEBUG: [get_pr_content] Excluding section: {section_title}")
             
             # If we found any sections, combine them
             if sections:
                 if debug:
-                    print(f"\nDEBUG: Found {len(sections)} sections to include")
+                    print(f"\nDEBUG: [get_pr_content] Found {len(sections)} sections to include")
                 external_notes = "\n\n".join(sections)
             else:
                 if debug:
-                    print("\nDEBUG: No sections found, trying fallback patterns")
+                    print("\nDEBUG: [get_pr_content] No sections found, trying fallback patterns")
                 
                 # Fallback to old format with more robust matching
                 old_format_patterns = [
@@ -1243,8 +1245,8 @@ def get_pr_content(pr_number, repo, debug=False):
                     match = re.search(pattern, pr_data['body'], re.DOTALL | re.IGNORECASE)
                     if match:
                         if debug:
-                            print(f"DEBUG: Found match with pattern: {pattern}")
-                            print(f"DEBUG: Passing to adjust_heading_levels (extracted_text):\n{match.group(1).strip()}")
+                            print(f"DEBUG: [get_pr_content] Found match with pattern: {pattern}")
+                            print(f"DEBUG: [get_pr_content] Passing to adjust_heading_levels (extracted_text):\n{match.group(1).strip()}")
                         extracted_text = match.group(1).strip()
                         # Adjust heading levels in extracted text
                         adjusted_text = adjust_heading_levels(extracted_text, min_level=4, debug=debug)
@@ -1255,24 +1257,24 @@ def get_pr_content(pr_number, repo, debug=False):
         pr_summary = None
         comments = pr_data.get('comments', [])
         if debug:
-            print(f"DEBUG: PR #{pr_number} in {repo} - Number of comments: {len(comments)}")
+            print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Number of comments: {len(comments)}")
         for i, comment in enumerate(comments):
             body = comment.get('body', '')
             if debug:
-                print(f"DEBUG: PR #{pr_number} in {repo} - Comment {i} full body: {body!r}")
+                print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Comment {i} full body: {body!r}")
             if "# PR Summary" in body:
                 match = re.search(r"(# PR Summary\s*.+?)(?=^## |\Z)", body, re.DOTALL | re.MULTILINE)
                 if match:
                     pr_summary = match.group(1).strip()
                     if debug:
-                        print(f"DEBUG: Passing to adjust_heading_levels (pr_summary):\n{pr_summary}")
+                        print(f"DEBUG: [get_pr_content] Passing to adjust_heading_levels (pr_summary):\n{pr_summary}")
                     # Adjust heading levels in PR summary
                     pr_summary = adjust_heading_levels(pr_summary, min_level=4, debug=debug)
                     if debug:
-                        print(f"DEBUG: PR #{pr_number} in {repo} - Found PR summary: {pr_summary[:80]!r}")
+                        print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Found PR summary: {pr_summary[:80]!r}")
                     break
         if pr_summary is None and debug:
-            print(f"DEBUG: PR #{pr_number} in {repo} - No PR summary found.")
+            print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - No PR summary found.")
         title = pr_data.get('title')
         pr_body = pr_data.get('body')
         # Extract image URLs from PR body and comments
@@ -1294,8 +1296,8 @@ def get_pr_content(pr_number, repo, debug=False):
             # Loom videos
             video_urls += re.findall(r'https://www\.loom\.com/(?:share|embed)/[a-zA-Z0-9\-]+', cbody)
         if debug:
-            print(f"DEBUG: PR #{pr_number} in {repo} - Image URLs: {image_urls}")
-            print(f"DEBUG: PR #{pr_number} in {repo} - Loom video URLs: {video_urls}")
+            print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Image URLs: {image_urls}")
+            print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Loom video URLs: {video_urls}")
         return external_notes, pr_summary, labels, title, pr_body, image_urls
     except Exception as e:
         if debug:
@@ -1327,7 +1329,7 @@ def get_previous_tag(repo, tag, debug=False):
     Uses /git/refs/tags as primary, /tags as fallback.
     
     For RC tags (e.g., 25.05-rc1):
-    1. First looks for previous RC of same version (e.g., looks for edit_ RCs)
+    1. First looks for previous RC of same version (e.g., edit_ RCs)
     2. Then tries previous version's final release
     3. Finally tries previous version's RCs in reverse order
     
@@ -2856,81 +2858,74 @@ Added support for offline feature flags configuration through environment variab
             print(f"  Output: {out_line}")
     return result
 
-# Playwright-based asset downloader for GitHub user-attachments
-# Requires: pip install playwright && playwright install
-# Example usage:
-# download_with_playwright(
-#     url="https://github.com/user-attachments/assets/6f2ae03c-cb9d-4ee1-bde7-016cde360fe5",
-#     output_path="downloaded_image.png",
-#     browser_profile_dir=None,  # Or path to your Chrome/Edge user profile for authentication
-#     headless=True
-# )
-
 def download_with_playwright(url, output_path, browser_profile_dir=None, headless=True):
     """
-    Download an image or video from a GitHub user-attachments URL using Playwright.
+    Download an image from a web page using Playwright, supporting authenticated sessions via a persistent browser profile.
+
     Args:
-        url (str): The asset URL to download
-        output_path (str): Where to save the downloaded file
-        browser_profile_dir (str, optional): Path to a user profile directory for authentication (if needed)
-        headless (bool): Whether to run browser in headless mode
+        url (str): The URL of the page containing the image to download.
+        output_path (str): The local file path where the downloaded image will be saved.
+        browser_profile_dir (str, optional): Path to a persistent browser profile directory (for authentication/session reuse). Defaults to './.pw-profile'.
+        headless (bool, optional): Whether to run the browser in headless mode. Set to False for manual login/debugging. Defaults to True.
+
     Returns:
-        bool: True if download succeeded, False otherwise
-    
-    Note: This function is defined after __main__ since it's an optional helper that is only imported
-    and used when needed for downloading assets. Keeping it separate from the core functionality
-    allows the script to run without Playwright installed.
+        bool: True if the image was successfully downloaded and saved, False otherwise.
     """
-    try:
-        from playwright.sync_api import sync_playwright
-        import time
-        print(f"DEBUG: [download_with_playwright] Attempting to download {url} to {output_path}")
-        with sync_playwright() as p:
-            browser_args = {}
-            if browser_profile_dir:
-                browser_args["user_data_dir"] = browser_profile_dir
-                print(f"DEBUG: [download_with_playwright] Using browser profile: {browser_profile_dir}")
-            browser = p.chromium.launch_persistent_context(
-                user_data_dir=browser_profile_dir or "./.pw-profile",
-                headless=headless
-            )
-            page = browser.new_page()
-            print(f"DEBUG: [download_with_playwright] Navigating to URL")
-            page.goto(url)
-            # Wait for network and element
-            page.wait_for_load_state("networkidle")
-            # Try to find an <img> or <video> tag
-            if page.locator("img").count() > 0:
-                print(f"DEBUG: [download_with_playwright] Found image element, taking screenshot")
-                img = page.locator("img").first
-                img.screenshot(path=output_path)
-                browser.close()
-                return True
-            elif page.locator("video").count() > 0:
-                print(f"DEBUG: [download_with_playwright] Found video element")
-                video = page.locator("video").first
-                # Try to get the video src
-                src = video.get_attribute("src")
-                if src:
-                    print(f"DEBUG: [download_with_playwright] Downloading video from source: {src}")
-                    # Download the video file
-                    import requests
-                    r = requests.get(src, stream=True)
-                    with open(output_path, 'wb') as f:
-                        for chunk in r.iter_content(chunk_size=8192):
-                            f.write(chunk)
-                    browser.close()
-                    return True
-            # Fallback: try to download the page content (may work for direct file links)
-            print(f"DEBUG: [download_with_playwright] No media elements found, trying page content fallback")
-            content = page.content()
-            with open(output_path, 'wb') as f:
-                f.write(content.encode('utf-8'))
+    from playwright.sync_api import sync_playwright
+    import os
+    print(f"DEBUG: [download_with_playwright] Attempting to download {url} to {output_path}")
+    print(f"DEBUG: [download_with_playwright] CWD: {os.getcwd()}")
+    with sync_playwright() as p:
+        browser = p.chromium.launch_persistent_context(
+            user_data_dir=browser_profile_dir or "./.pw-profile",
+            headless=headless
+        )
+        page = browser.new_page()
+        # --- Authentication check ---
+        page.goto("https://github.com/")
+        page.wait_for_load_state("networkidle")
+        # Check for 'Sign in' button (not authenticated) or user avatar (authenticated)
+        if page.query_selector("text=Sign in") is not None:
+            print("WARNING: [download_with_playwright] Playwright browser is not authenticated. Please log in to GitHub using the .pw-profile before running this script.")
             browser.close()
-            return True
-    except Exception as e:
-        print(f"[download_with_playwright] Failed to download {url}: {e}")
-        return False
+            return False
+        # Proceed to download
+        page.goto(url)
+        page.wait_for_load_state("networkidle")
+        img_elements = page.query_selector_all('img')
+        print(f"DEBUG: [download_with_playwright] Found {len(img_elements)} <img> elements")
+        all_srcs = []
+        for i, img in enumerate(img_elements):
+            src = img.get_attribute('src')
+            if src:
+                if src.startswith('data:'):
+                    print(f"DEBUG: [download_with_playwright] <img> {i} src is a data URL. Skipping.")
+                    continue  # Skip data URLs entirely
+                print(f"DEBUG: [download_with_playwright] <img> {i} src: {src}")
+                all_srcs.append(src)
+        if not img_elements or not all_srcs:
+            print("DEBUG: [download_with_playwright] No valid <img> elements with non-data URLs found on the page.")
+            browser.close()
+            return False
+        img_src = all_srcs[0]
+        print(f"DEBUG: [download_with_playwright] First <img> src: {img_src}")
+        from urllib.parse import urljoin
+        img_url = urljoin(url, img_src)
+        print(f"DEBUG: [download_with_playwright] Downloading image from: {img_url}")
+        img_response = page.request.get(img_url)
+        print(f"DEBUG: [download_with_playwright] Image response status: {img_response.status}")
+        if img_response.status == 200:
+            with open(output_path, 'wb') as f:
+                f.write(img_response.body())
+            print(f"DEBUG: [download_with_playwright] Image saved to {output_path}")
+        else:
+            body = img_response.body()
+            print(f"DEBUG: [download_with_playwright] Failed to download image, status: {img_response.status}")
+            print(f"DEBUG: [download_with_playwright] Response body (first 200 chars): {body[:200]}")
+        browser.close()
+        print(f"DEBUG: [download_with_playwright] Checking if file exists: {os.path.abspath(output_path)}")
+        print(f"DEBUG: [download_with_playwright] File exists: {os.path.exists(output_path)}")
+        return os.path.exists(output_path)
 
 def download_image(url, tag, debug=False):
     """Download an image or video from a URL and save it to a tag-specific folder."""
@@ -2946,19 +2941,26 @@ def download_image(url, tag, debug=False):
         local_path = os.path.join(releases_dir, filename)
         headers = {}
         github_token = os.getenv('GITHUB_TOKEN')
+        # --- Improved authentication for direct download ---
         if github_token:
             headers['Authorization'] = f'token {github_token}'
+            # Also try as a session cookie for github.com
+            headers['Cookie'] = f'user_session={github_token}'
         # Try original URL first
         if debug:
             print(f"DEBUG: [download_image] Trying original URL: {url}")
+            print(f"DEBUG: [download_image] Target file: {os.path.abspath(local_path)}")
         try:
             response = requests.get(url, headers=headers, stream=True)
+            if debug:
+                print(f"DEBUG: [download_image] Response status code: {response.status_code}")
             response.raise_for_status()
             with open(local_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
             if debug:
                 print(f"DEBUG: [download_image] Successfully downloaded file to {local_path}")
+                print(f"DEBUG: [download_image] File exists after write: {os.path.exists(local_path)}")
             return local_path
         except requests.exceptions.RequestException as e:
             if debug:
@@ -2971,12 +2973,15 @@ def download_image(url, tag, debug=False):
                 print(f"DEBUG: [download_image] Trying fallback raw URL: {raw_url}")
             try:
                 response = requests.get(raw_url, headers=headers, stream=True)
+                if debug:
+                    print(f"DEBUG: [download_image] Fallback response status code: {response.status_code}")
                 response.raise_for_status()
                 with open(local_path, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
                 if debug:
                     print(f"DEBUG: [download_image] Successfully downloaded file to {local_path} (fallback)")
+                    print(f"DEBUG: [download_image] File exists after fallback write: {os.path.exists(local_path)}")
                 return local_path
             except requests.exceptions.RequestException as e:
                 if debug:
@@ -2985,18 +2990,22 @@ def download_image(url, tag, debug=False):
         if 'github.com/user-attachments/' in url:
             if debug:
                 print(f"DEBUG: [download_image] Trying Playwright fallback for {url}")
-            try:
-                # Import here to avoid dependency if not needed
-                from scripts.generate_release_notes import download_with_playwright
-            except ImportError:
-                # If running as a script, download_with_playwright is already in scope
-                pass
             output_path = local_path
-            # Try Playwright download
-            success = download_with_playwright(url, output_path, browser_profile_dir=None, headless=True)
+            # --- Playwright profile setup ---
+            profile_dir = os.path.abspath("./.pw-profile")
+            # NOTE: To use an authenticated session, you must first log in manually with Playwright using this profile.
+            # To refresh the session: run a manual login with headless=False using .pw-profile, then rerun automated downloads.
+            success = download_with_playwright(
+                url, output_path,
+                browser_profile_dir=profile_dir,
+                headless=False
+            )
+            if debug:
+                print(f"DEBUG: [download_image] Playwright download result: {success}")
+                print(f"DEBUG: [download_image] File exists after Playwright: {os.path.exists(output_path)}")
             if success:
                 if debug:
-                    print(f"DEBUG: [download_image] Playwright: Successfully downloaded file to {output_path}")
+                    print(f"DEBUG: [download_image] Playwright successfully downloaded file to {output_path}")
                 return output_path
             else:
                 if debug:
