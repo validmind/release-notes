@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "release-notes-generator"
+version = "0.1.0"
+description = "Generate ValidMind release notes from GitHub PRs."
+authors = ["Your Name <your@email.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<4.0"
+python-dotenv = "^1.0.0"
+requests = "^2.31.0"
+openai = "^1.14.3"
+numpy = "^1.26.4"
+ipython = "^8.24.0"
+playwright = "^1.44.0"
+# argparse is in the stdlib for Python >=3.2, so not needed here
+
+[tool.poetry.dev-dependencies]
+# Add any dev dependencies here
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api" 

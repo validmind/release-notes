@@ -22,27 +22,32 @@ The release notes generator:
 
 ## Requirements
 
-- Python 3.x
+- Python 3.8+
 - GitHub CLI (`gh`)
-- Required Python packages (see `scripts/requirements.txt`):
-  - python-dotenv
-  - requests
+- [Poetry](https://python-poetry.org/) for dependency management
+- Playwright browsers (see below)
 
-## Usage
+## Installation
 
-1. Ensure you have the required dependencies installed:
+1. Install dependencies with Poetry:
    ```bash
-   pip install -r scripts/requirements.txt
+   cd scripts
+   poetry install
    ```
-
-2. Set up your GitHub authentication:
+2. Install Playwright browsers (required for asset downloading):
+   ```bash
+   poetry run playwright install
+   ```
+3. Set up your GitHub authentication:
    - Install and configure the GitHub CLI
    - Ensure you have appropriate permissions to access the repositories
 
-3. Run the script:
-   ```bash
-   python scripts/generate_release_notes.py
-   ```
+## Usage
+
+Run the script using Poetry:
+```bash
+poetry run python scripts/generate_release_notes.py
+```
 
 ## Output
 
@@ -54,7 +59,7 @@ The script generates:
 
 ## Repository Structure
 
-- `scripts/` - Contains the main Python script and requirements
+- `scripts/` - Contains the main Python script and Poetry configuration
 - `site/` - Output directory for generated release notes
   - `installation/` - Contains release notes and release history
   - `releases/` - Individual release documentation

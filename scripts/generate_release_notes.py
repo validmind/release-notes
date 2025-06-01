@@ -157,9 +157,9 @@ def classify_section(section_title, section_content, debug=False):
         bool: True if section should be included, False if excluded
     """
     if debug:
-        print(f"\nDEBUG: Classifying section:")
-        print(f"Title: {section_title}")
-        print(f"Content: {section_content[:200]}...")  # Show first 200 chars of content
+        print(f"\nDEBUG: [classify_section] Classifying section:")
+        print(f"DEBUG: [classify_section] Title: {section_title}")
+        print(f"DEBUG: [classify_section] Content: {section_content[:200]}...")  # Show first 200 chars of content
     
     try:
         prompt = SECTION_CLASSIFICATION_PROMPT.format(
@@ -168,10 +168,10 @@ def classify_section(section_title, section_content, debug=False):
         )
         
         if debug:
-            print("DEBUG: Sending prompt to OpenAI...")
+            print("DEBUG: [classify_section] Sending prompt to OpenAI...")
             
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
@@ -188,33 +188,33 @@ def classify_section(section_title, section_content, debug=False):
         
         result = response.choices[0].message.content.strip().upper()
         if debug:
-            print(f"DEBUG: OpenAI response: {result}")
+            print(f"DEBUG: [classify_section] OpenAI response: {result}")
         return result == 'INCLUDE'
         
     except Exception as e:
         if debug:
-            print(f"DEBUG: Error in OpenAI classification: {e}")
-            print("DEBUG: Falling back to pattern matching...")
+            print(f"DEBUG: [classify_section] Error in OpenAI classification: {e}")
+            print("DEBUG: [classify_section] Falling back to pattern matching...")
             
         # Fallback to basic pattern matching if OpenAI fails
         normalized_title = section_title.lower()
         normalized_title = re.sub(r'[^\w\s]', '', normalized_title)
         
         if debug:
-            print(f"DEBUG: Normalized title: {normalized_title}")
+            print(f"DEBUG: [classify_section] Normalized title: {normalized_title}")
         
         # Check excluded patterns first
         for excluded in EXCLUDED_SECTIONS:
             if excluded.lower() in normalized_title:
                 if debug:
-                    print(f"DEBUG: Matched excluded pattern: {excluded}")
+                    print(f"DEBUG: [classify_section] Matched excluded pattern: {excluded}")
                 return False
                 
         # Then check included patterns
         for included in INCLUDED_SECTIONS:
             if included.lower() in normalized_title:
                 if debug:
-                    print(f"DEBUG: Matched included pattern: {included}")
+                    print(f"DEBUG: [classify_section] Matched included pattern: {included}")
                 return True
                 
         if debug:
@@ -275,8 +275,8 @@ class PR:
         self.pr_body = self.data_json['body']
         
         if self.debug:
-            print("\nDEBUG: Extracting external release notes")
-            print(f"DEBUG: PR body length: {len(self.pr_body)}")
+            print("\nDEBUG: [extract_external_release_notes] Extracting external release notes")
+            print(f"DEBUG: [extract_external_release_notes] PR body length: {len(self.pr_body)}")
         
         # Extract only the sections we want to keep
         sections = []
@@ -290,27 +290,27 @@ class PR:
             section_content = match.group(2).strip()
             
             if self.debug:
-                print(f"\nDEBUG: Found section: {section_title}")
-                print(f"DEBUG: Section content (first 200 chars): {section_content[:200]}")
+                print(f"\nDEBUG: [extract_external_release_notes] Found section: {section_title}")
+                print(f"DEBUG: [extract_external_release_notes] Section content (first 200 chars): {section_content[:200]}")
             
             # Use OpenAI to classify the section
             if classify_section(section_title, section_content, self.debug):
                 if self.debug:
-                    print(f"DEBUG: Including section: {section_title}")
+                    print(f"DEBUG: [extract_external_release_notes] Including section: {section_title}")
                 sections.append(f"## {section_title}\n{section_content}")
             else:
                 if self.debug:
-                    print(f"DEBUG: Excluding section: {section_title}")
+                    print(f"DEBUG: [extract_external_release_notes] Excluding section: {section_title}")
         
         # If we found any sections, combine them
         if sections:
             if self.debug:
-                print(f"\nDEBUG: Found {len(sections)} sections to include")
+                print(f"\nDEBUG: [extract_external_release_notes] Found {len(sections)} sections to include")
             self.generated_lines = "\n\n".join(sections)
             return True
             
         if self.debug:
-            print("\nDEBUG: No sections found, trying fallback patterns")
+            print("\nDEBUG: [extract_external_release_notes] No sections found, trying fallback patterns")
             
         # Fallback to old format with more robust matching
         old_format_patterns = [
@@ -332,7 +332,7 @@ class PR:
                 return True
                 
         if self.debug:
-            print("DEBUG: No sections found in fallback patterns")
+            print("DEBUG: [extract_external_release_notes] No sections found in fallback patterns")
         return None
         
     def extract_pr_summary_comment(self):
@@ -994,7 +994,7 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
             if debug:
                 # Sort tags using version_key function
                 sorted_tags = sorted(tag_names, key=version_key)
-                print(f"DEBUG: {repo} tag list sorted: {sorted_tags}")
+                print(f"DEBUG: [get_all_cmvm_tags] {repo} tag list sorted: {sorted_tags}")
             
             # Only check releases if we have tags
             if tag_names:
@@ -1004,7 +1004,7 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
                     returncode, stdout, stderr = rate_limited_api_call(cmd)
                     if returncode == 0:
                         if debug and (not version or tag == version):
-                            print(f"DEBUG: Release exists for {tag}")
+                            print(f"DEBUG: [get_all_cmvm_tags] Release exists for {tag}")
                     return tag
                 
                 # Use ThreadPoolExecutor with limited concurrency
@@ -1018,14 +1018,14 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
                             future.result()
                         except Exception as e:
                             if debug:
-                                print(f"DEBUG: Error checking release for tag {future_to_tag[future]}: {e}")
+                                print(f"DEBUG: [get_all_cmvm_tags] Error checking release for tag {future_to_tag[future]}: {e}")
             elif debug:
-                print(f"DEBUG: No tags found in {repo}")
+                print(f"DEBUG: [get_all_cmvm_tags] No tags found in {repo}")
                 
             return tag_names
     except Exception as e:
         if debug:
-            print(f"DEBUG: Error getting tags from {repo}: {e}")
+            print(f"DEBUG: [get_all_cmvm_tags] Error getting tags from {repo}: {e}")
         else:
             print(f"  WARN: Error getting tags from {repo}: {e}")
     return []
@@ -1366,7 +1366,7 @@ def get_previous_tag(repo, tag, debug=False):
         
     if not match:
         if debug:
-            print(f"DEBUG: {repo} invalid tag format: {tag}")
+            print(f"DEBUG: [get_previous_tag] {repo} invalid tag format: {tag}")
         return None
     
     major, minor, patch, rc_num = match.groups()
@@ -1414,12 +1414,12 @@ def get_previous_tag(repo, tag, debug=False):
     
     if current_idx is None:
         if debug:
-            print(f"DEBUG: {repo} current_tag {tag} not in tag list.")
+            print(f"DEBUG: [get_previous_tag] {repo} current_tag {tag} not in tag list.")
         return None
     
     if current_idx == 0:
         if debug:
-            print(f"DEBUG: {repo} current_tag {tag} is the first tag.")
+            print(f"DEBUG: [get_previous_tag] {repo} current_tag {tag} is the first tag.")
         return None
     
     # For RC tags
@@ -1428,21 +1428,21 @@ def get_previous_tag(repo, tag, debug=False):
         for t in reversed(valid_tags[:current_idx]):
             if t['major'] == major and t['minor'] == minor and t['rc'] is not None:
                 if debug:
-                    print(f"DEBUG: {repo} previous RC tag for {tag}: {t['name']}")
+                    print(f"DEBUG: [get_previous_tag] {repo} previous RC tag for {tag}: {t['name']}")
                 return t['name']
         
         # Then try previous version's final release
         for t in reversed(valid_tags[:current_idx]):
             if t['rc'] is None:
                 if debug:
-                    print(f"DEBUG: {repo} previous release for {tag}: {t['name']}")
+                    print(f"DEBUG: [get_previous_tag] {repo} previous release for {tag}: {t['name']}")
                 return t['name']
         
         # Finally try previous version's RCs
         if valid_tags[:current_idx]:
             prev_tag = valid_tags[current_idx - 1]['name']
             if debug:
-                print(f"DEBUG: {repo} previous version RC for {tag}: {prev_tag}")
+                print(f"DEBUG: [get_previous_tag] {repo} previous version RC for {tag}: {prev_tag}")
             return prev_tag
     
     # For regular releases
@@ -1451,19 +1451,19 @@ def get_previous_tag(repo, tag, debug=False):
         for t in reversed(valid_tags[:current_idx]):
             if t['rc'] is None:
                 if debug:
-                    print(f"DEBUG: {repo} previous non-RC tag for {tag}: {t['name']}")
+                    print(f"DEBUG: [get_previous_tag] {repo} previous non-RC tag for {tag}: {t['name']}")
                 return t['name']
         
         # Then try RCs of current version
         for t in reversed(valid_tags[:current_idx]):
             if t['major'] == major and t['minor'] == minor and t['rc'] is not None:
                 if debug:
-                    print(f"DEBUG: {repo} previous version RC for {tag}: {t['name']}")
+                    print(f"DEBUG: [get_previous_tag] {repo} previous version RC for {tag}: {t['name']}")
                 return t['name']
     
     # Fallback to immediate previous tag if no better match found
     if debug:
-        print(f"DEBUG: {repo} fallback previous tag for {tag}: {valid_tags[current_idx - 1]['name']}")
+        print(f"DEBUG: [get_previous_tag] {repo} fallback previous tag for {tag}: {valid_tags[current_idx - 1]['name']}")
     return valid_tags[current_idx - 1]['name']
 
 def get_commits_for_tag(repo, tag, debug=False):
@@ -1474,48 +1474,48 @@ def get_commits_for_tag(repo, tag, debug=False):
         prev_tag = get_previous_tag(repo, tag, debug=debug)
         if not prev_tag:
             if debug:
-                print(f"DEBUG: No previous tag found for {tag} in {repo}, using tag/release body as fallback.")
+                print(f"DEBUG: [get_commits_for_tag] No previous tag found for {tag} in {repo}, using tag/release body as fallback.")
             # Try to fetch the release body first
             cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
             if debug:
-                print(f"DEBUG: Release API call: {' '.join(cmd)}")
+                print(f"DEBUG: [get_commits_for_tag] Release API call: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True)
             if debug:
-                print(f"DEBUG: Release API call for {tag} returned code: {result.returncode}")
+                print(f"DEBUG: [get_commits_for_tag] Release API call for {tag} returned code: {result.returncode}")
                 if result.returncode != 0:
-                    print(f"DEBUG: Release API call error: {result.stderr}")
+                    print(f"DEBUG: [get_commits_for_tag] Release API call error: {result.stderr}")
             body = ''
             if result.returncode == 0:
                 try:
                     release_data = json.loads(result.stdout)
                     body = release_data.get('body', '')
                     if debug:
-                        print(f"DEBUG: Release body length: {len(body)}")
+                        print(f"DEBUG: [get_commits_for_tag] Release body length: {len(body)}")
                 except Exception as e:
                     if debug:
-                        print(f"DEBUG: Could not parse release body for {tag} in {repo}: {e}")
+                        print(f"DEBUG: [get_commits_for_tag] Could not parse release body for {tag} in {repo}: {e}")
             if not body:
                 # If no release, try to fetch the annotated tag message
                 cmd = ['gh', 'api', f'repos/validmind/{repo}/git/tags/{tag}']
                 if debug:
-                    print(f"DEBUG: Tag API call: {' '.join(cmd)}")
+                    print(f"DEBUG: [get_commits_for_tag] Tag API call: {' '.join(cmd)}")
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 if debug:
-                    print(f"DEBUG: Tag API call for {tag} returned code: {result.returncode}")
+                    print(f"DEBUG: [get_commits_for_tag] Tag API call for {tag} returned code: {result.returncode}")
                     if result.returncode != 0:
-                        print(f"DEBUG: Tag API call error: {result.stderr}")
+                        print(f"DEBUG: [get_commits_for_tag] Tag API call error: {result.stderr}")
                 if result.returncode == 0:
                     try:
                         tag_data = json.loads(result.stdout)
                         body = tag_data.get('message', '')
                         if debug:
-                            print(f"DEBUG: Tag message length: {len(body)}")
+                            print(f"DEBUG: [get_commits_for_tag] Tag message length: {len(body)}")
                     except Exception as e:
                         if debug:
-                            print(f"DEBUG: Could not parse tag message for {tag} in {repo}: {e}")
+                            print(f"DEBUG: [get_commits_for_tag] Could not parse tag message for {tag} in {repo}: {e}")
             pr_numbers = re.findall(r"https://github.com/validmind/.+/pull/(\d+)", body)
             if debug:
-                print(f"DEBUG: Found {len(pr_numbers)} PR numbers in body")
+                print(f"DEBUG: [get_commits_for_tag] Found {len(pr_numbers)} PR numbers in body")
             
             # Parallelize PR content fetching
             def fetch_pr_content(pr_number):
@@ -1540,7 +1540,7 @@ def get_commits_for_tag(repo, tag, debug=False):
                             })
                     except Exception as e:
                         if debug:
-                            print(f"DEBUG: Error processing PR #{pr_number}: {e}")
+                            print(f"DEBUG: [fetch_pr_content] Error processing PR #{pr_number}: {e}")
             return commits
             
         # If we have a previous tag, use the commit-range logic
@@ -1548,58 +1548,58 @@ def get_commits_for_tag(repo, tag, debug=False):
         prev_tag_with_prefix = f"cmvm/{prev_tag}" if not prev_tag.startswith('cmvm/') else prev_tag
         cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags/{prev_tag_with_prefix}']
         if debug:
-            print(f"DEBUG: Previous tag SHA API call: {' '.join(cmd)}")
+            print(f"DEBUG: [get_commits_for_tag] Previous tag SHA API call: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
         if debug:
-            print(f"DEBUG: Previous tag SHA API call for {prev_tag_with_prefix} returned code: {result.returncode}")
+            print(f"DEBUG: [get_commits_for_tag] Previous tag SHA API call for {prev_tag_with_prefix} returned code: {result.returncode}")
             if result.returncode != 0:
-                print(f"DEBUG: Previous tag SHA API call error: {result.stderr}")
+                print(f"DEBUG: [get_commits_for_tag] Previous tag SHA API call error: {result.stderr}")
         if result.returncode != 0:
             if debug:
-                print(f"DEBUG: Could not get SHA for previous tag {prev_tag_with_prefix}")
+                print(f"DEBUG: [get_commits_for_tag] Could not get SHA for previous tag {prev_tag_with_prefix}")
             return []
         tag_data = json.loads(result.stdout)
         base_sha = tag_data['object']['sha']
         if debug:
-            print(f"DEBUG: Previous tag {prev_tag_with_prefix} SHA: {base_sha}")
+            print(f"DEBUG: [get_commits_for_tag] Previous tag {prev_tag_with_prefix} SHA: {base_sha}")
         # Get SHA for current tag
         current_tag_with_prefix = f"cmvm/{tag}" if not tag.startswith('cmvm/') else tag
         cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags/{current_tag_with_prefix}']
         if debug:
-            print(f"DEBUG: Current tag SHA API call: {' '.join(cmd)}")
+            print(f"DEBUG: [get_commits_for_tag] Current tag SHA API call: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
         if debug:
-            print(f"DEBUG: Current tag SHA API call for {current_tag_with_prefix} returned code: {result.returncode}")
+            print(f"DEBUG: [get_commits_for_tag] Current tag SHA API call for {current_tag_with_prefix} returned code: {result.returncode}")
             if result.returncode != 0:
-                print(f"DEBUG: Current tag SHA API call error: {result.stderr}")
+                print(f"DEBUG: [get_commits_for_tag] Current tag SHA API call error: {result.stderr}")
         if result.returncode != 0:
             if debug:
-                print(f"DEBUG: Could not get SHA for current tag {current_tag_with_prefix}")
+                print(f"DEBUG: [get_commits_for_tag] Could not get SHA for current tag {current_tag_with_prefix}")
             return []
         tag_data = json.loads(result.stdout)
         head_sha = tag_data['object']['sha']
         if debug:
-            print(f"DEBUG: Current tag {current_tag_with_prefix} SHA: {head_sha}")
+            print(f"DEBUG: [get_commits_for_tag] Current tag {current_tag_with_prefix} SHA: {head_sha}")
         # Get all commits in the range (exclusive of base, inclusive of head)
         cmd = ['gh', 'api', f'repos/validmind/{repo}/compare/{base_sha}...{head_sha}']
         if debug:
-            print(f"DEBUG: Compare API call: {' '.join(cmd)}")
+            print(f"DEBUG: [get_commits_for_tag] Compare API call: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
         if debug:
-            print(f"DEBUG: Compare API call returned code: {result.returncode}")
+            print(f"DEBUG: [get_commits_for_tag] Compare API call returned code: {result.returncode}")
             if result.returncode != 0:
-                print(f"DEBUG: Compare API call error: {result.stderr}")
+                print(f"DEBUG: [get_commits_for_tag] Compare API call error: {result.stderr}")
         if result.returncode != 0:
             if debug:
-                print(f"DEBUG: Could not get commits between {base_sha} and {head_sha}")
+                print(f"DEBUG: [get_commits_for_tag] Could not get commits between {base_sha} and {head_sha}")
             return []
         compare_data = json.loads(result.stdout)
         commit_shas = [c['sha'] for c in compare_data.get('commits', [])]
         if debug:
-            print(f"DEBUG: Found {len(commit_shas)} commits between {prev_tag_with_prefix} and {current_tag_with_prefix}")
+            print(f"DEBUG: [get_commits_for_tag] Found {len(commit_shas)} commits between {prev_tag_with_prefix} and {current_tag_with_prefix}")
             if commit_shas:
-                print(f"DEBUG: First commit SHA: {commit_shas[0]}")
-                print(f"DEBUG: Last commit SHA: {commit_shas[-1]}")
+                print(f"DEBUG: [get_commits_for_tag] First commit SHA: {commit_shas[0]}")
+                print(f"DEBUG: [get_commits_for_tag] Last commit SHA: {commit_shas[-1]}")
         
         # Parallelize PR lookup for commits
         def fetch_prs_for_commit(sha):
@@ -1607,11 +1607,11 @@ def get_commits_for_tag(repo, tag, debug=False):
             # In subprocess, pass header as a single string to match shell quoting
             cmd = ['gh', 'api', '-H', 'Accept: application/vnd.github.groot-preview+json', f'repos/validmind/{repo}/commits/{sha}/pulls']
             if debug:
-                print(f"DEBUG: PR lookup API call: {' '.join(cmd)}")
+                print(f"DEBUG: [fetch_prs_for_commit] PR lookup API call: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True)
             if debug and result.returncode != 0:
-                print(f"DEBUG: Could not get PRs for commit {sha}, code: {result.returncode}")
-                print(f"DEBUG: PR lookup API call error: {result.stderr}")
+                print(f"DEBUG: [fetch_prs_for_commit] Could not get PRs for commit {sha}, code: {result.returncode}")
+                print(f"DEBUG: [fetch_prs_for_commit] PR lookup API call error: {result.stderr}")
             if result.returncode != 0:
                 return []
             pulls = json.loads(result.stdout)
@@ -1631,7 +1631,7 @@ def get_commits_for_tag(repo, tag, debug=False):
                             pr_info[pr_number] = pr
                 except Exception as e:
                     if debug:
-                        print(f"DEBUG: Error processing commit {sha}: {e}")
+                        print(f"DEBUG: [fetch_prs_for_commit] Error processing commit {sha}: {e}")
         
         if debug:
             print(f"DEBUG: Found {len(pr_numbers)} PRs in commits")
@@ -1759,18 +1759,20 @@ def generate_changelog_content(repo, tag, commits, has_release):
                 content += f"\n<!--- PR #{pr_number}: {pr_url} --->\n"
                 content += f"<!--- Labels: {', '.join(commit['labels']) if commit['labels'] else 'none'} --->\n"
                 content += f"### {title} (#{pr_number})\n\n"
+                # Embed images as markdown using local paths
+                for url in commit.get('image_urls', []):
+                    local_path = download_image(url, tag, debug=False)
+                    if local_path:
+                        rel_path = os.path.relpath(local_path, os.getcwd())
+                        content += f'![Image]({rel_path})\n'
                 if commit['external_notes']:
-                    content += f"{commit['external_notes']}\n\n"
+                    content += f"{update_image_links(commit['external_notes'], tag, False)}\n\n"
                 if commit['pr_summary']:
-                    content += f"{commit['pr_summary']}\n\n"
+                    content += f"{update_image_links(commit['pr_summary'], tag, False)}\n\n"
                 # If no notes or summary, use PR body as fallback
                 if not commit['external_notes'] and not commit['pr_summary']:
                     if commit.get('pr_body'):
-                        content += f"{commit['pr_body']}\n\n"
-                # Include image URLs as comments
-                if commit.get('image_urls'):
-                    for url in commit['image_urls']:
-                        content += f"<!-- Image: {url} -->\n"
+                        content += f"{update_image_links(commit['pr_body'], tag, False)}\n\n"
     return content
 
 def check_github_release(repo, version):
@@ -2854,88 +2856,155 @@ Added support for offline feature flags configuration through environment variab
             print(f"  Output: {out_line}")
     return result
 
-def download_image(url, tag, debug=False):
-    """Download an image or video from a URL and save it to a tag-specific folder.
-    If the file is a .qt video, convert it to .mp4 using ffmpeg if available.
+# Playwright-based asset downloader for GitHub user-attachments
+# Requires: pip install playwright && playwright install
+# Example usage:
+# download_with_playwright(
+#     url="https://github.com/user-attachments/assets/6f2ae03c-cb9d-4ee1-bde7-016cde360fe5",
+#     output_path="downloaded_image.png",
+#     browser_profile_dir=None,  # Or path to your Chrome/Edge user profile for authentication
+#     headless=True
+# )
+
+def download_with_playwright(url, output_path, browser_profile_dir=None, headless=True):
+    """
+    Download an image or video from a GitHub user-attachments URL using Playwright.
+    Args:
+        url (str): The asset URL to download
+        output_path (str): Where to save the downloaded file
+        browser_profile_dir (str, optional): Path to a user profile directory for authentication (if needed)
+        headless (bool): Whether to run browser in headless mode
+    Returns:
+        bool: True if download succeeded, False otherwise
+    
+    Note: This function is defined after __main__ since it's an optional helper that is only imported
+    and used when needed for downloading assets. Keeping it separate from the core functionality
+    allows the script to run without Playwright installed.
     """
     try:
-        # Create releases directory if it doesn't exist
+        from playwright.sync_api import sync_playwright
+        import time
+        print(f"DEBUG: [download_with_playwright] Attempting to download {url} to {output_path}")
+        with sync_playwright() as p:
+            browser_args = {}
+            if browser_profile_dir:
+                browser_args["user_data_dir"] = browser_profile_dir
+                print(f"DEBUG: [download_with_playwright] Using browser profile: {browser_profile_dir}")
+            browser = p.chromium.launch_persistent_context(
+                user_data_dir=browser_profile_dir or "./.pw-profile",
+                headless=headless
+            )
+            page = browser.new_page()
+            print(f"DEBUG: [download_with_playwright] Navigating to URL")
+            page.goto(url)
+            # Wait for network and element
+            page.wait_for_load_state("networkidle")
+            # Try to find an <img> or <video> tag
+            if page.locator("img").count() > 0:
+                print(f"DEBUG: [download_with_playwright] Found image element, taking screenshot")
+                img = page.locator("img").first
+                img.screenshot(path=output_path)
+                browser.close()
+                return True
+            elif page.locator("video").count() > 0:
+                print(f"DEBUG: [download_with_playwright] Found video element")
+                video = page.locator("video").first
+                # Try to get the video src
+                src = video.get_attribute("src")
+                if src:
+                    print(f"DEBUG: [download_with_playwright] Downloading video from source: {src}")
+                    # Download the video file
+                    import requests
+                    r = requests.get(src, stream=True)
+                    with open(output_path, 'wb') as f:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            f.write(chunk)
+                    browser.close()
+                    return True
+            # Fallback: try to download the page content (may work for direct file links)
+            print(f"DEBUG: [download_with_playwright] No media elements found, trying page content fallback")
+            content = page.content()
+            with open(output_path, 'wb') as f:
+                f.write(content.encode('utf-8'))
+            browser.close()
+            return True
+    except Exception as e:
+        print(f"[download_with_playwright] Failed to download {url}: {e}")
+        return False
+
+def download_image(url, tag, debug=False):
+    """Download an image or video from a URL and save it to a tag-specific folder."""
+    try:
         releases_dir = os.path.join('releases', tag)
         os.makedirs(releases_dir, exist_ok=True)
-
-        # Get filename from URL and ensure it has an extension
         parsed_url = urlparse(url)
         filename = os.path.basename(parsed_url.path)
         if not filename:
             filename = f"image_{hash(url)}.png"
         elif not any(filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.mov', '.qt']):
-            # Add .png extension if no extension is present
             filename = f"{filename}.png"
-
-        # Handle GitHub user-attachments URLs (old and new patterns)
-        if (
-            'github.com/user-attachments/' in url or
-            'github.com/user-attachments/assets/' in url
-        ):
-            # Extract the asset ID from the URL (last part)
-            asset_id = url.split('/')[-1]
-            # Construct the raw URL
-            raw_url = f"https://raw.githubusercontent.com/validmind/user-attachments/main/{asset_id}"
-            url = raw_url
-
-        # Full path for the image/video
         local_path = os.path.join(releases_dir, filename)
-
-        # Download the file
         headers = {}
         github_token = os.getenv('GITHUB_TOKEN')
         if github_token:
             headers['Authorization'] = f'token {github_token}'
-
+        # Try original URL first
         if debug:
-            print(f"DEBUG: Downloading file from {url}")
-
+            print(f"DEBUG: [download_image] Trying original URL: {url}")
         try:
             response = requests.get(url, headers=headers, stream=True)
             response.raise_for_status()
-
             with open(local_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
-
             if debug:
-                print(f"DEBUG: Successfully downloaded file to {local_path}")
+                print(f"DEBUG: [download_image] Successfully downloaded file to {local_path}")
+            return local_path
         except requests.exceptions.RequestException as e:
             if debug:
-                print(f"DEBUG: Failed to download file: {str(e)}")
-                print(f"DEBUG: Response status code: {e.response.status_code if hasattr(e, 'response') else 'N/A'}")
-                print(f"DEBUG: Response headers: {e.response.headers if hasattr(e, 'response') else 'N/A'}")
-            raise
-
-        # If the file is a .qt video, convert to .mp4 using ffmpeg
-        if local_path.lower().endswith('.qt'):
-            mp4_path = local_path[:-3] + 'mp4'
-            import subprocess
+                print(f"DEBUG: [download_image] Failed to download with original URL: {e}")
+        # Fallback: try rewriting old user-attachments URLs
+        if 'github.com/user-attachments/' in url and '/assets/' not in url:
+            asset_id = url.split('/')[-1]
+            raw_url = f"https://raw.githubusercontent.com/validmind/user-attachments/main/{asset_id}"
+            if debug:
+                print(f"DEBUG: [download_image] Trying fallback raw URL: {raw_url}")
             try:
-                subprocess.run([
-                    'ffmpeg', '-y', '-i', local_path, mp4_path
-                ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                response = requests.get(raw_url, headers=headers, stream=True)
+                response.raise_for_status()
+                with open(local_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
                 if debug:
-                    print(f"DEBUG: Converted {local_path} to {mp4_path}")
-                os.remove(local_path)
-                local_path = mp4_path
-            except Exception as e:
+                    print(f"DEBUG: [download_image] Successfully downloaded file to {local_path} (fallback)")
+                return local_path
+            except requests.exceptions.RequestException as e:
                 if debug:
-                    print(f"DEBUG: Failed to convert {local_path} to mp4: {e}")
-
-        if debug:
-            print(f"DEBUG: Downloaded image/video from {url} to {local_path}")
-
-        return local_path
-
+                    print(f"DEBUG: [download_image] Fallback also failed: {e}")
+        # Playwright fallback for user-attachments URLs
+        if 'github.com/user-attachments/' in url:
+            if debug:
+                print(f"DEBUG: [download_image] Trying Playwright fallback for {url}")
+            try:
+                # Import here to avoid dependency if not needed
+                from scripts.generate_release_notes import download_with_playwright
+            except ImportError:
+                # If running as a script, download_with_playwright is already in scope
+                pass
+            output_path = local_path
+            # Try Playwright download
+            success = download_with_playwright(url, output_path, browser_profile_dir=None, headless=True)
+            if success:
+                if debug:
+                    print(f"DEBUG: [download_image] Playwright: Successfully downloaded file to {output_path}")
+                return output_path
+            else:
+                if debug:
+                    print(f"DEBUG: [download_image] Playwright failed for {url}")
+        return None
     except Exception as e:
         if debug:
-            print(f"DEBUG: Failed to download image/video from {url}: {e}")
+            print(f"DEBUG: [download_image] Failed to download image/video from {url}: {e}")
         return None
 
 def update_image_links(content, tag, debug=False):
@@ -2951,21 +3020,37 @@ def update_image_links(content, tag, debug=False):
     """
     if not content:
         return content
-        
+
     def replace_image_link(match):
-        alt_text = match.group(1)
-        url = match.group(2)
-        
-        local_path = download_image(url, tag, debug)
-        if local_path:
-            # Convert path to use forward slashes and make it relative
-            relative_path = local_path.replace('\\', '/')
-            return f"![{alt_text}]({relative_path})"
-        return match.group(0)
-        
-    # Find and replace image links
-    pattern = r'!\[([^\]]*)\]\((https?://[^)]+)\)'
+        # Markdown image
+        if match.group(1) is not None and match.group(2) is not None:
+            alt_text = match.group(1)
+            url = match.group(2)
+            local_path = download_image(url, tag, debug)
+            if local_path:
+                rel_path = os.path.relpath(local_path, os.getcwd())
+                return f'![{alt_text}]({rel_path})'
+            else:
+                return match.group(0)
+        # HTML <img> tag
+        elif match.group(3) is not None and match.group(4) is not None and match.group(5) is not None:
+            before_src = match.group(3)
+            url = match.group(4)
+            after_src = match.group(5)
+            local_path = download_image(url, tag, debug)
+            if local_path:
+                rel_path = os.path.relpath(local_path, os.getcwd())
+                return f'<img {before_src}src="{rel_path}"{after_src}>'
+            else:
+                return match.group(0)
+        else:
+            return match.group(0)
+
+    pattern = r'!\[([^\]]*)\]\((https?://[^)]+)\)|<img ([^>]*?)src=["\"](https?://[^"\"]+)["\"]([^>]*)>'
     updated_content = re.sub(pattern, replace_image_link, content)
+
+    if debug:
+        print(f"DEBUG: [update_image_links] Image links updated.")
     
     return updated_content
 
@@ -3026,3 +3111,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
