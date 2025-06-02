@@ -1808,21 +1808,18 @@ def create_release_file(release, overwrite=False, debug=False, edit=False):
     version = release['version']
     date = release['date']
     
-    # Convert version to file name format (e.g., cmvm/25.03.02 -> 25_03_02.qmd)
-    file_version = version.split('/')[-1].replace('.', '_')
-    file_name = f"{file_version}.qmd"
-    
-    # Determine the output directory based on whether the tag contains 'cmvm'
+    # Convert version to directory and file name (e.g., cmvm/25.03.02 -> releases/cmvm/25.03.02/index.qmd)
+    version_str = version.split('/')[-1]
     if 'cmvm' in version.lower():
-        output_dir = os.path.join(RELEASES_DIR, 'cmvm')
+        output_dir = os.path.join(RELEASES_DIR, 'cmvm', version_str)
     else:
-        output_dir = RELEASES_DIR
-        
+        output_dir = os.path.join(RELEASES_DIR, version_str)
+    file_name = "index.qmd"
     file_path = os.path.join(output_dir, file_name)
     
     # Check if file exists and handle overwrite at the start
     if os.path.exists(file_path) and not overwrite:
-        print(f"File {file_name} already exists. Use --overwrite to update it.")
+        print(f"File {file_path} already exists. Use --overwrite to update it.")
         return
         
     # Create releases directory if it doesn't exist
@@ -1973,7 +1970,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False):
             f.write('This release includes no public-facing updates to features, bug fixes, or documentation. If you\'re unsure whether any changes affect your deployment, contact <support@validmind.com>.\n')
             f.write(':::\n\n')
         f.write("\n".join(content))
-    print(f"\nCreated release file: {output_dir}/{file_name}")
+    print(f"\nCreated release file: {file_path}")
 
 def parse_release_tables(qmd_file_path, version=None, debug=False):
     """Parse release tables from the customer-managed-validmind-releases.qmd file.
@@ -2936,7 +2933,12 @@ def download_image(url, tag, debug=False):
     import subprocess
     import imghdr
     try:
-        releases_dir = os.path.join('releases', tag)
+        # Determine if this is a cmvm tag or not
+        tag_str = tag.split('/')[-1]
+        if 'cmvm' in tag.lower():
+            releases_dir = os.path.join('releases', 'cmvm', tag_str)
+        else:
+            releases_dir = os.path.join('releases', tag_str)
         os.makedirs(releases_dir, exist_ok=True)
         parsed_url = urlparse(url)
         filename = os.path.basename(parsed_url.path)

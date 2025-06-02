@@ -3,7 +3,7 @@ title: "25.06 release notes"
 date: "May 30, 2025"
 sidebar: validmind-installation
 toc-expand: true
-# Content overwritten from an earlier version - 2025-06-01 19:58
+# Content overwritten from an earlier version - 2025-06-01 20:08
 ---
 
 ## Backend
@@ -29,25 +29,25 @@ toc-expand: true
 ### PR Summary
 This PR introduces several functional enhancements and bug fixes across the project. Key changes include:
 
-#### Workflow Update: 
+#### Workflow Update
    - The CASBIN database URI in the GitHub Actions workflow was updated to use the service alias "db" instead of "host.docker.internal".
 
-#### Admin User Management Improvements:
+#### Admin User Management Improvements
    - The admin user management script now explicitly uses the Flask app context (via with app.app_context()) to ensure that the database and application resources are properly accessible.
    - The logic for upserting users based on the authentication configuration has been refactored for clarity.
 
-#### RBAC and SQL Initialization Enhancements:
+#### RBAC and SQL Initialization Enhancements
    - File handling in the RBAC utilities now uses context managers (with open(...)) to improve resource safety and error handling.
    - The initialization function for role-based access control now verifies the existence of required SQL files, logs the process, and gracefully handles exceptions by rolling back on errors.
 
-#### Custom Fields API Refactoring:
+#### Custom Fields API Refactoring
    - The old custom fields endpoints (in ui_customfields_utils.py) have been removed in favor of a neatly implemented new namespace (in ui_custom_fields.py) that consolidates custom field code testing and permissions retrieval endpoints.
    - A new method (get_roles_for_custom_field) was added in the database group module to retrieve roles (excluding admin roles) with proper read/write permissions for a given custom field key.
 
-#### Additional Logging and Error Handling:
+#### Additional Logging and Error Handling
    - More detailed logging has been introduced across modules (e.g., in RBAC initialization and schema update functions) to assist with troubleshooting and monitoring.
 
-#### Test Improvements:
+#### Test Improvements
    - Integration tests across text editor file uploads and custom field endpoints have been updated to ensure XSS sanitization, file size validations, and proper serialization of role data. These tests also cover cases for unauthorized access and non-existent custom fields.
 
 <!-- ### Changes with no label -->
@@ -72,12 +72,67 @@ This PR introduces several functional enhancements and bug fixes across the proj
 ### Enhancements
 
 
+<!--- PR #1423: https://github.com/validmind/frontend/pull/1423 --->
+<!--- Labels: enhancement --->
+### Refactor custom field permissions handling (#1423)
+
+#### What
+### Release Notes
+
+#### Version 2.0.0
+
+##### Added `TCustomFieldPermissions` interface to manage read/write permissions for custom fields.
+- Implemented `GetFieldPermissions` API call to fetch permissions based on field key.
+- Updated `useCustomFieldPermissions` hook to utilize the new API for fetching permissions, simplifying the logic.
+- Adjusted imports in `API.ts` and `CustomFieldModal/index.tsx` to reflect the new model structure.
+
+Using this approach the field permissions dropdown loads instantly 🫡.
+
+#### Breaking Changes
+### List any breaking changes
+
+#### Screenshots/Videos (Frontend Only)
+### Add screenshots or videos showing before/after
+
+### PR Summary
+
+This PR introduces new functionality to better handle custom field permissions. The changes are concentrated in three areas:
+
+#### In the API layer (API.ts)
+
+A new asynchronous function, GetFieldPermissions, has been added. This function retrieves permissions for a custom field and returns an object containing separate lists for write and read roles. The changes also include refactoring of some existing API functions to adhere to a cleaner formatting style.
+
+#### In the CustomFieldModal component
+
+The import for CodeTestResponse was updated to point to the correct module, ensuring consistency with the new custom fields model.
+
+#### The useCustomFieldPermissions hook
+
+Now leverages the new GetFieldPermissions API function. This refactor replaces the prior manual iteration over organization roles to determine update permissions, simplifying the logic by directly setting update roles from the 'write' permissions received from the API.
+
+#### A new type, TCustomFieldPermissions
+
+Is introduced in the custom_fields model. This consolidates the structure for field permissions and ensures type consistency across the codebase.
+
+Overall, this PR improves the clarity and efficiency of permission handling for custom fields by centralizing permission-related logic in the API and reducing repetitive code in UI components.
+
+
 <!--- PR #1419: https://github.com/validmind/frontend/pull/1419 --->
 <!--- Labels: enhancement --->
 ### [SC-10533] Reorganize Settings page (#1419)
 
 #### What
 ### Reorganizing the settings page to better categorize settings for ease of use
+
+#### Before the Change
+- General Settings
+- Account Settings
+- Privacy Settings
+
+#### After the Change
+- ###### General Settings
+- ###### Account Settings
+- ###### Privacy Settings
 
 #### Why
 ### Explain why the change is being made and needed
@@ -108,59 +163,6 @@ This PR refactors the settings user interface by reorganizing and grouping navig
 
 #### Changes Aim
 These changes aim to improve maintainability, user experience, and adaptability of the settings interface based on user roles and permissions.
-
-
-<!--- PR #1423: https://github.com/validmind/frontend/pull/1423 --->
-<!--- Labels: enhancement --->
-### Refactor custom field permissions handling (#1423)
-
-#### What
-### Release Notes
-
-#### Version 2.0.0
-
-##### Added `TCustomFieldPermissions` interface to manage read/write permissions for custom fields.
-##### Implemented `GetFieldPermissions` API call to fetch permissions based on field key.
-##### Updated `useCustomFieldPermissions` hook to utilize the new API for fetching permissions, simplifying the logic.
-##### Adjusted imports in `API.ts` and `CustomFieldModal/index.tsx` to reflect the new model structure.
-
-Using this approach the field permissions dropdown loads instantly 🫡.
-
-#### Breaking Changes
-### List any breaking changes
-
-#### Screenshots/Videos (Frontend Only)
-### Before and After Screenshots
-
-#### Homepage
-![Homepage Before](homepage_before.png)
-![Homepage After](homepage_after.png)
-
-#### Profile Page
-![Profile Before](profile_before.png)
-![Profile After](profile_after.png)
-
-### PR Summary
-
-This PR introduces new functionality to better handle custom field permissions. The changes are concentrated in three areas:
-
-#### In the API layer (API.ts)
-
-A new asynchronous function, GetFieldPermissions, has been added. This function retrieves permissions for a custom field and returns an object containing separate lists for write and read roles. The changes also include refactoring of some existing API functions to adhere to a cleaner formatting style.
-
-#### In the CustomFieldModal component
-
-The import for CodeTestResponse was updated to point to the correct module, ensuring consistency with the new custom fields model.
-
-#### The useCustomFieldPermissions hook
-
-Now leverages the new GetFieldPermissions API function. This refactor replaces the prior manual iteration over organization roles to determine update permissions, simplifying the logic by directly setting update roles from the 'write' permissions received from the API.
-
-#### A new type, TCustomFieldPermissions
-
-Is introduced in the custom_fields model. This consolidates the structure for field permissions and ensures type consistency across the codebase.
-
-Overall, this PR improves the clarity and efficiency of permission handling for custom fields by centralizing permission-related logic in the API and reducing repetitive code in UI components.
 
 <!-- ### Changes with no label -->
 
