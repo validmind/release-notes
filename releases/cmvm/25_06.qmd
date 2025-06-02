@@ -3,7 +3,7 @@ title: "25.06 release notes"
 date: "May 30, 2025"
 sidebar: validmind-installation
 toc-expand: true
-# Content overwritten from an earlier version - 2025-06-01 14:34
+# Content overwritten from an earlier version - 2025-06-01 19:58
 ---
 
 ## Backend
@@ -24,7 +24,7 @@ toc-expand: true
 ### List any breaking changes
 
 #### Screenshots/Videos (Frontend Only)
-### <!-- Add screenshots or videos showing before/after -->
+### Add screenshots or videos showing before/after
 
 ### PR Summary
 This PR introduces several functional enhancements and bug fixes across the project. Key changes include:
@@ -106,7 +106,7 @@ This PR refactors the settings user interface by reorganizing and grouping navig
 - Adjusting the order and grouping of links (e.g., "Risk Areas & Validation Guidelines" remains tied to permissions) to provide a more intuitive navigation experience based on user roles.
 - Enhancing the overall component structure by replacing some Box components with Stack and using the Heading component for titles, thereby improving readability and accessibility.
 
-#### Changes Made
+#### Changes Aim
 These changes aim to improve maintainability, user experience, and adaptability of the settings interface based on user roles and permissions.
 
 
@@ -119,12 +119,10 @@ These changes aim to improve maintainability, user experience, and adaptability 
 
 #### Version 2.0.0
 
-- Added `TCustomFieldPermissions` interface to manage read/write permissions for custom fields.
-- Implemented `GetFieldPermissions` API call to fetch permissions based on field key.
-- Updated `useCustomFieldPermissions` hook to utilize the new API for fetching permissions, simplifying the logic.
-- Adjusted imports in `API.ts` and `CustomFieldModal/index.tsx` to reflect the new model structure.
-
-##### Performance Enhancement
+##### Added `TCustomFieldPermissions` interface to manage read/write permissions for custom fields.
+##### Implemented `GetFieldPermissions` API call to fetch permissions based on field key.
+##### Updated `useCustomFieldPermissions` hook to utilize the new API for fetching permissions, simplifying the logic.
+##### Adjusted imports in `API.ts` and `CustomFieldModal/index.tsx` to reflect the new model structure.
 
 Using this approach the field permissions dropdown loads instantly 🫡.
 
@@ -167,15 +165,15 @@ Overall, this PR improves the clarity and efficiency of permission handling for 
 <!-- ### Changes with no label -->
 
 
-<!--- PR #1431: https://github.com/validmind/frontend/pull/1431 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.36.3) (#1431) --->
-<!-- No release notes or summary provided. -->
-
-
 <!--- PR #1432: https://github.com/validmind/frontend/pull/1432 --->
 <!--- Labels: none --->
 <!--- ### Merge Staging into Prod (prod-1.36.3) (#1432) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1431: https://github.com/validmind/frontend/pull/1431 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Staging (staging-1.36.3) (#1431) --->
 <!-- No release notes or summary provided. -->
 
 
