@@ -1,0 +1,20 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "ValidMind Release Notes"
+  navbar:
+    left:
+      # - text: Home
+      #   href: index.qmd
+      - text: Releases
+        href: releases/index.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+
+resources:
+  - releases/**/* 

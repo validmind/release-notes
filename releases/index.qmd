@@ -1,0 +1,14 @@
+---
+title: "Release Notes"
+listing:
+  contents: .
+  type: default
+  sort: date desc
+  categories: true
+  sort-ui: true
+  filter-ui: true
+page-layout: full
+# title-block-banner: true
+---
+
+Browse all ValidMind release notes below. Each post details the changes and enhancements for a specific release.
