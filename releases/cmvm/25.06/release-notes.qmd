@@ -1,0 +1,125 @@
+---
+title: "25.06 release notes"
+date: "May 30, 2025"
+sidebar: validmind-installation
+toc-expand: true
+# Content edited by AI - 2025-06-02 08:15
+# Content validated by AI - 2025-06-02 08:15
+# Content overwritten from an earlier version - 2025-06-02 08:15
+---
+
+## Backend
+<!--- Tag: [cmvm/25.06](https://github.com/validmind/backend/releases/tag/cmvm/25.06) --->
+<!--- Compare API call: gh api repos/validmind/backend/compare/9a25cb2452a9b02dec0fb6944020765d43660a35...9a25cb2452a9b02dec0fb6944020765d43660a35 --->
+
+<!--- PR #1531: https://github.com/validmind/backend/pull/1531 --->
+<!--- Labels: enhancement --->
+### Introduce new API for custom fields permissions (#1531)
+
+We have added new routes for retrieving permissions for custom fields. This update may introduce some changes that could potentially affect existing functionalities.
+
+Here are the key changes:
+
+- Workflow update: The CASBIN database URI in the GitHub Actions workflow has been updated. It now uses the service alias "db" instead of "host.docker.internal".
+
+- Admin user management improvements: The admin user management script now explicitly uses the Flask app context to ensure that the database and application resources are properly accessible. The logic for upserting users based on the authentication configuration has been refactored for clarity.
+
+- RBAC and SQL initialization enhancements: File handling in the RBAC utilities now uses context managers to improve resource safety and error handling. The initialization function for role-based access control verifies the existence of required SQL files, logs the process, and gracefully handles exceptions by rolling back on errors.
+
+- Custom fields API refactoring: The old custom fields endpoints have been removed in favor of a new namespace that consolidates custom field code testing and permissions retrieval endpoints. A new method has been added in the database group module to retrieve roles (excluding admin roles) with proper read/write permissions for a given custom field key.
+
+- Additional logging and error handling: More detailed logging has been introduced across modules to assist with troubleshooting and monitoring.
+
+- Test improvements: Integration tests across text editor file uploads and custom field endpoints have been updated. These tests ensure XSS sanitization, file size validations, and proper serialization of role data. They also cover cases for unauthorized access and non-existent custom fields.
+
+<!-- ### Changes with no label -->
+
+
+<!--- PR #1536: https://github.com/validmind/backend/pull/1536 --->
+<!--- Labels: none --->
+<!--- ### Updated production with the latest staging changes (#1536) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1535: https://github.com/validmind/backend/pull/1535 --->
+<!--- Labels: none --->
+<!--- ### Merged main branch into staging branch (#1535) --->
+<!-- No release notes or summary provided. -->
+
+
+## Frontend
+<!--- Tag: [cmvm/25.06](https://github.com/validmind/frontend/releases/tag/cmvm/25.06) --->
+<!--- Compare API call: gh api repos/validmind/frontend/compare/8d27e60a09a075a3d625d9044bd4ba5add36f9e0...8d27e60a09a075a3d625d9044bd4ba5add36f9e0 --->
+
+<!--- PR #1419: https://github.com/validmind/frontend/pull/1419 --->
+<!--- Labels: enhancement --->
+### Settings page reorganization (#1419)
+
+We have reorganized the settings page to improve categorization and ease of use. The settings are now divided into three main categories: General Settings, Account Settings, and Privacy Settings. This change enhances readability and provides a clearer understanding of the purpose of each setting.
+
+![Reorganized settings page](448488851-af74eff5-4ef9-43ab-9e78-e188857fc314.png)
+
+![Reorganized settings bar](448488675-6f2ae03c-cb9d-4ee1-bde7-016cde360fe5.png)
+
+The key changes include:
+
+- The **Stakeholders** section has been moved from the general workspace settings to a model-specific section and renamed to **Model Stakeholder Types** where applicable.
+- Admin features like **Workflows** and **Workflow States** are now conditionally rendered and only displayed when user permissions are met.
+- The order and grouping of links, such as **Risk Areas & Validation Guidelines**, have been adjusted to provide a more intuitive navigation experience based on user roles.
+- The overall component structure has been enhanced by replacing some Box components with Stack and using the Heading component for titles, improving readability and accessibility.
+
+The aim of these changes is to improve the maintainability, user experience, and adaptability of the settings interface based on user roles and permissions.
+
+<!--- PR #1423: https://github.com/validmind/frontend/pull/1423 --->
+<!--- Labels: enhancement --->
+### Enhanced management of custom field permissions (#1423)
+
+This release introduces enhanced functionality for managing custom field permissions, focusing on three key areas:
+
+- In the API layer, we've added a new asynchronous function, `GetFieldPermissions`. This function fetches permissions for a custom field and returns an object containing separate lists for write and read roles. We've also refactored some existing API functions for cleaner formatting.
+
+- In the `CustomFieldModal` component, we've updated the import for `CodeTestResponse` to align with the new custom fields model.
+
+- The `useCustomFieldPermissions` hook now utilizes the `GetFieldPermissions` API function, replacing the previous manual iteration over organization roles to determine update permissions. This simplifies the logic by directly setting update roles from the 'write' permissions received from the API.
+
+We've also introduced a new type, `TCustomFieldPermissions`, in the custom_fields model. This consolidates the structure for field permissions and ensures type consistency across the codebase.
+
+These changes enhance the clarity and efficiency of permission handling for custom fields by centralizing permission-related logic in the API and reducing repetitive code in UI components.
+
+<!-- ### Changes with no label -->
+
+
+<!--- PR #1431: https://github.com/validmind/frontend/pull/1431 --->
+<!--- Labels: none --->
+<!--- ### Merged main branch into staging for version `1.36.3` (#1431) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1432: https://github.com/validmind/frontend/pull/1432 --->
+<!--- Labels: none --->
+<!--- ### Updated production to version `prod-1.36.3` from staging (#1432) --->
+<!-- No release notes or summary provided. -->
+
+
+<!-- ## Agents -->
+<!--- Tag: [cmvm/25.06](https://github.com/validmind/agents/releases/tag/cmvm/25.06) --->
+<!--- Compare API call: gh api repos/validmind/agents/compare/7296184079d435d4c14b3a9af81dcf2ed3c5f8a1...7296184079d435d4c14b3a9af81dcf2ed3c5f8a1 --->
+
+<!-- ### Changes with no label -->
+
+
+<!--- PR #30: https://github.com/validmind/agents/pull/30 --->
+<!--- Labels: none --->
+<!--- ### Merging main branch into production branch (#30) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- ## Documentation --->
+<!--- Tag: [cmvm/25.06](https://github.com/validmind/documentation/releases/tag/cmvm/25.06) --->
+<!--- Compare API call: gh api repos/validmind/documentation/compare/01f652d63c5c2897688a76ad8ca89ea50973c492...01f652d63c5c2897688a76ad8ca89ea50973c492 --->
+<!-- No public PRs found for this release -->
+
+<!--- ## Validmind-library --->
+<!--- Tag: [cmvm/25.06](https://github.com/validmind/validmind-library/releases/tag/cmvm/25.06) --->
+<!--- Compare API call: gh api repos/validmind/validmind-library/compare/cmvm/25.06...cmvm/25.06 --->
+<!-- No public PRs found for this release -->

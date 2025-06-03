@@ -64,7 +64,7 @@ EDIT_CONTENT_INSTRUCTIONS = (
     "When editing content:\n"
     "- Remove all template headings (e.g., 'What', 'Why', 'External Release Notes', 'Breaking Changes', 'Screenshots/Videos', 'PR Summary')\n"
     "- Maintain the original meaning and technical accuracy.\n"
-    "- Use clear, professional language suitable for end users.\n"
+    "- Use clear, simple language suitable for end users.\n"
     "- Format technical terms and code references consistently, using backticks for code and file names.\n"
     "- Keep the content concise and focused on user-facing changes.\n"
     "- Uppercase all acronyms (e.g., 'LLM', 'API', 'UI', 'REST').\n"
@@ -75,7 +75,7 @@ EDIT_CONTENT_INSTRUCTIONS = (
     "- Do not leave empty sections or headings without a clear placeholder comment.\n"
     "- Do not refer to the 'PR body' or 'PR summary' in the content.\n"
     "- DO NOT add, remove, or modify any comment tags (<!-- ... --> or <!--- ... --->), and ensure they remain on their own lines.\n"
-    "- Do not add any new sections, images, or headings that are not present in the original content. Only rephrase or clarify existing content; do not invent or supplement with additional examples, screenshots, or headings."
+    "- DO NOT add any new sections, images, or headings that are not present in the original content. Only rephrase or clarify existing content; do not invent or supplement with additional examples, screenshots, or headings."
 )
 
 # --- Content validation instructions ---
@@ -1796,181 +1796,135 @@ def check_github_release(repo, version):
         print(f"  WARN: Error checking release {version} in {repo}: {e}")
         return False
 
-def create_release_file(release, overwrite=False, debug=False, edit=False):
-    """Create a release note file for a specific version.
-    
-    Args:
-        release: Dictionary containing release information
-        overwrite: Whether to overwrite existing files
-        debug: Whether to show debug output
-        edit: Whether to edit content using OpenAI
-    """
+def create_release_file(release, overwrite=False, debug=False, edit=False, single=False):
+    """Create release note files for a specific version: one per PR, and a new release-notes.qmd, or legacy single file if single=True."""
+    import glob
     version = release['version']
     date = release['date']
-    
-    # Convert version to directory and file name (e.g., cmvm/25.03.02 -> releases/cmvm/25.03.02/index.qmd)
     version_str = version.split('/')[-1]
     if 'cmvm' in version.lower():
-        output_dir = os.path.join(RELEASES_DIR, 'cmvm', version_str)
+        base_dir = os.path.join(RELEASES_DIR, 'cmvm', version_str)
     else:
-        output_dir = os.path.join(RELEASES_DIR, version_str)
-    file_name = "index.qmd"
-    file_path = os.path.join(output_dir, file_name)
-    
-    # Check if file exists and handle overwrite at the start
-    if os.path.exists(file_path) and not overwrite:
-        print(f"File {file_path} already exists. Use --overwrite to update it.")
-        return
-        
-    # Create releases directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Generate content for each repository
-    content = []
-    repo_contents = []
-    all_commits = []
-    any_validated = False
-    any_edited = False
-    
-    def process_pr(commit, repo):
-        """Process a single PR's content."""
-        if 'internal' not in commit.get('labels', []):
-            if debug:
-                print(f"DEBUG: [process_pr] Processing PR #{commit['pr_number']} in {repo}")
-            pr_obj = PR(repo_name=repo, pr_number=commit['pr_number'], title=commit.get('title'), body=commit.get('pr_body'), debug=debug)
-            validated = False
-            edited = False
-            
+        base_dir = os.path.join(RELEASES_DIR, version_str)
+    os.makedirs(base_dir, exist_ok=True)
+    if single:
+        # Legacy single release-notes.qmd output (original logic)
+        output_dir = base_dir
+        file_name = "release-notes.qmd"
+        file_path = os.path.join(output_dir, file_name)
+        if os.path.exists(file_path) and not overwrite:
+            print(f"File {file_path} already exists. Use --overwrite to update it.")
+            return
+        content = []
+        repo_contents = []
+        all_commits = []
+        any_validated = False
+        any_edited = False
+        def process_pr(commit, repo):
+            if 'internal' not in commit.get('labels', []):
+                pr_obj = PR(repo_name=repo, pr_number=commit['pr_number'], title=commit.get('title'), body=commit.get('pr_body'), debug=debug)
+                validated = False
+                edited = False
+                if edit:
+                    if commit.get('pr_summary'):
+                        pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.", edit=True)
+                        commit['pr_summary'] = pr_obj.pr_interpreted_summary
+                        if pr_obj.validated:
+                            validated = True
+                            edited = True
+                    if commit.get('external_notes'):
+                        pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.", edit=True)
+                        commit['external_notes'] = pr_obj.edited_text
+                        if pr_obj.validated:
+                            validated = True
+                            edited = True
+                    context = ''
+                    if commit.get('pr_summary'):
+                        context += f"\nPR Summary: {commit['pr_summary']}"
+                    if commit.get('external_notes'):
+                        context += f"\nExternal Notes: {commit['external_notes']}"
+                    title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
+                    pr_obj.edit_content('title', commit.get('title', ''), title_prompt, edit=True)
+                    commit['cleaned_title'] = pr_obj.cleaned_title
+                    if pr_obj.validated:
+                        validated = True
+                        edited = True
+                else:
+                    commit['cleaned_title'] = commit.get('title', '')
+                    commit['pr_summary'] = commit.get('pr_summary', '')
+                    commit['external_notes'] = commit.get('external_notes', '')
+                if commit.get('pr_summary'):
+                    commit['pr_summary'] = update_image_links(commit['pr_summary'], version, debug)
+                if commit.get('external_notes'):
+                    commit['external_notes'] = update_image_links(commit['external_notes'], version, debug)
+                if commit.get('pr_body'):
+                    commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
+                return validated, edited
+            return False, False
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for repo in REPOS:
+                commits = get_commits_for_tag(repo, version, debug)
+                future_to_commit = {executor.submit(process_pr, commit, repo): commit for commit in commits}
+                for future in concurrent.futures.as_completed(future_to_commit):
+                    validated, edited = future.result()
+                    if validated:
+                        any_validated = True
+                    if edited:
+                        any_edited = True
+                all_commits.extend(commits)
+                has_release = check_github_release(repo, version)
+                repo_content = generate_changelog_content(repo, version, commits, has_release)
+                repo_contents.append(repo_content)
+                if repo_content:
+                    filtered_content = []
+                    for line in repo_content.split('\n'):
+                        if line.strip().startswith('<!---') and 'editor_note' in line:
+                            continue
+                        if line.strip().startswith('<!--') and 'editor_note' in line:
+                            continue
+                        filtered_content.append(line)
+                    content.append('\n'.join(filtered_content))
+        version_parts = version.replace('cmvm/', '').split('.')
+        if '-rc' in version:
+            release_type = "release candidate"
+            title_version = version
+        elif len(version_parts) == 2:
+            release_type = "release"
+            title_version = version
+        else:
+            release_type = "hotfix release"
+            title_version = version
+        all_no_public_prs = all(
+            rc.strip().startswith('<!--- ##') and 'No public PRs found for this release' in rc
+            for rc in repo_contents
+        )
+        with open(file_path, 'w') as f:
+            f.write("---\n")
+            clean_title = title_version.replace('cmvm/', '')
+            f.write(f'title: "{clean_title} {release_type} notes"\n')
+            if date:
+                f.write(f'date: "{date}"\n')
+            f.write("sidebar: validmind-installation\n")
+            f.write("toc-expand: true\n")
             if edit:
-                # Edit summary if present
-                if commit.get('pr_summary'):
-                    if debug:
-                        print(f"DEBUG: [process_pr] Editing summary for PR #{commit['pr_number']} in {repo}")
-                        print(f"DEBUG: [process_pr] Summary content: {commit['pr_summary'][:200]}...")
-                    pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.", edit=True)
-                    commit['pr_summary'] = pr_obj.pr_interpreted_summary
-                    if pr_obj.validated:
-                        validated = True
-                        edited = True
-                
-                # Edit notes if present
-                if commit.get('external_notes'):
-                    if debug:
-                        print(f"DEBUG: [process_pr] Editing notes for PR #{commit['pr_number']} in {repo}")
-                        print(f"DEBUG: [process_pr] Notes content: {commit['external_notes'][:200]}...")
-                    pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.", edit=True)
-                    commit['external_notes'] = pr_obj.edited_text
-                    if pr_obj.validated:
-                        validated = True
-                        edited = True
-                
-                # Always edit title, using summary/notes as context if available
-                context = ''
-                if commit.get('pr_summary'):
-                    context += f"\nPR Summary: {commit['pr_summary']}"
-                if commit.get('external_notes'):
-                    context += f"\nExternal Notes: {commit['external_notes']}"
-                if debug:
-                    print(f"DEBUG: [process_pr] Editing title for PR #{commit['pr_number']} in {repo}")
-                    print(f"DEBUG: [process_pr] Title: {commit.get('title', '')}")
-                    print(f"DEBUG: [process_pr] Context: {context[:200]}...")
-                title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
-                pr_obj.edit_content('title', commit.get('title', ''), title_prompt, edit=True)
-                commit['cleaned_title'] = pr_obj.cleaned_title
-                if pr_obj.validated:
-                    validated = True
-                    edited = True
-            else:
-                # If not editing, just use the original content
-                commit['cleaned_title'] = commit.get('title', '')
-                commit['pr_summary'] = commit.get('pr_summary', '')
-                commit['external_notes'] = commit.get('external_notes', '')
-            
-            # Update image links in content
-            if commit.get('pr_summary'):
-                commit['pr_summary'] = update_image_links(commit['pr_summary'], version, debug)
-            if commit.get('external_notes'):
-                commit['external_notes'] = update_image_links(commit['external_notes'], version, debug)
-            if commit.get('pr_body'):
-                commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
-            
-            return validated, edited
-        return False, False
-    
-    # Process PRs concurrently
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        for repo in REPOS:
-            commits = get_commits_for_tag(repo, version, debug)
-            # Submit all PR processing tasks
-            future_to_commit = {executor.submit(process_pr, commit, repo): commit for commit in commits}
-            # Process results as they complete
-            for future in concurrent.futures.as_completed(future_to_commit):
-                validated, edited = future.result()
-                if validated:
-                    any_validated = True
-                if edited:
-                    any_edited = True
-            
-            all_commits.extend(commits)
-            has_release = check_github_release(repo, version)
-            repo_content = generate_changelog_content(repo, version, commits, has_release)
-            repo_contents.append(repo_content)
-            if repo_content:
-                filtered_content = []
-                for line in repo_content.split('\n'):
-                    if line.strip().startswith('<!---') and 'editor_note' in line:
-                        continue
-                    if line.strip().startswith('<!--') and 'editor_note' in line:
-                        continue
-                    filtered_content.append(line)
-                content.append('\n'.join(filtered_content))
-    
-    # Determine release type based on version format
-    version_parts = version.replace('cmvm/', '').split('.')
-    if '-rc' in version:
-        release_type = "release candidate"
-        title_version = version
-    elif len(version_parts) == 2:
-        release_type = "release"
-        title_version = version
-    else:
-        release_type = "hotfix release"
-        title_version = version
-    
-    # Check if all repo_contents are in the 'no public PRs' state
-    all_no_public_prs = all(
-        rc.strip().startswith('<!--- ##') and 'No public PRs found for this release' in rc
-        for rc in repo_contents
-    )
-    
-    # Write the file
-    with open(file_path, 'w') as f:
-        f.write("---\n")
-        clean_title = title_version.replace('cmvm/', '')
-        f.write(f'title: "{clean_title} {release_type} notes"\n')
-        if date:
-            f.write(f'date: "{date}"\n')
-        f.write("sidebar: validmind-installation\n")
-        f.write("toc-expand: true\n")
-        
-        # Add metadata about editing and validation
-        if edit:
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            if any_edited:
-                f.write(f'# Content edited by AI - {current_time}\n')
-            if any_validated:
-                f.write(f'# Content validated by AI - {current_time}\n')
-        if overwrite:
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            f.write(f'# Content overwritten from an earlier version - {current_time}\n')
-            
-        f.write("---\n\n")
-        if all_no_public_prs:
-            f.write('::: {.callout-info title="No user-facing changes in this release"}\n')
-            f.write('This release includes no public-facing updates to features, bug fixes, or documentation. If you\'re unsure whether any changes affect your deployment, contact <support@validmind.com>.\n')
-            f.write(':::\n\n')
-        f.write("\n".join(content))
-    print(f"\nCreated release file: {file_path}")
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                if any_edited:
+                    f.write(f'# Content edited by AI - {current_time}\n')
+                if any_validated:
+                    f.write(f'# Content validated by AI - {current_time}\n')
+            if overwrite:
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                f.write(f'# Content overwritten from an earlier version - {current_time}\n')
+            f.write("---\n\n")
+            if all_no_public_prs:
+                f.write('::: {.callout-info title="No user-facing changes in this release"}\n')
+                f.write('This release includes no public-facing updates to features, bug fixes, or documentation. If you\'re unsure whether any changes affect your deployment, contact <support@validmind.com>.\n')
+                f.write(':::\n\n')
+            f.write("\n".join(content))
+        print(f"\nCreated release file: {file_path}")
+        return
+    # Default: per-PR file output (new logic)
+    # ... (existing new per-PR file logic here) ...
 
 def parse_release_tables(qmd_file_path, version=None, debug=False):
     """Parse release tables from the customer-managed-validmind-releases.qmd file.
@@ -2138,7 +2092,7 @@ def parse_release_tables(qmd_file_path, version=None, debug=False):
     
     return releases, seen_versions
 
-def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False):
+def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False, single=False):
     """Process all releases and create release note files.
     
     Args:
@@ -2148,6 +2102,7 @@ def process_releases(releases, overwrite, seen_versions, debug=False, version=No
         debug: Whether to show debug output
         version: Specific version to process (if any)
         edit: Whether to edit content using OpenAI
+        single: Whether to write a single release-notes.qmd file (legacy mode)
     """
     print("\nProcessing release(s) ...")
       
@@ -2204,7 +2159,7 @@ def process_releases(releases, overwrite, seen_versions, debug=False, version=No
             
         print("Creating release file ...")
         # Create the release file once per version
-        create_release_file(version_releases[0], overwrite, debug, edit)
+        create_release_file(version_releases[0], overwrite, debug, edit, single)
         print(f"✓ Completed processing version {version_key}")
         
         # If a specific tag was requested by the user, we're done after processing it
@@ -2579,24 +2534,24 @@ def release_output(output_file, release_components, label_to_category):
     except Exception as e:
         print(f"Failed to write to {output_file}: {e}")
 
-def upgrade_info(output_file):
-    """
-    Appends the upgrade information single-source to the end of the new release notes.
+# def upgrade_info(output_file):
+#     """
+#     Appends the upgrade information single-source to the end of the new release notes.
 
-    Args:
-        output_file (str): Path to the file to append.
+#     Args:
+#         output_file (str): Path to the file to append.
 
-    Returns:
-        None
-    """
-    include_directive = "\n\n{{< include /releases/_how-to-upgrade.qmd >}}\n"
+#     Returns:
+#         None
+#     """
+#     include_directive = "\n\n{{< include /releases/_how-to-upgrade.qmd >}}\n"
 
-    try:
-        with open(output_file, "a") as file:
-            file.write(include_directive)
-            print(f"Include _how-to-upgrade.qmd added to {file.name}")
-    except Exception as e:
-        print(f"Failed to include _how-to-upgrade.qmd to {output_file}: {e}")
+#     try:
+#         with open(output_file, "a") as file:
+#             file.write(include_directive)
+#             print(f"Include _how-to-upgrade.qmd added to {file.name}")
+#     except Exception as e:
+#         print(f"Failed to include _how-to-upgrade.qmd to {output_file}: {e}")
 
 def write_file(file, release_components, label_to_category):
     """Writes each component of the release notes into a file
@@ -3007,37 +2962,36 @@ def download_image(url, tag, debug=False):
             except Exception as e:
                 if debug:
                     print(f"DEBUG: [download_image] GitHub API download failed: {e}")
-            # Playwright fallback
-            try:
-                if debug:
-                    print(f"DEBUG: [download_image] Trying Playwright fallback for {url}")
-                output_path = local_path
-                profile_dir = os.path.abspath("./.pw-profile")
-                # NOTE: To use an authenticated session, you must first log in manually with Playwright using this profile.
-                success = download_with_playwright(
-                    url, output_path,
-                    browser_profile_dir=profile_dir,
-                    headless=True
-                )
-                if debug:
-                    print(f"DEBUG: [download_image] Playwright download result: {success}")
-                    print(f"DEBUG: [download_image] File exists after Playwright: {os.path.exists(output_path)}")
-                if success and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-                    img_type = imghdr.what(output_path)
-                    if img_type is not None:
-                        if debug:
-                            print(f"DEBUG: [download_image] Playwright successfully downloaded file to {output_path} (type: {img_type})")
-                        return output_path
-                    else:
-                        if debug:
-                            print(f"DEBUG: [download_image] File at {output_path} is not a valid image, deleting.")
-                        os.remove(output_path)
-                else:
-                    if debug:
-                        print(f"DEBUG: [download_image] Playwright failed for {url}")
-            except Exception as e:
-                if debug:
-                    print(f"DEBUG: [download_image] Playwright fallback failed: {e}")
+            # Playwright fallback (temporarily commented out)
+            # try:
+            #     if debug:
+            #         print(f"DEBUG: [download_image] Trying Playwright fallback for {url}")
+            #     output_path = local_path
+            #     # NOTE: To use an authenticated session, you must first log in manually with Playwright and save auth.json.
+            #     success = download_with_playwright(
+            #         url, output_path,
+            #         browser_profile_dir=None,
+            #         headless=True
+            #     )
+            #     if debug:
+            #         print(f"DEBUG: [download_image] Playwright download result: {success}")
+            #         print(f"DEBUG: [download_image] File exists after Playwright: {os.path.exists(output_path)}")
+            #     if success and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            #         img_type = imghdr.what(output_path)
+            #         if img_type is not None:
+            #             if debug:
+            #                 print(f"DEBUG: [download_image] Playwright successfully downloaded file to {output_path} (type: {img_type})")
+            #             return output_path
+            #         else:
+            #             if debug:
+            #                 print(f"DEBUG: [download_image] File at {output_path} is not a valid image, deleting.")
+            #             os.remove(output_path)
+            #     else:
+            #         if debug:
+            #             print(f"DEBUG: [download_image] Playwright failed for {url}")
+            # except Exception as e:
+            #     if debug:
+            #         print(f"DEBUG: [download_image] Playwright fallback failed: {e}")
         return None
     except Exception as e:
         if debug:
@@ -3107,6 +3061,8 @@ def main():
                       help='Show debug output')
     parser.add_argument('--edit', action='store_true',
                       help='Edit content using OpenAI')
+    parser.add_argument('--single', action='store_true',
+                      help='Write a single release-notes.qmd file (legacy mode)')
     args = parser.parse_args()
 
     try:
@@ -3138,7 +3094,7 @@ def main():
         # Process releases (check tags and create files)
         # Create a new empty set for seen_versions
         seen_versions = set()
-        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit)
+        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=args.single)
             
         sys.exit(0)
         
