@@ -1,5 +1,5 @@
 ---
-title: "Revert "Fix: Prevent unauthorized access to inventory model assets""
+title: "Revert 'Fix: Prevent unauthorized access to inventory model assets'"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true

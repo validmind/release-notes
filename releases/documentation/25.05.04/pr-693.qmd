@@ -1,5 +1,5 @@
 ---
-title: "Add missing "Export ongoing monitoring document" section to docs"
+title: "Add missing 'Export ongoing monitoring document' section to docs"
 categories: [documentation, 25.05.04, hotfix, documentation]
 sidebar: release-notes
 toc-expand: true
