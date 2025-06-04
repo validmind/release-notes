@@ -150,6 +150,7 @@ EDIT_PASS_2_INSTRUCTIONS = (
     "- Remove duplicate or near-duplicate sentences and ideas\n"
     "- Retain only the clearest version of each unique point\n"
     "- Avoid shortening or rephrasing at this stage\n"
+    "- If there are no breaking changes associated with this update, remove any reference to breaking changes\n"
     "Input: grouped text from Pass 1. Output only the deduplicated text."
 )
 
@@ -209,9 +210,6 @@ def classify_section(section_title, section_content, debug=False):
             title=section_title,
             content=section_content
         )
-        
-        if debug:
-            print("DEBUG: [classify_section] Sending prompt to OpenAI ...")
             
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -1994,252 +1992,249 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
     else:
         base_dir = os.path.join(RELEASES_DIR, version_str)
     os.makedirs(base_dir, exist_ok=True)
-    if single:
-        # Legacy single release-notes.qmd output (original logic)
-        output_dir = base_dir
-        file_name = "release-notes.qmd"
-        file_path = os.path.join(output_dir, file_name)
-        if os.path.exists(file_path) and not overwrite:
-            print(f"File {file_path} already exists. Use --overwrite to update it.")
-            return
-        content = []
-        repo_contents = []
-        all_commits = []
-        any_validated = False
-        any_edited = False
-        def process_pr(commit, repo):
-            # Skip internal PRs
-            if 'internal' in commit.get('labels', []):
-                return False, False
-            # Skip merge PRs
-            if is_merge_pr(commit.get('title', '')):
-                if debug:
-                    print(f"DEBUG: [process_pr] Skipping merge PR #{commit.get('pr_number')} in {repo} (merge PR detected by title)")
-                return False, False
-            pr_obj = PR(repo_name=repo, pr_number=commit['pr_number'], title=commit.get('title'), body=commit.get('pr_body'), debug=debug)
-            validated = False
-            edited = False
-            if edit:
-                if commit.get('pr_summary'):
-                    pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.", edit=True)
-                    commit['pr_summary'] = pr_obj.pr_interpreted_summary
-                    if pr_obj.validated:
-                        validated = True
-                        edited = True
-                if commit.get('external_notes'):
-                    pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.", edit=True)
-                    commit['external_notes'] = pr_obj.edited_text
-                    if pr_obj.validated:
-                        validated = True
-                        edited = True
-                context = ''
-                if commit.get('pr_summary'):
-                    context += f"\nPR Summary: {commit['pr_summary']}"
-                if commit.get('external_notes'):
-                    context += f"\nExternal Notes: {commit['external_notes']}"
-                title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
-                pr_obj.edit_content('title', commit.get('title', ''), title_prompt, edit=True)
-                commit['cleaned_title'] = pr_obj.cleaned_title
+    # Always use the legacy single release-notes.qmd output logic
+    output_dir = base_dir
+    file_name = "release-notes.qmd"
+    file_path = os.path.join(output_dir, file_name)
+    if os.path.exists(file_path) and not overwrite:
+        print(f"File {file_path} already exists. Use --overwrite to update it.")
+        return
+    content = []
+    repo_contents = []
+    all_commits = []
+    any_validated = False
+    any_edited = False
+    def process_pr(commit, repo):
+        # Skip internal PRs
+        if 'internal' in commit.get('labels', []):
+            return False, False
+        # Skip merge PRs
+        if is_merge_pr(commit.get('title', '')):
+            if debug:
+                print(f"DEBUG: [process_pr] Skipping merge PR #{commit.get('pr_number')} in {repo} (merge PR detected by title)")
+            return False, False
+        pr_obj = PR(repo_name=repo, pr_number=commit['pr_number'], title=commit.get('title'), body=commit.get('pr_body'), debug=debug)
+        validated = False
+        edited = False
+        if edit:
+            if commit.get('pr_summary'):
+                pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.", edit=True)
+                commit['pr_summary'] = pr_obj.pr_interpreted_summary
                 if pr_obj.validated:
                     validated = True
                     edited = True
-            else:
-                commit['cleaned_title'] = commit.get('title', '')
-                commit['pr_summary'] = commit.get('pr_summary', '')
-                commit['external_notes'] = commit.get('external_notes', '')
-            if commit.get('pr_summary') and adjust_heading_levels:
-                commit['pr_summary'] = adjust_heading_levels_fn(commit['pr_summary'], min_level=4, debug=debug)
-            if commit.get('external_notes') and adjust_heading_levels:
-                commit['external_notes'] = adjust_heading_levels_fn(commit['external_notes'], min_level=4, debug=debug)
-            if commit.get('pr_body') and adjust_heading_levels:
-                commit['pr_body'] = adjust_heading_levels_fn(commit['pr_body'], min_level=4, debug=debug)
-            if commit.get('pr_body'):
-                commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
             if commit.get('external_notes'):
-                commit['external_notes'] = update_image_links(commit['external_notes'], version, debug)
-            if commit.get('pr_body'):
-                commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
-            return validated, edited
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            for repo in REPOS:
-                commits = get_commits_for_tag(repo, version, debug)
-                future_to_commit = {executor.submit(process_pr, commit, repo): commit for commit in commits}
-                for future in concurrent.futures.as_completed(future_to_commit):
-                    validated, edited = future.result()
-                    if validated:
-                        any_validated = True
-                    if edited:
-                        any_edited = True
-                all_commits.extend(commits)
-                has_release = check_github_release(repo, version)
-                repo_content = generate_changelog_content(repo, version, commits, has_release)
-                repo_contents.append(repo_content)
-                if repo_content:
-                    filtered_content = []
-                    for line in repo_content.split('\n'):
-                        if line.strip().startswith('<!---') and 'editor_note' in line:
-                            continue
-                        if line.strip().startswith('<!--') and 'editor_note' in line:
-                            continue
-                        filtered_content.append(line)
-                    content.append('\n'.join(filtered_content))
-        
-        # --- Add high-level summary logic here ---
-        def has_user_facing_content(commit):
-            return bool(
-                (commit.get('external_notes') and commit['external_notes'].strip()) or
-                (commit.get('pr_summary') and commit['pr_summary'].strip())
-            )
-        def generate_highlevel_summary(commits, char_limit=250):
-            # Only include PRs with user-facing content
-            enhancement_titles = [
-                c.get('cleaned_title') or c.get('title')
-                for c in commits
-                if 'enhancement' in (c.get('labels') or []) and has_user_facing_content(c)
-            ]
-            other_titles = [
-                c.get('cleaned_title') or c.get('title')
-                for c in commits
-                if 'enhancement' not in (c.get('labels') or []) and has_user_facing_content(c)
-            ]
-            ordered_titles = [t for t in enhancement_titles if t] + [t for t in other_titles if t]
-            if not ordered_titles:
-                return "This release includes no user-facing changes."
-            # Clean and format titles
-            def clean_title(title):
-                t = title.strip()
-                if t.endswith('.'):
-                    t = t[:-1]
-                return t
-            cleaned_titles = [clean_title(t) for t in ordered_titles]
-            if not cleaned_titles:
-                return "This release includes no user-facing changes."
-            summary = "This release includes "
-            listed = []
-            truncated = False
-            for i, title in enumerate(cleaned_titles):
-                # Lowercase all but the first title
-                if i == 0:
-                    t = title
-                else:
-                    t = title[0].lower() + title[1:] if title else title
-                next_list = listed + [t]
-                # Use Oxford comma and 'and' if this is the last item and not truncated
-                if i == len(cleaned_titles) - 1:
-                    candidate = summary + (", ".join(next_list[:-1]) + (", and " if len(next_list) > 1 else "") + next_list[-1] if len(next_list) > 1 else next_list[0]) + "."
-                else:
-                    candidate = summary + ", ".join(next_list) + ", and more."
-                if len(candidate) > char_limit:
-                    truncated = True
-                    break
-                listed.append(t)
-            if truncated:
-                summary += ", ".join(listed) + ", and more."
-            else:
-                if len(listed) == 1:
-                    summary += listed[0] + "."
-                else:
-                    summary += ", ".join(listed[:-1]) + ", and " + listed[-1] + "."
-            return summary
-        def validate_summary(summary, enhancement_titles):
-            if enhancement_titles:
-                return any(t and t.lower() in summary.lower() for t in enhancement_titles)
-            return True
-        # --- LLM proofread step ---
-        def proofread_summary_with_llm(summary, max_tries=5, debug=False):
-            prompt = (
-                "Proofread and streamline the following release summary for clarity and natural flow. "
-                "Keep it concise, user-facing, and ensure it starts with 'This release includes'. "
-                "Do not add or remove features, just improve the language and flow. "
-                "Return only the improved summary.\n\n"
-                f"Summary:\n{summary}"
-            )
-            for attempt in range(max_tries):
-                try:
-                    response = client.chat.completions.create(
-                        model="gpt-4o",
-                        messages=[
-                            {"role": "system", "content": "You are a professional technical writer."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        max_tokens=200,
-                        temperature=0.2
-                    )
-                    improved = response.choices[0].message.content.strip()
-                    # Simple validation: must start with the required phrase and not be empty
-                    if improved.lower().startswith("this release includes") and len(improved) > 30:
-                        return improved
-                    if debug:
-                        print(f"Proofread attempt {attempt+1} failed validation: {improved}")
-                except Exception as e:
-                    if debug:
-                        print(f"Proofread attempt {attempt+1} failed: {e}")
-            # Fallback to original if all attempts fail
-            return summary
+                pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.", edit=True)
+                commit['external_notes'] = pr_obj.edited_text
+                if pr_obj.validated:
+                    validated = True
+                    edited = True
+            context = ''
+            if commit.get('pr_summary'):
+                context += f"\nPR Summary: {commit['pr_summary']}"
+            if commit.get('external_notes'):
+                context += f"\nExternal Notes: {commit['external_notes']}"
+            title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
+            pr_obj.edit_content('title', commit.get('title', ''), title_prompt, edit=True)
+            commit['cleaned_title'] = pr_obj.cleaned_title
+            if pr_obj.validated:
+                validated = True
+                edited = True
+        else:
+            commit['cleaned_title'] = commit.get('title', '')
+            commit['pr_summary'] = commit.get('pr_summary', '')
+            commit['external_notes'] = commit.get('external_notes', '')
+        if commit.get('pr_summary') and adjust_heading_levels:
+            commit['pr_summary'] = adjust_heading_levels_fn(commit['pr_summary'], min_level=4, debug=debug)
+        if commit.get('external_notes') and adjust_heading_levels:
+            commit['external_notes'] = adjust_heading_levels_fn(commit['external_notes'], min_level=4, debug=debug)
+        if commit.get('pr_body') and adjust_heading_levels:
+            commit['pr_body'] = adjust_heading_levels_fn(commit['pr_body'], min_level=4, debug=debug)
+        if commit.get('pr_body'):
+            commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
+        if commit.get('external_notes'):
+            commit['external_notes'] = update_image_links(commit['external_notes'], version, debug)
+        if commit.get('pr_body'):
+            commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
+        return validated, edited
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for repo in REPOS:
+            commits = get_commits_for_tag(repo, version, debug)
+            future_to_commit = {executor.submit(process_pr, commit, repo): commit for commit in commits}
+            for future in concurrent.futures.as_completed(future_to_commit):
+                validated, edited = future.result()
+                if validated:
+                    any_validated = True
+                if edited:
+                    any_edited = True
+            all_commits.extend(commits)
+            has_release = check_github_release(repo, version)
+            repo_content = generate_changelog_content(repo, version, commits, has_release)
+            repo_contents.append(repo_content)
+            if repo_content:
+                filtered_content = []
+                for line in repo_content.split('\n'):
+                    if line.strip().startswith('<!---') and 'editor_note' in line:
+                        continue
+                    if line.strip().startswith('<!--') and 'editor_note' in line:
+                        continue
+                    filtered_content.append(line)
+                content.append('\n'.join(filtered_content))
+    
+    # --- Add high-level summary logic here ---
+    def has_user_facing_content(commit):
+        return bool(
+            (commit.get('external_notes') and commit['external_notes'].strip()) or
+            (commit.get('pr_summary') and commit['pr_summary'].strip())
+        )
+    def generate_highlevel_summary(commits, char_limit=250):
+        # Only include PRs with user-facing content
         enhancement_titles = [
             c.get('cleaned_title') or c.get('title')
-            for c in all_commits
+            for c in commits
             if 'enhancement' in (c.get('labels') or []) and has_user_facing_content(c)
         ]
-        summary = generate_highlevel_summary(all_commits)
-        summary = proofread_summary_with_llm(summary, max_tries=5, debug=debug)
-        is_valid = validate_summary(summary, enhancement_titles)
-        # --- End summary logic ---
-        
-        version_parts = version.replace('cmvm/', '').split('.')
-        if '-rc' in version:
-            release_type = "Release candidate"
-            title_version = version
-        elif len(version_parts) == 2:
-            release_type = "Release"
-            title_version = version
-        else:
-            release_type = "Hotfix release"
-            title_version = version
-        all_no_public_prs = all(
-            rc.strip().startswith('<!--- ##') and 'No public PRs found for this release' in rc
-            for rc in repo_contents
-        )
-        with open(file_path, 'w') as f:
-            f.write("---\n")
-            clean_title = title_version.replace('cmvm/', '')
-            normalized_version = version.replace('cmvm/', '')
-            f.write(f'title: "{clean_title} {release_type} notes"\n')
-            if date:
-                f.write(f'date: "{date}"\n')
-            # Add categories field
-            if '-rc' in version:
-                yaml_release_type = 'release-candidate'
-            elif len(version_parts) == 2:
-                yaml_release_type = 'release'
+        other_titles = [
+            c.get('cleaned_title') or c.get('title')
+            for c in commits
+            if 'enhancement' not in (c.get('labels') or []) and has_user_facing_content(c)
+        ]
+        ordered_titles = [t for t in enhancement_titles if t] + [t for t in other_titles if t]
+        if not ordered_titles:
+            return "This release includes no user-facing changes."
+        # Clean and format titles
+        def clean_title(title):
+            t = title.strip()
+            if t.endswith('.'):
+                t = t[:-1]
+            return t
+        cleaned_titles = [clean_title(t) for t in ordered_titles]
+        if not cleaned_titles:
+            return "This release includes no user-facing changes."
+        summary = "This release includes "
+        listed = []
+        truncated = False
+        for i, title in enumerate(cleaned_titles):
+            # Lowercase all but the first title
+            if i == 0:
+                t = title
             else:
-                yaml_release_type = 'hotfix'
-            f.write(f'categories: [cmvm, {normalized_version}, {yaml_release_type}]\n')
-            f.write("sidebar: validmind-installation\n")
-            f.write("toc-expand: true\n")
-            if edit:
-                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-                if any_edited:
-                    f.write(f'# Content edited by AI - {current_time}\n')
-                if any_validated:
-                    f.write(f'# Content validated by AI - {current_time}\n')
-            if overwrite:
-                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-                f.write(f'# Content overwritten from an earlier version - {current_time}\n')
-            f.write("---\n\n")
-            # Write the summary here
-            f.write(summary + "\n\n")
-            if not is_valid:
-                f.write("<!-- WARNING: Summary may not mention an enhancement PR -->\n\n")
-            if all_no_public_prs:
-                f.write('::: {.callout-info title="No user-facing changes in this release"}\n')
-                f.write('This release includes no public-facing updates to features, bug fixes, or documentation. If you\'re unsure whether any changes affect your deployment, contact <support@validmind.com>.\n')
-                f.write(':::\n\n')
-            f.write("\n".join(content))
-        print(f"\nCreated release file: {file_path}")
-        return
-    # Default: per-PR file output (new logic)
-    # ... (existing new per-PR file logic here) ...
+                t = title[0].lower() + title[1:] if title else title
+            next_list = listed + [t]
+            # Use Oxford comma and 'and' if this is the last item and not truncated
+            if i == len(cleaned_titles) - 1:
+                candidate = summary + (", ".join(next_list[:-1]) + (", and " if len(next_list) > 1 else "") + next_list[-1] if len(next_list) > 1 else next_list[0]) + "."
+            else:
+                candidate = summary + ", ".join(next_list) + ", and more."
+            if len(candidate) > char_limit:
+                truncated = True
+                break
+            listed.append(t)
+        if truncated:
+            summary += ", ".join(listed) + ", and more."
+        else:
+            if len(listed) == 1:
+                summary += listed[0] + "."
+            else:
+                summary += ", ".join(listed[:-1]) + ", and " + listed[-1] + "."
+        return summary
+    def validate_summary(summary, enhancement_titles):
+        if enhancement_titles:
+            return any(t and t.lower() in summary.lower() for t in enhancement_titles)
+        return True
+    # --- LLM proofread step ---
+    def proofread_summary_with_llm(summary, max_tries=5, debug=False):
+        prompt = (
+            "Proofread and streamline the following release summary for clarity and natural flow. "
+            "Keep it concise, user-facing, and ensure it starts with 'This release includes'. "
+            "Do not add or remove features, just improve the language and flow. "
+            "Return only the improved summary.\n\n"
+            f"Summary:\n{summary}"
+        )
+        for attempt in range(max_tries):
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "system", "content": "You are a professional technical writer."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=200,
+                    temperature=0.2
+                )
+                improved = response.choices[0].message.content.strip()
+                # Simple validation: must start with the required phrase and not be empty
+                if improved.lower().startswith("this release includes") and len(improved) > 30:
+                    return improved
+                if debug:
+                    print(f"Proofread attempt {attempt+1} failed validation: {improved}")
+            except Exception as e:
+                if debug:
+                    print(f"Proofread attempt {attempt+1} failed: {e}")
+        # Fallback to original if all attempts fail
+        return summary
+    enhancement_titles = [
+        c.get('cleaned_title') or c.get('title')
+        for c in all_commits
+        if 'enhancement' in (c.get('labels') or []) and has_user_facing_content(c)
+    ]
+    summary = generate_highlevel_summary(all_commits)
+    summary = proofread_summary_with_llm(summary, max_tries=5, debug=debug)
+    is_valid = validate_summary(summary, enhancement_titles)
+    # --- End summary logic ---
+    
+    version_parts = version.replace('cmvm/', '').split('.')
+    if '-rc' in version:
+        release_type = "Release candidate"
+        title_version = version
+    elif len(version_parts) == 2:
+        release_type = "Release"
+        title_version = version
+    else:
+        release_type = "Hotfix release"
+        title_version = version
+    all_no_public_prs = all(
+        rc.strip().startswith('<!--- ##') and 'No public PRs found for this release' in rc
+        for rc in repo_contents
+    )
+    with open(file_path, 'w') as f:
+        f.write("---\n")
+        clean_title = title_version.replace('cmvm/', '')
+        normalized_version = version.replace('cmvm/', '')
+        f.write(f'title: "{clean_title} {release_type} notes"\n')
+        if date:
+            f.write(f'date: "{date}"\n')
+        # Add categories field
+        if '-rc' in version:
+            yaml_release_type = 'release-candidate'
+        elif len(version_parts) == 2:
+            yaml_release_type = 'release'
+        else:
+            yaml_release_type = 'hotfix'
+        f.write(f'categories: [cmvm, {normalized_version}, {yaml_release_type}]\n')
+        f.write("sidebar: validmind-installation\n")
+        f.write("toc-expand: true\n")
+        if edit:
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            if any_edited:
+                f.write(f'# Content edited by AI - {current_time}\n')
+            if any_validated:
+                f.write(f'# Content validated by AI - {current_time}\n')
+        if overwrite:
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            f.write(f'# Content overwritten from an earlier version - {current_time}\n')
+        f.write("---\n\n")
+        # Write the summary here
+        f.write(summary + "\n\n")
+        if not is_valid:
+            f.write("<!-- WARNING: Summary may not mention an enhancement PR -->\n\n")
+        if all_no_public_prs:
+            f.write('::: {.callout-info title="No user-facing changes in this release"}\n')
+            f.write('This release includes no public-facing updates to features, bug fixes, or documentation. If you\'re unsure whether any changes affect your deployment, contact <support@validmind.com>.\n')
+            f.write(':::\n\n')
+        f.write("\n".join(content))
+    print(f"\nCreated release file: {file_path}")
+    return
 
 def parse_release_tables(qmd_file_path, version=None, debug=False):
     """Parse release tables from the customer-managed-validmind-releases.qmd file.
@@ -3339,8 +3334,6 @@ def main():
                       help='Show debug output')
     parser.add_argument('--edit', action='store_true',
                       help='Edit content using OpenAI')
-    parser.add_argument('--single', action='store_true',
-                      help='Write a single release-notes.qmd file (legacy mode)')
     parser.add_argument('--adjust-heading-levels', action='store_true',
                       help='Adjust heading levels in PR text (calls adjust_heading_levels)')
     args = parser.parse_args()
@@ -3373,7 +3366,7 @@ def main():
         # Process releases (check tags and create files)
         # Create a new empty set for seen_versions
         seen_versions = set()
-        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=args.single, adjust_heading_levels=args.adjust_heading_levels)
+        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=False, adjust_heading_levels=args.adjust_heading_levels)
             
         sys.exit(0)
         
