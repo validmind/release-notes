@@ -2212,7 +2212,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         else:
             yaml_release_type = 'hotfix'
         f.write(f'categories: [cmvm, {normalized_version}, {yaml_release_type}]\n')
-        f.write("sidebar: validmind-installation\n")
+        f.write("sidebar: release-notes\n")
         f.write("toc-expand: true\n")
         if edit:
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")

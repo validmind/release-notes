@@ -2,7 +2,7 @@
 title: "25.05-rc1 Release candidate notes"
 date: "April 24, 2025"
 categories: [cmvm, 25.05-rc1, release-candidate]
-sidebar: validmind-installation
+sidebar: release-notes
 toc-expand: true
 # Content edited by AI - 2025-06-04 08:30
 # Content validated by AI - 2025-06-04 08:30

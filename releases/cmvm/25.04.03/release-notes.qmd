@@ -2,7 +2,7 @@
 title: "25.04.03 Hotfix release notes"
 date: "April 10, 2025"
 categories: [cmvm, 25.04.03, hotfix]
-sidebar: validmind-installation
+sidebar: release-notes
 toc-expand: true
 # Content overwritten from an earlier version - 2025-06-04 09:02
 ---

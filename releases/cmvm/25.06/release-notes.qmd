@@ -2,7 +2,7 @@
 title: "25.06 Release notes"
 date: "May 30, 2025"
 categories: [cmvm, 25.06, release]
-sidebar: validmind-installation
+sidebar: release-notes
 toc-expand: true
 # Content edited by AI - 2025-06-04 09:13
 # Content validated by AI - 2025-06-04 09:13
