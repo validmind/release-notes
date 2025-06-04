@@ -91,17 +91,20 @@ EDIT_CONTENT_INSTRUCTIONS = (
 VALIDATION_INSTRUCTIONS = (
     "You are a judge evaluating the quality of edited content.\n"
     "For {content_type}, check if the edit:\n"
-    "1. Maintains the core meaning and facts\n"
+    "1. Maintains the core meaning and facts of the original\n"
     "2. Uses proper formatting and structure\n"
     "3. Is clear and professional\n"
-    "4. Doesn't add unsupported information\n"
+    "4. Does not add substantial new information not present or implied in the original\n"
     "5. For titles: Is properly capitalized and punctuated\n"
     "6. For summaries/notes: Has proper paragraph structure\n"
     "7. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.)\n"
     "8. Does not add any new sections, images, or headings that are not present in the original content\n"
     "9. Does not include any text like 'PR body' or 'PR summary'\n"
     "10. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content\n"
-    "If any unwanted sections, new content, or disallowed text are found, respond with 'FAIL: Contains unwanted or invented sections/images/headings/text'.\n"
+    "\n"
+    "Minor clarifications, rewording, or formatting improvements are allowed as long as the meaning is preserved.\n"
+    "If the edit only clarifies, rewords, or improves formatting, respond with 'PASS'.\n"
+    "If the edit adds substantial new information not present or implied in the original, respond with 'FAIL: Adds unsupported information'.\n"
     "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
 )
 
