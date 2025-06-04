@@ -1,0 +1,44 @@
+---
+title: "25.05.02 Hotfix release notes"
+date: "April 29, 2025"
+categories: [cmvm, 25.05.02, hotfix]
+sidebar: validmind-installation
+toc-expand: true
+# Content overwritten from an earlier version - 2025-06-03 17:25
+---
+
+## Backend
+<!--- Tag: [cmvm/25.05.02](https://github.com/validmind/backend/releases/tag/cmvm/25.05.02) --->
+<!--- Compare API call: gh api repos/validmind/backend/compare/e8bd2e94f40b626fb61596f0d7cb568cbd5b4a21...e8bd2e94f40b626fb61596f0d7cb568cbd5b4a21 --->
+
+<!-- ### Changes with no label -->
+
+
+<!--- PR #1421: https://github.com/validmind/backend/pull/1421 --->
+<!--- Labels: none --->
+### Nibz/cherry pick/1420 (#1421)
+
+# PR Summary
+
+This PR introduces a change in the Dockerfile by adding a command to remove the `poetry.lock` file from the application directory during the build process. The addition ensures that any potentially stale dependency information in `poetry.lock` is eliminated from production builds, possibly to avoid conflicts or security issues with outdated lock files. This change specifically targets the `litellm/Dockerfile.customermanaged` file and does not affect application functionality, focusing instead on build-time file cleanup.
+
+
+<!--- ## Frontend --->
+<!--- Tag: [cmvm/25.05.02](https://github.com/validmind/frontend/releases/tag/cmvm/25.05.02) --->
+<!--- Compare API call: gh api repos/validmind/frontend/compare/ad63f732dee826862a4964af2edc9ab5fe69e709...ad63f732dee826862a4964af2edc9ab5fe69e709 --->
+<!-- No public PRs found for this release -->
+
+<!--- ## Agents --->
+<!--- Tag: [cmvm/25.05.02](https://github.com/validmind/agents/releases/tag/cmvm/25.05.02) --->
+<!--- Compare API call: gh api repos/validmind/agents/compare/d9c9fe5f27cfcfe8c87003d3cbb4d5ec083122eb...d9c9fe5f27cfcfe8c87003d3cbb4d5ec083122eb --->
+<!-- No public PRs found for this release -->
+
+<!--- ## Documentation --->
+<!--- Tag: [cmvm/25.05.02](https://github.com/validmind/documentation/releases/tag/cmvm/25.05.02) --->
+<!--- Compare API call: gh api repos/validmind/documentation/compare/a43dbe7f31d943df0b8d187060983bbdc89c8ac9...a43dbe7f31d943df0b8d187060983bbdc89c8ac9 --->
+<!-- No public PRs found for this release -->
+
+<!--- ## Validmind-library --->
+<!--- Tag: [cmvm/25.05.02](https://github.com/validmind/validmind-library/releases/tag/cmvm/25.05.02) --->
+<!--- Compare API call: gh api repos/validmind/validmind-library/compare/cmvm/25.05.02...cmvm/25.05.02 --->
+<!-- No public PRs found for this release -->

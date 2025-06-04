@@ -33,16 +33,16 @@ categories = {
 INCLUDED_SECTIONS = [
     "What and why",
     "Release notes",
-    "Dependencies",
-    "Screenshots"
 ]
 
 EXCLUDED_SECTIONS = [
-    "Checklist",
+    "Dependencies",
     "Deployment",
     "Review",
     "Testing",
     "Internal"
+    "Screenshots"
+    "Checklist",
 ]
 
 # --- Editing prompt and static editing info ---
@@ -62,7 +62,7 @@ EDIT_TITLE_PROMPT = (
 # --- Content editing instructions ---
 EDIT_CONTENT_INSTRUCTIONS = (
     "When editing content:\n"
-    "- Remove all template headings (e.g., 'What', 'Why', 'External Release Notes', 'Breaking Changes', 'Screenshots/Videos', 'PR Summary')\n"
+    "- Remove all Markdown headings (e.g., '#### What', '#### Breaking Changes', '#### External Release Notes', '# PR Summary')\n"
     "- Maintain the original meaning and technical accuracy.\n"
     "- Use clear, simple language suitable for end users.\n"
     "- Format technical terms and code references consistently, using backticks for code and file names.\n"
@@ -89,8 +89,10 @@ VALIDATION_INSTRUCTIONS = (
     "5. For titles: Is properly capitalized and punctuated\n"
     "6. For summaries/notes: Has proper paragraph structure\n"
     "7. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.)\n"
-    "8. Does not add any new sections, images, or headings that are not present in the original content.\n"
-    "If any unwanted sections or new content are found, respond with 'FAIL: Contains unwanted or invented sections/images/headings'.\n"
+    "8. Does not add any new sections, images, or headings that are not present in the original content\n"
+    "9. Does not include any text like 'PR body' or 'PR summary'\n"
+    "10. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content\n"
+    "If any unwanted sections, new content, or disallowed text are found, respond with 'FAIL: Contains unwanted or invented sections/images/headings/text'.\n"
     "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
 )
 
@@ -470,7 +472,7 @@ class PR:
 
                 # Make API call
                 response = client.chat.completions.create(
-                    model="gpt-4",
+                    model="gpt-4o",
                     messages=[
                         {
                             "role": "system",
@@ -1144,7 +1146,7 @@ def is_merge_pr(title):
     title_lower = title.lower()
     return any(keyword in title_lower for keyword in MERGE_KEYWORDS)
 
-def get_pr_content(pr_number, repo, debug=False):
+def get_pr_content(pr_number, repo, debug=False, adjust_heading_levels=False):
     """Get content from a PR's external release notes, PR summary, title, and image URLs.
     
     Args:
@@ -1215,8 +1217,10 @@ def get_pr_content(pr_number, repo, debug=False):
                 if classify_section(section_title, section_content, debug):
                     if debug:
                         print(f"DEBUG: [get_pr_content] Including section: {section_title}")
-                    # Adjust heading levels in section content to be at least level 4
-                    adjusted_content = adjust_heading_levels(section_content, min_level=4, debug=debug)
+                    if adjust_heading_levels:
+                        adjusted_content = adjust_heading_levels(section_content, min_level=4, debug=debug)
+                    else:
+                        adjusted_content = section_content
                     # Add the section with adjusted heading level
                     sections.append(f"#### {section_title}\n{adjusted_content}")
                 else:
@@ -1249,8 +1253,10 @@ def get_pr_content(pr_number, repo, debug=False):
                             print(f"DEBUG: [get_pr_content] Found match with pattern: {pattern}")
                             print(f"DEBUG: [get_pr_content] Passing to adjust_heading_levels (extracted_text):\n{match.group(1).strip()}")
                         extracted_text = match.group(1).strip()
-                        # Adjust heading levels in extracted text
-                        adjusted_text = adjust_heading_levels(extracted_text, min_level=4, debug=debug)
+                        if adjust_heading_levels:
+                            adjusted_text = adjust_heading_levels(extracted_text, min_level=4, debug=debug)
+                        else:
+                            adjusted_text = extracted_text
                         external_notes = adjusted_text
                         break
 
@@ -1269,8 +1275,8 @@ def get_pr_content(pr_number, repo, debug=False):
                     pr_summary = match.group(1).strip()
                     if debug:
                         print(f"DEBUG: [get_pr_content] Passing to adjust_heading_levels (pr_summary):\n{pr_summary}")
-                    # Adjust heading levels in PR summary
-                    pr_summary = adjust_heading_levels(pr_summary, min_level=4, debug=debug)
+                    if adjust_heading_levels:
+                        pr_summary = adjust_heading_levels(pr_summary, min_level=4, debug=debug)
                     if debug:
                         print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Found PR summary: {pr_summary[:80]!r}")
                     break
@@ -1796,7 +1802,7 @@ def check_github_release(repo, version):
         print(f"  WARN: Error checking release {version} in {repo}: {e}")
         return False
 
-def create_release_file(release, overwrite=False, debug=False, edit=False, single=False):
+def create_release_file(release, overwrite=False, debug=False, edit=False, single=False, adjust_heading_levels=False):
     """Create release note files for a specific version: one per PR, and a new release-notes.qmd, or legacy single file if single=True."""
     import glob
     version = release['version']
@@ -1853,8 +1859,14 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                     commit['cleaned_title'] = commit.get('title', '')
                     commit['pr_summary'] = commit.get('pr_summary', '')
                     commit['external_notes'] = commit.get('external_notes', '')
-                if commit.get('pr_summary'):
-                    commit['pr_summary'] = update_image_links(commit['pr_summary'], version, debug)
+                if commit.get('pr_summary') and adjust_heading_levels:
+                    commit['pr_summary'] = adjust_heading_levels_fn(commit['pr_summary'], min_level=4, debug=debug)
+                if commit.get('external_notes') and adjust_heading_levels:
+                    commit['external_notes'] = adjust_heading_levels_fn(commit['external_notes'], min_level=4, debug=debug)
+                if commit.get('pr_body') and adjust_heading_levels:
+                    commit['pr_body'] = adjust_heading_levels_fn(commit['pr_body'], min_level=4, debug=debug)
+                if commit.get('pr_body'):
+                    commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
                 if commit.get('external_notes'):
                     commit['external_notes'] = update_image_links(commit['external_notes'], version, debug)
                 if commit.get('pr_body'):
@@ -1886,13 +1898,13 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                     content.append('\n'.join(filtered_content))
         version_parts = version.replace('cmvm/', '').split('.')
         if '-rc' in version:
-            release_type = "release candidate"
+            release_type = "Release candidate"
             title_version = version
         elif len(version_parts) == 2:
-            release_type = "release"
+            release_type = "Release"
             title_version = version
         else:
-            release_type = "hotfix release"
+            release_type = "Hotfix release"
             title_version = version
         all_no_public_prs = all(
             rc.strip().startswith('<!--- ##') and 'No public PRs found for this release' in rc
@@ -1901,9 +1913,18 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         with open(file_path, 'w') as f:
             f.write("---\n")
             clean_title = title_version.replace('cmvm/', '')
+            normalized_version = version.replace('cmvm/', '')
             f.write(f'title: "{clean_title} {release_type} notes"\n')
             if date:
                 f.write(f'date: "{date}"\n')
+            # Add categories field
+            if '-rc' in version:
+                yaml_release_type = 'release-candidate'
+            elif len(version_parts) == 2:
+                yaml_release_type = 'release'
+            else:
+                yaml_release_type = 'hotfix'
+            f.write(f'categories: [cmvm, {normalized_version}, {yaml_release_type}]\n')
             f.write("sidebar: validmind-installation\n")
             f.write("toc-expand: true\n")
             if edit:
@@ -2092,7 +2113,7 @@ def parse_release_tables(qmd_file_path, version=None, debug=False):
     
     return releases, seen_versions
 
-def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False, single=False):
+def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False, single=False, adjust_heading_levels=False):
     """Process all releases and create release note files.
     
     Args:
@@ -2159,7 +2180,7 @@ def process_releases(releases, overwrite, seen_versions, debug=False, version=No
             
         print("Creating release file ...")
         # Create the release file once per version
-        create_release_file(version_releases[0], overwrite, debug, edit, single)
+        create_release_file(version_releases[0], overwrite, debug, edit, single, adjust_heading_levels=adjust_heading_levels)
         print(f"✓ Completed processing version {version_key}")
         
         # If a specific tag was requested by the user, we're done after processing it
@@ -2646,7 +2667,7 @@ def get_releases_from_github(version=None, debug=False):
             return [(repo, tag) for tag in tags]
         except Exception as e:
             if debug:
-                print(f"DEBUG: Error getting tags from {repo}: {e}")
+                print(f"DEBUG: [get_releases_from_github] Error getting tags from {repo}: {e}")
             return []
     
     # Use ThreadPoolExecutor with limited concurrency
@@ -2660,18 +2681,18 @@ def get_releases_from_github(version=None, debug=False):
                 if tags:
                     repo_tags.extend(tags)
                     if debug:
-                        print(f"DEBUG: Found {len(tags)} tags in {repo}")
+                        print(f"DEBUG: [get_releases_from_github] Found {len(tags)} tags in {repo}")
             except Exception as e:
                 if debug:
                     print(f"DEBUG: Error processing tags from {repo}: {e}")
     
     if debug:
-        print(f"DEBUG: Found {len(repo_tags)} tags across all repos")
+        print(f"DEBUG: [get_releases_from_github] Found {len(repo_tags)} tags across all repos")
         for repo, tag in repo_tags:
-            print(f"DEBUG: Tag {tag} in {repo}")
+            print(f"DEBUG: [get_releases_from_github] Tag {tag} in {repo}")
     
     if not repo_tags:
-        print(f"ERROR: No tags found for version {version if version else 'any'}")
+        print(f"ERROR: [get_releases_from_github] No tags found for version {version if version else 'any'}")
         return [], set()
     
     # Process tags in parallel with rate limiting
@@ -2687,20 +2708,20 @@ def get_releases_from_github(version=None, debug=False):
                         releases.append(release)
                         seen_versions.add(release['version'])
                         if debug:
-                            print(f"DEBUG: Added release: {release['version']} from {repo}")
+                            print(f"DEBUG: [get_releases_from_github] Added release: {release['version']} from {repo}")
             except Exception as e:
                 if debug:
-                    print(f"DEBUG: Error processing tag {tag} in {repo}: {e}")
+                    print(f"DEBUG: [get_releases_from_github] Error processing tag {tag} in {repo}: {e}")
     
     if not releases:
-        print(f"ERROR: No releases found for version {version if version else 'any'}")
+        print(f"ERROR: [get_releases_from_github] No releases found for version {version if version else 'any'}")
         return [], set()
     
     # Sort releases by date in descending order, with version_key as secondary sort
     releases.sort(key=lambda x: (parse_date(x['date']), version_key(x['version'])), reverse=True)
     
     if debug:
-        print(f"DEBUG: Processed {len(releases)} total release(s), {len(seen_versions)} unique version(s)")
+        print(f"DEBUG: [get_releases_from_github] Processed {len(releases)} total release(s), {len(seen_versions)} unique version(s)")
                 
     return releases, seen_versions
 
@@ -2769,47 +2790,6 @@ def process_tag(repo_tag):
     except Exception as e:
         print(f"  WARN: Error processing tag {tag} in {repo}: {e}")
         return None
-
-def test_heading_conversion():
-    """Test the heading conversion logic with a real PR body sample and print only changed lines."""
-    test_content = """## What
-This PR introduces offline feature flag support and improves the feature flags codebase by:
-- Adding offline feature flag functionality through environment variables
-- Adding comprehensive docstrings to all feature flag functions
-- Refactoring feature flag access to use a new centralized context-aware function
-- Removing unused feature flags (FLAG_REDIS_ENABLED, FLAG_CASBIN_RELOAD_ENABLED, FLAG_AUTH_CONFIG)
-- Adding type hints to improve code maintainability
-
-Before: Feature flags were only accessible through LaunchDarkly and required an active connection.
-After: Feature flags can be configured through environment variables when LaunchDarkly integration is not available, with improved code documentation and type safety.
-
-## Why
-- Enables feature flag functionality in environments where LaunchDarkly integration is not possible (e.g., VM deployments)
-- Improves code maintainability through better documentation and type hints
-- Centralizes feature flag access through a single function to reduce code duplication
-- Removes technical debt by cleaning up unused feature flags
-
-## External Release Notes
-Added support for offline feature flags configuration through environment variables, enabling feature flag functionality in environments without LaunchDarkly integration."""
-    
-    print("Testing heading conversion with real PR body sample...")
-    print("\nInput:")
-    print(test_content)
-    print("\nInput lines (repr):")
-    for i, line in enumerate(test_content.split('\n')):
-        print(f"{i+1}: {repr(line)}")
-    print("\nOutput:")
-    result = adjust_heading_levels(test_content, debug=False)
-    print(result)
-    print("\nChanged lines:")
-    input_lines = test_content.split('\n')
-    output_lines = result.split('\n')
-    for i, (in_line, out_line) in enumerate(zip(input_lines, output_lines)):
-        if in_line != out_line:
-            print(f"Line {i+1}:")
-            print(f"  Input:  {in_line}")
-            print(f"  Output: {out_line}")
-    return result
 
 def download_with_playwright(url, output_path, browser_profile_dir=None, headless=True):
     """
@@ -3063,6 +3043,8 @@ def main():
                       help='Edit content using OpenAI')
     parser.add_argument('--single', action='store_true',
                       help='Write a single release-notes.qmd file (legacy mode)')
+    parser.add_argument('--adjust-heading-levels', action='store_true',
+                      help='Adjust heading levels in PR text (calls adjust_heading_levels)')
     args = parser.parse_args()
 
     try:
@@ -3094,7 +3076,7 @@ def main():
         # Process releases (check tags and create files)
         # Create a new empty set for seen_versions
         seen_versions = set()
-        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=args.single)
+        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=args.single, adjust_heading_levels=args.adjust_heading_levels)
             
         sys.exit(0)
         

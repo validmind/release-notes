@@ -1,0 +1,37 @@
+---
+title: "25.05.01 Hotfix release notes"
+date: "April 28, 2025"
+categories: [cmvm, 25.05.01, hotfix]
+sidebar: validmind-installation
+toc-expand: true
+# Content overwritten from an earlier version - 2025-06-03 17:24
+---
+
+::: {.callout-info title="No user-facing changes in this release"}
+This release includes no public-facing updates to features, bug fixes, or documentation. If you're unsure whether any changes affect your deployment, contact <support@validmind.com>.
+:::
+
+<!--- ## Backend --->
+<!--- Tag: [cmvm/25.05.01](https://github.com/validmind/backend/releases/tag/cmvm/25.05.01) --->
+<!--- Compare API call: gh api repos/validmind/backend/compare/485d53cbc0d5613d59a083eb196875aa1f31b235...485d53cbc0d5613d59a083eb196875aa1f31b235 --->
+<!-- No public PRs found for this release -->
+
+<!--- ## Frontend --->
+<!--- Tag: [cmvm/25.05.01](https://github.com/validmind/frontend/releases/tag/cmvm/25.05.01) --->
+<!--- Compare API call: gh api repos/validmind/frontend/compare/ad63f732dee826862a4964af2edc9ab5fe69e709...ad63f732dee826862a4964af2edc9ab5fe69e709 --->
+<!-- No public PRs found for this release -->
+
+<!--- ## Agents --->
+<!--- Tag: [cmvm/25.05.01](https://github.com/validmind/agents/releases/tag/cmvm/25.05.01) --->
+<!--- Compare API call: gh api repos/validmind/agents/compare/d9c9fe5f27cfcfe8c87003d3cbb4d5ec083122eb...d9c9fe5f27cfcfe8c87003d3cbb4d5ec083122eb --->
+<!-- No public PRs found for this release -->
+
+<!--- ## Documentation --->
+<!--- Tag: [cmvm/25.05.01](https://github.com/validmind/documentation/releases/tag/cmvm/25.05.01) --->
+<!--- Compare API call: gh api repos/validmind/documentation/compare/a43dbe7f31d943df0b8d187060983bbdc89c8ac9...a43dbe7f31d943df0b8d187060983bbdc89c8ac9 --->
+<!-- No public PRs found for this release -->
+
+<!--- ## Validmind-library --->
+<!--- Tag: [cmvm/25.05.01](https://github.com/validmind/validmind-library/releases/tag/cmvm/25.05.01) --->
+<!--- Compare API call: gh api repos/validmind/validmind-library/compare/cmvm/25.05.01...cmvm/25.05.01 --->
+<!-- No public PRs found for this release -->
