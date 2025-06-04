@@ -1,10 +1,10 @@
 ---
 title: "25.04.03 Hotfix release notes"
-date: "April 10, 2025"
+date: "April 17, 2025"
 categories: [cmvm, 25.04.03, hotfix]
 sidebar: validmind-installation
 toc-expand: true
-# Content overwritten from an earlier version - 2025-06-03 15:40
+# Content overwritten from an earlier version - 2025-06-04 07:21
 ---
 
 ## Backend
@@ -18,17 +18,19 @@ toc-expand: true
 <!--- Labels: none --->
 ### cherry pick #1380 onto prod (#1381)
 
-### PR Summary
+This update refines the authorization process for the report generation endpoint in the UI reporting route. Key changes include:
 
-#### This PR updates the authorization handling for the report generation endpoint in the UI reporting route. The changes include:
+- The authorization decorator on the GET endpoint now uses a generic `read` action instead of `download_report`.
+  
+- In-method permission checks are added based on the document type in the request. Specific checks are performed for:
+  
+  - `documentation-report` or `monitoring-report`: Requires `download_doc` authorization.
+  
+  - `validation-report`: Requires `download_vr` authorization.
+  
+  - Unsupported document types trigger a `BadRequestError`.
 
-- Modification of the authorization decorator on the GET endpoint from using the generic 'download_report' action to a more generic 'read' action.
-- Introduction of in-method permission checks based on the document type provided in the request. Depending on the value of the document type parameter, the endpoint now performs:
-  - An authorization check for 'download_doc' if the document type is either 'documentation-report' or 'monitoring-report'.
-  - An authorization check for 'download_vr' if the document type is 'validation-report'.
-  - A BadRequestError is raised if the document type does not match any of the supported types.
-
-##### These changes enforce more granular permission controls when generating reports, ensuring that users must have the appropriate rights for the specific type of report they are attempting to access.
+These changes enhance permission controls, ensuring users have the necessary rights for the specific report type they wish to access.
 
 
 <!--- ## Frontend --->

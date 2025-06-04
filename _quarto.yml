@@ -6,17 +6,17 @@ website:
   title: "ValidMind Release Notes"
   navbar:
     left:
-      - text: cmvm
+      - text: CMVM
         href: cmvm.qmd
-      - text: backend
+      - text: Backend
         href: backend.qmd
-      - text: frontend
+      - text: Frontend
         href: frontend.qmd
-      - text: agents
+      - text: Agents
         href: agents.qmd
-      - text: validmind-library
+      - text: Validmind Library
         href: validmind-library.qmd
-      - text: documentation
+      - text: Documentation
         href: documentation.qmd
 
 
