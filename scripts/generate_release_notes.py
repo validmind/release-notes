@@ -2067,6 +2067,9 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                     any_validated = True
                 if edited:
                     any_edited = True
+            # Ensure each commit has a 'repo' key
+            for commit in commits:
+                commit['repo'] = repo
             all_commits.extend(commits)
             has_release = check_github_release(repo, version)
             repo_content = generate_changelog_content(repo, version, commits, has_release)
@@ -2268,12 +2271,11 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         pr_title = commit.get('cleaned_title') or commit.get('title') or f"PR #{pr_number}"
         yaml_header = [
             '---',
-            f'title: "{pr_title}"',
+            f'title: "{pr_title} (#{pr_number})"',
             f'categories: [{", ".join(categories)}]',
             f'sidebar: release-notes',
             f'toc-expand: true',
             f'date: "{date}"' if date else '',
-            '---',
         ]
         # Add informational comments as in the combined file
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -2284,7 +2286,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         if overwrite:
             yaml_header.append(f'# Content overwritten from an earlier version - {current_time}')
         yaml_header.append(f'# PR URL: https://github.com/validmind/{repo}/pull/{pr_number}')
-        yaml_header.append('')
+        yaml_header.append('---\n\n')
         # Prepare content (notes, summary, body)
         content_parts = []
         # Prefer edited/validated content fields
