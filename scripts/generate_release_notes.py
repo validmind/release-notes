@@ -608,29 +608,28 @@ class PR:
             
             # Set the content based on type
             if content_type == 'title':
-                # If all attempts failed and the title is substantially different, add a comment
                 if not is_valid and attempt == max_attempts - 1:
                     orig = content.rstrip('.')
                     new = edited_content.rstrip('.')
                     ratio = SequenceMatcher(None, orig.lower(), new.lower()).ratio()
                     comment = "<!--- CHECK: Content may be substantially different from original --->\n"
                     if orig.lower() not in new.lower() and ratio < 0.7:
-                        comment += f"<!--- CHECK: Title may besubstantially different from original --->\n<!--- ORIGINAL: {orig} --->\n"
-                        self.cleaned_title = comment + new
-                        if self.debug:
-                            print(f"DEBUG: [edit_content] Title difference detected, comment added.")
-                    else:
-                        self.cleaned_title = comment + new
+                        comment += f"<!--- CHECK: Title may be substantially different from original --->\n<!--- ORIGINAL: {orig} --->\n"
+                    self.cleaned_title_comment = comment
+                    self.cleaned_title = new
                 else:
+                    self.cleaned_title_comment = ""
                     self.cleaned_title = edited_content.rstrip('.')
                 if self.debug:
                     print(f"DEBUG: [edit_content] Set cleaned_title: {self.cleaned_title}")
             elif content_type == 'summary':
                 if not is_valid and attempt == max_attempts - 1:
                     comment = "<!--- CHECK: Content may be substantially different from original --->\n"
-                    self.pr_interpreted_summary = comment + edited_content
-                    self.edited_text = self.pr_interpreted_summary
+                    self.content_warning_comment = comment
+                    self.pr_interpreted_summary = edited_content
+                    self.edited_text = edited_content
                 else:
+                    self.content_warning_comment = ""
                     self.pr_interpreted_summary = edited_content
                     self.edited_text = self.pr_interpreted_summary
                 if self.debug:
@@ -638,8 +637,10 @@ class PR:
             elif content_type == 'notes':
                 if not is_valid and attempt == max_attempts - 1:
                     comment = "<!--- CHECK: Content may be substantially different from original --->\n"
-                    self.edited_text = comment + edited_content
+                    self.content_warning_comment = comment
+                    self.edited_text = edited_content
                 else:
+                    self.content_warning_comment = ""
                     self.edited_text = edited_content
                 if self.debug:
                     print(f"DEBUG: [edit_content] Set edited_text")
@@ -2873,13 +2874,18 @@ def write_file(file, release_components, label_to_category):
                     f"<!---\nPR #{pr['pr_number']}: {pr['full_title']}\n",
                     f"URL: {pr['url']}\n",
                     f"Labels: {pr['labels'] if pr['labels'] else 'none'}\n",
-                    f"--->\n### {pr['title']}\n",
-                    f"<!--- Source: {pr['url']} --->\n\n"
+                    f"--->\n"
                 ]
-                
+                # Output title warning comment if present
+                if hasattr(pr, 'cleaned_title_comment') and pr.cleaned_title_comment:
+                    pr_lines.append(pr.cleaned_title_comment)
+                pr_lines.append(f"### {pr['title']}\n")
+                pr_lines.append(f"<!--- Source: {pr['url']} --->\n\n")
+                # Output content warning comment if present
+                if hasattr(pr, 'content_warning_comment') and pr.content_warning_comment:
+                    pr_lines.append(pr.content_warning_comment)
                 if pr['notes']:
                     pr_lines.append(f"{pr['notes']}\n\n")
-                
                 for line in pr_lines:
                     if line.strip() == "":
                         if last_line_was_blank:
@@ -2888,7 +2894,6 @@ def write_file(file, release_components, label_to_category):
                     else:
                         last_line_was_blank = False
                     output_lines.append(line)
-
             # Write processed lines to file
             file.writelines(output_lines)
 
