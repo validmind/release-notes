@@ -1,0 +1,13 @@
+---
+title: "ValidMind Library Release Notes"
+listing:
+  contents: releases/validmind-library
+  fields: [date, title, categories, description]
+  sort: "date desc"
+  type: default
+  categories: true
+  sort-ui: true
+  filter-ui: true
+page-layout: full
+# title-block-banner: true
+--- 

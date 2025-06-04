@@ -6,14 +6,23 @@ website:
   title: "ValidMind Release Notes"
   navbar:
     left:
-      # - text: Home
-      #   href: index.qmd
-      - text: Releases
-        href: releases/index.qmd
+      - text: cmvm
+        href: cmvm.qmd
+      - text: backend
+        href: backend.qmd
+      - text: frontend
+        href: frontend.qmd
+      - text: agents
+        href: agents.qmd
+      - text: validmind-library
+        href: validmind-library.qmd
+      - text: documentation
+        href: documentation.qmd
+
 
 format:
   html:
-    theme: cosmo
+    theme: flatly
     toc: true
 
 resources:
