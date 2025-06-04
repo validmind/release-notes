@@ -610,28 +610,37 @@ class PR:
             if content_type == 'title':
                 # If all attempts failed and the title is substantially different, add a comment
                 if not is_valid and attempt == max_attempts - 1:
-                    # Check for substantial difference (simple check: not substring, or Levenshtein distance > threshold)
                     orig = content.rstrip('.')
                     new = edited_content.rstrip('.')
                     ratio = SequenceMatcher(None, orig.lower(), new.lower()).ratio()
+                    comment = "<!--- CHECK: Content may be substantially different from original --->\n"
                     if orig.lower() not in new.lower() and ratio < 0.7:
-                        comment = f"<!--- CHECK: Title substantially different from original --->\n<!--- ORIGINAL: {orig} --->\n"
+                        comment += f"<!--- CHECK: Title may besubstantially different from original --->\n<!--- ORIGINAL: {orig} --->\n"
                         self.cleaned_title = comment + new
                         if self.debug:
                             print(f"DEBUG: [edit_content] Title difference detected, comment added.")
                     else:
-                        self.cleaned_title = new
+                        self.cleaned_title = comment + new
                 else:
                     self.cleaned_title = edited_content.rstrip('.')
                 if self.debug:
                     print(f"DEBUG: [edit_content] Set cleaned_title: {self.cleaned_title}")
             elif content_type == 'summary':
-                self.pr_interpreted_summary = edited_content
-                self.edited_text = self.pr_interpreted_summary
+                if not is_valid and attempt == max_attempts - 1:
+                    comment = "<!--- CHECK: Content may be substantially different from original --->\n"
+                    self.pr_interpreted_summary = comment + edited_content
+                    self.edited_text = self.pr_interpreted_summary
+                else:
+                    self.pr_interpreted_summary = edited_content
+                    self.edited_text = self.pr_interpreted_summary
                 if self.debug:
                     print(f"DEBUG: [edit_content] Set pr_interpreted_summary and edited_text")
             elif content_type == 'notes':
-                self.edited_text = edited_content
+                if not is_valid and attempt == max_attempts - 1:
+                    comment = "<!--- CHECK: Content may be substantially different from original --->\n"
+                    self.edited_text = comment + edited_content
+                else:
+                    self.edited_text = edited_content
                 if self.debug:
                     print(f"DEBUG: [edit_content] Set edited_text")
             
@@ -2077,6 +2086,91 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                             continue
                         filtered_content.append(line)
                     content.append('\n'.join(filtered_content))
+        
+        # --- Add high-level summary logic here ---
+        def generate_highlevel_summary(commits, char_limit=250):
+            enhancement_titles = [c.get('cleaned_title') or c.get('title') for c in commits if 'enhancement' in (c.get('labels') or [])]
+            other_titles = [c.get('cleaned_title') or c.get('title') for c in commits if 'enhancement' not in (c.get('labels') or [])]
+            ordered_titles = [t for t in enhancement_titles if t] + [t for t in other_titles if t]
+            if not ordered_titles:
+                return "This release includes no user-facing changes."
+            # Clean and format titles
+            def clean_title(title):
+                t = title.strip()
+                if t.endswith('.'):
+                    t = t[:-1]
+                return t
+            cleaned_titles = [clean_title(t) for t in ordered_titles]
+            if not cleaned_titles:
+                return "This release includes no user-facing changes."
+            summary = "This release includes "
+            listed = []
+            truncated = False
+            for i, title in enumerate(cleaned_titles):
+                # Lowercase all but the first title
+                if i == 0:
+                    t = title
+                else:
+                    t = title[0].lower() + title[1:] if title else title
+                next_list = listed + [t]
+                # Use Oxford comma and 'and' if this is the last item and not truncated
+                if i == len(cleaned_titles) - 1:
+                    candidate = summary + (", ".join(next_list[:-1]) + (", and " if len(next_list) > 1 else "") + next_list[-1] if len(next_list) > 1 else next_list[0]) + "."
+                else:
+                    candidate = summary + ", ".join(next_list) + ", and more."
+                if len(candidate) > char_limit:
+                    truncated = True
+                    break
+                listed.append(t)
+            if truncated:
+                summary += ", ".join(listed) + ", and more."
+            else:
+                if len(listed) == 1:
+                    summary += listed[0] + "."
+                else:
+                    summary += ", ".join(listed[:-1]) + ", and " + listed[-1] + "."
+            return summary
+        def validate_summary(summary, enhancement_titles):
+            if enhancement_titles:
+                return any(t and t.lower() in summary.lower() for t in enhancement_titles)
+            return True
+        # --- LLM proofread step ---
+        def proofread_summary_with_llm(summary, max_tries=5, debug=False):
+            prompt = (
+                "Proofread and streamline the following release summary for clarity and natural flow. "
+                "Keep it concise, user-facing, and ensure it starts with 'This release includes'. "
+                "Do not add or remove features, just improve the language and flow. "
+                "Return only the improved summary.\n\n"
+                f"Summary:\n{summary}"
+            )
+            for attempt in range(max_tries):
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": "You are a professional technical writer."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        max_tokens=200,
+                        temperature=0.2
+                    )
+                    improved = response.choices[0].message.content.strip()
+                    # Simple validation: must start with the required phrase and not be empty
+                    if improved.lower().startswith("this release includes") and len(improved) > 30:
+                        return improved
+                    if debug:
+                        print(f"Proofread attempt {attempt+1} failed validation: {improved}")
+                except Exception as e:
+                    if debug:
+                        print(f"Proofread attempt {attempt+1} failed: {e}")
+            # Fallback to original if all attempts fail
+            return summary
+        enhancement_titles = [c.get('cleaned_title') or c.get('title') for c in all_commits if 'enhancement' in (c.get('labels') or [])]
+        summary = generate_highlevel_summary(all_commits)
+        summary = proofread_summary_with_llm(summary, max_tries=5, debug=debug)
+        is_valid = validate_summary(summary, enhancement_titles)
+        # --- End summary logic ---
+        
         version_parts = version.replace('cmvm/', '').split('.')
         if '-rc' in version:
             release_type = "Release candidate"
@@ -2118,6 +2212,10 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
                 f.write(f'# Content overwritten from an earlier version - {current_time}\n')
             f.write("---\n\n")
+            # Write the summary here
+            f.write(summary + "\n\n")
+            if not is_valid:
+                f.write("<!-- WARNING: Summary may not mention an enhancement PR -->\n\n")
             if all_no_public_prs:
                 f.write('::: {.callout-info title="No user-facing changes in this release"}\n')
                 f.write('This release includes no public-facing updates to features, bug fixes, or documentation. If you\'re unsure whether any changes affect your deployment, contact <support@validmind.com>.\n')
