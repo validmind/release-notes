@@ -1,0 +1,32 @@
+---
+title: "[SC-7548] trigger workflow on field change"
+categories: [frontend, 25.05.04, hotfix, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/frontend/pull/1347
+---
+#### External Release Notes
+When creating a new workflow, a new Trigger type is available for "On Model Field Change". This allows selecting an inventory model field to monitor for changes before starting workflow execution
+
+
+https://github.com/user-attachments/assets/4f0fa1d1-0484-401e-a012-923d4cc6503e
+
+# PR Summary
+
+This pull request introduces several functional enhancements to the workflow management component and its associated API service:
+
+1. API Changes:
+   - The GET endpoint in the API has been adjusted to format the URL string correctly by removing an unnecessary line break in the template literal.
+   - A new optional parameter, triggerFieldKey, has been added to the PostWorkflow API call, allowing workflows to capture a custom trigger field key.
+
+2. Workflow Modal Enhancements:
+   - The Workflow Modal component now imports additional context and utility methods. The UsersContext and getSchemaPropertyByKey functions are used to dynamically build a list of available fields from the organization's inventory model schema.
+   - A new workflow trigger type, MODEL_FIELD_CHANGE, has been added. When selected, the UI displays a dropdown for users to choose the specific field that will trigger the workflow.
+   - The modal has been updated to support dynamic behavior based on the selected trigger type. Specifically, when the MODEL_FIELD_CHANGE trigger is chosen, the form captures and passes the `field_name` to the API.
+   - The component now resets error states upon modal open/close and includes conditional logic to adjust entity names and event types based on whether the workflow is initiated by a field change event or a regular model registration event.
+
+3. Model Updates:
+   - Enumerations for TriggerType, EntityName, and EntityEventType have been extended to accommodate the new MODEL_FIELD_CHANGE trigger, ensuring that workflows can properly handle both field-based modifications and traditional events.
+
+Overall, these changes improve the flexibility of workflow triggering mechanisms and enhance user interface dynamics for workflow creation and editing.

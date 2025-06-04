@@ -1,0 +1,28 @@
+---
+title: "[SC-8690] Ability to delete a workflow"
+categories: [frontend, 25.05.04, hotfix, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/frontend/pull/1339
+---
+#### External Release Notes
+This PR introduces a new feature to allow 'soft-deleting' workflows. Deleting a workflow will allow users to continue executions that are currently using the deleted workflow but will remove it from active workflows listing and prevent future executions from running
+
+# PR Summary
+
+This PR introduces functionality to delete workflows along with an additional check for dependencies between workflows and associated models. The key changes include:
+
+1. API Enhancements:
+   - New function GetWorkflowModelDependenciesCount: This function retrieves the number of models depending on a given workflow. It is used to warn users of potential impact before deletion.
+   - New function DeleteWorkflow: This function sends a DELETE request to remove the specified workflow.
+
+2. New UI Components:
+   - A new component, WorkflowDeleteModal, has been introduced. This modal provides a confirmation dialog for deleting workflows. It displays additional warnings if the workflow is used by models (using the dependency count), and handles success and error scenarios with toast notifications.
+   - Enhancements in the ExecutionDetails component: An alert is shown to indicate if a workflow has been deleted, ensuring users understand that although the workflow is deprecated, current executions continue normally.
+   - Integration into WorkflowList: The workflow listing page now includes a delete option. It triggers the dependency count check and then opens the delete modal, facilitating safer deletion of workflows.
+
+3. Model Update:
+   - A new field 'deleted_at' has been added to the Workflow model to track when a workflow has been deleted, which is then used by the UI to conditionally render warnings.
+
+Overall, these changes aim to provide a robust mechanism for workflow deletion that prevents accidental removal when dependencies exist, and improves user feedback during the deletion process.

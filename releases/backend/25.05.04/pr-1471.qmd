@@ -1,0 +1,43 @@
+---
+title: "[SC-10305] Check workflow permissions for states"
+categories: [backend, 25.05.04, hotfix, bug, security]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1471
+---
+None
+
+## Deployment Notes
+None
+
+## Breaking Changes
+None
+
+## Screenshots/Videos (Frontend Only)
+None
+
+## Checklist
+- [x] PR body describes what, why, and how to test
+- [x] Release notes written
+- [x] Deployment notes written
+- [x] Breaking changes identified
+- [x] Labels applied
+- [x] PR linked to Shortcut
+- [x] Screenshots/videos added (Frontend)
+- [ ] Unit tests added (Backend)
+- [x] Tested locally
+- [x] Documentation updated (if required)
+
+## Areas Needing Special Review
+None
+
+## Additional Notes
+None
+
+# PR Summary
+This PR updates the UI workflow states endpoints to enforce organization-specific data access. Instead of querying the global Workflow model directly, the endpoints now retrieve workflows through the current user's organization (using g.current_user_org.workflows). This change is applied across multiple endpoints (GET, POST, PATCH, and DELETE) and ensures that only workflows associated with the current user’s organization are accessed, reducing the risk of data leakage between organizations.
+
+The modifications also include refining exception handling: ResourceNotFoundError exceptions are now explicitly rethrown, thereby allowing precise error signaling to the client, while any other exceptions are still caught and returned as an InternalServerError.
+
+Overall, these updates improve security by constraining data access to the user's organization and provide clearer error propagation within workflow state management.

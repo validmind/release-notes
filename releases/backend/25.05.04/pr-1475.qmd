@@ -1,0 +1,26 @@
+---
+title: "[SC-10304] [HIGH] Cross‑Tenant Template Overwrite via Missing X‑Organization‑Id Check"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1475
+---
+#### What
+<!-- Describe what the change is doing, including behavior before and after the change -->
+
+#### Breaking Changes
+<!-- List any breaking changes -->
+
+#### Screenshots/Videos (Frontend Only)
+<!-- Add screenshots or videos showing before/after -->
+
+# PR Summary
+
+This PR introduces two primary changes:
+
+1. In the backend API configuration (src/backend/api.py), the assignment of the SQLALCHEMY_MAX_OVERFLOW setting has been reformatted to improve code readability. Although the functionality remains the same, the code style is now consistent with other multiline assignments.
+
+2. The main functional enhancement is in the template retrieval logic (src/backend/routes/ui_templates.py). Previously, the code queried for a template solely based on a unique identifier. With the changes, the query now also filters based on the current user's organization (using g.current_user_org.id), ensuring that users can only access templates that belong to their own organization. This adjustment enhances both data integrity and security.
+
+Minor import reordering and cleanup in src/backend/routes/ui_assets_proxy.py have also been performed which improves the overall code organization and clarity.

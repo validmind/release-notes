@@ -1,0 +1,29 @@
+---
+title: "[SC 8517] Code explainer agents implementation"
+categories: [agents, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/agents/pull/3
+---
+#### How to use the Code Explainer
+```python
+from IPython.display import Markdown, display
+
+from agents import code_explainer
+
+with open("binary_classifier_code.py") as f:
+    code_content = f.read()
+state = {
+    "inputs": {
+        "additional_instructions": "Preprocessing module for binary classification",
+        "source_code": code_content,
+    },
+    "output": "",
+}
+state = code_explainer.invoke(state)
+display(display(Markdown(state["output"])))
+```
+
+#### Demo notebook
+The demo notebook is located at `notebooks/code_explainer.ipynb`

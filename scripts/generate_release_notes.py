@@ -2234,6 +2234,81 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             f.write(':::\n\n')
         f.write("\n".join(content))
     print(f"\nCreated release file: {file_path}")
+    
+    # --- Begin per-PR file output logic ---
+    generated_files = []
+    for commit in all_commits:
+        repo = commit.get('repo')
+        if not repo:
+            continue
+        # Skip internal PRs
+        if 'internal' in (commit.get('labels') or []):
+            continue
+        # Skip merge PRs
+        if is_merge_pr(commit.get('title', '')):
+            continue
+        pr_number = commit.get('pr_number')
+        tag_str = version.split('/')[-1]
+        repo_dir = os.path.join(RELEASES_DIR, repo, tag_str)
+        os.makedirs(repo_dir, exist_ok=True)
+        pr_file = os.path.join(repo_dir, f"pr-{pr_number}.qmd")
+        if os.path.exists(pr_file):
+            print(f"DEBUG: [create_release_file] Checking overwrite for {pr_file} (overwrite={overwrite})")
+            if not overwrite:
+                print(f"DEBUG: [create_release_file] Skipping {pr_file} (already exists, overwrite is False)")
+                print(f"DEBUG: [create_release_file] File {pr_file} already exists. Use --overwrite to update it.")
+                continue
+            else:
+                print(f"DEBUG: [create_release_file] Overwriting {pr_file} (overwrite is True)")
+        else:
+            print(f"DEBUG: [create_release_file] Writing new file {pr_file}")
+        # Prepare YAML header
+        labels = commit.get('labels') or []
+        categories = [repo, normalized_version, yaml_release_type] + labels
+        pr_title = commit.get('cleaned_title') or commit.get('title') or f"PR #{pr_number}"
+        yaml_header = [
+            '---',
+            f'title: "{pr_title}"',
+            f'categories: [{", ".join(categories)}]',
+            f'sidebar: release-notes',
+            f'toc-expand: true',
+            f'date: "{date}"' if date else '',
+            '---',
+        ]
+        # Add informational comments as in the combined file
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        if any_edited:
+            yaml_header.append(f'# Content edited by AI - {current_time}')
+        if any_validated:
+            yaml_header.append(f'# Content validated by AI - {current_time}')
+        if overwrite:
+            yaml_header.append(f'# Content overwritten from an earlier version - {current_time}')
+        yaml_header.append(f'# PR URL: https://github.com/validmind/{repo}/pull/{pr_number}')
+        yaml_header.append('')
+        # Prepare content (notes, summary, body)
+        content_parts = []
+        # Prefer edited/validated content fields
+        if commit.get('edited_text'):
+            content_parts.append(update_image_links(commit['edited_text'], version, debug))
+        elif commit.get('external_notes'):
+            content_parts.append(update_image_links(commit['external_notes'], version, debug))
+        if commit.get('pr_interpreted_summary'):
+            content_parts.append(update_image_links(commit['pr_interpreted_summary'], version, debug))
+        elif commit.get('pr_summary'):
+            content_parts.append(update_image_links(commit['pr_summary'], version, debug))
+        if not content_parts and commit.get('pr_body'):
+            content_parts.append(update_image_links(commit['pr_body'], version, debug))
+        content = '\n\n'.join([c for c in content_parts if c])
+        # Write file
+        with open(pr_file, 'w') as f:
+            f.write('\n'.join(yaml_header))
+            f.write(content)
+        generated_files.append(pr_file)
+    if generated_files:
+        print("\nGenerated per-PR release notes files:")
+        for fpath in generated_files:
+            print(f"  - {fpath}")
+    # --- End per-PR file output logic ---
     return
 
 def parse_release_tables(qmd_file_path, version=None, debug=False):

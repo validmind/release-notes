@@ -1,0 +1,13 @@
+---
+title: "Removing legacy logic for implicit text blocks"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1466
+---
+# PR Summary
+
+This PR refactors how the API endpoint handles the 'contents' field of sections in the UI inventory models. Previously, if a section did not include a 'contents' key, the code would default to a list containing a dictionary with a 'content_id' (set to the section id) and a 'content_type' of 'text'. The updated logic now uses the dictionary get() method to retrieve 'contents', defaulting to an empty list if the key is absent. This change is applied consistently in both endpoints where section data is processed.
+
+This simplification reduces unnecessary code and clarifies the expected behavior when 'contents' is missing. However, users of this API should verify that returning an empty list (instead of a list with a default content block) does not introduce unintended downstream effects.

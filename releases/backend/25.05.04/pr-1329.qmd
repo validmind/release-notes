@@ -1,0 +1,10 @@
+---
+title: "Bump werkzeug from 2.3.8 to 3.0.6"
+categories: [backend, 25.05.04, hotfix, dependencies, python]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1329
+---
+# PR Summary
+This pull request updates the version of the werkzeug dependency from ^2.3.0 to ^3.0.6 in the pyproject.toml file. The change is focused solely on bumping the dependency version which could include bug fixes, performance improvements, and new features provided by the newer version of werkzeug. It is essential to confirm that this update does not break any parts of the application that rely on werkzeug, especially in areas involving routing, request handling, or middleware integration.

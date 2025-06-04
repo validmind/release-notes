@@ -1,0 +1,36 @@
+---
+title: "[SC-9472] Allow roles/stakeholder types to be deleted"
+categories: [frontend, 25.05.04, hotfix, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/frontend/pull/1372
+---
+#### What
+- Adds delete buttons & confirmation to list of roles & role detail page
+- Adds delete buttons & confirmation to list of stakeholder types & stakeholder type details page
+- Updates group deletion to use reusable component
+- Updates the styling to be more consistent
+- Adds API.ts call for deleting roles
+- Adds the stakeholder type settings menu item as per [the docs](https://docs.validmind.com/guide/configuration/manage-model-stakeholder-types.html)
+
+Note that the roles details page is reused for the stackeholder type detail page with slight differences. Also the API roles delete endpoint is reused for stakeholder type deletion requests.
+
+#### External Release Notes
+- Added the ability to delete Roles and Stakeholder Types
+
+#### Screenshots/Videos (Frontend Only)
+https://github.com/user-attachments/assets/fa8dd882-6067-4a76-9d87-55013d912464
+
+# PR Summary
+
+This PR introduces several functional improvements centered around role deletion and confirmation dialogs within the application. The following are the key changes:
+
+- A new API method (DeleteRole) has been added to the API module to support deletion of roles by calling an Axios DELETE endpoint.
+- The deletion confirmation workflow has been standardized using a new DeleteConfirmationAlert component. This component is now used across multiple pages including Group, RoleDetails, Roles, and Stakeholders to confirm deletion actions with a consistent user experience and custom messages.
+- Existing components such as DangerMenuItem have been updated with refined styling to better indicate destructive actions through adjusted color and background properties.
+- The RoleDetails page has been enhanced to support deletion of roles and stakeholder types by integrating the new confirmation dialog and providing detailed deletion messages explaining the impact of the action.
+- The Roles and Stakeholders listing pages have been updated to allow role deletion via a contextual menu. The implementation uses react-query mutations to trigger deletion operations, and it ensures that on success the queried data is invalidated to reflect the changes immediately.
+- Minor UI copy adjustments have been applied in the AddRoleModal to clearly differentiate between adding a new role and adding a stakeholder type.
+
+Overall, these changes improve the consistency of deletion flows throughout the application, ensuring that users are well-informed and deliberate when performing potentially destructive actions.

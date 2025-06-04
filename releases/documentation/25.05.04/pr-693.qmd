@@ -1,0 +1,19 @@
+---
+title: "Add missing "Export ongoing monitoring document" section to docs"
+categories: [documentation, 25.05.04, hotfix, documentation]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/documentation/pull/693
+---
+# PR Summary
+
+This pull request introduces a new feature to the documentation that allows users to export ongoing monitoring documentation for models. The new section provides step-by-step instructions on how to navigate the user interface to export this documentation. Specifically, it guides users to:
+
+1. Click on **Inventory** in the left sidebar.
+2. Select a model or use filters/search to find a model.
+3. Click on **Ongoing Monitoring** in the model's sidebar.
+4. Click on **Export Document** in the right sidebar.
+5. Download the file locally by clicking **Download File**.
+
+This enhancement aims to improve the usability of the documentation by providing clear instructions for exporting ongoing monitoring reports.

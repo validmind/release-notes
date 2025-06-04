@@ -1,0 +1,22 @@
+---
+title: "Revert "Fix: Prevent unauthorized access to inventory model assets""
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1485
+---
+#### What
+<!-- Describe what the change is doing, including behavior before and after the change -->
+
+#### Breaking Changes
+<!-- List any breaking changes -->
+
+#### Screenshots/Videos (Frontend Only)
+<!-- Add screenshots or videos showing before/after -->
+
+# PR Summary
+
+This PR streamlines the authentication process by removing the fallback logic that previously allowed token extraction from cookies. The functions get_token_auth_cookie and get_token_auth_header_or_cookie have been removed, and authentication now strictly relies on the token provided in the header using get_token_auth_header. 
+
+Additionally, in the UI assets proxy endpoint, the requires_auth decorator has been removed and the organization access check logic has been stripped out. The assets endpoint now directly retrieves a pre-signed URL from the object storage without validating the organization of the user. This simplification could impact previously enforced authorization checks for asset access.

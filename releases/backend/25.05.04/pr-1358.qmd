@@ -1,0 +1,18 @@
+---
+title: "feat: add startup checks for datastores, keycloak"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1358
+---
+# PR Summary
+
+This PR augments the Docker configuration and startup logic to improve service orchestration and dependency management. The changes include:
+
+- Updates to the Dockerfile to install additional utilities (jq, postgresql-client-15, redis-tools) that support enhanced operations and debugging.
+- Modifications in the docker-compose.yaml that add a new port mapping (9000) for Keycloak and set a new environment variable (KC_HEALTH_ENABLED) to enable health checking.
+- Improvements in the docker-entrypoint.sh where readiness checks for Postgres, Redis, and, conditionally, Keycloak are implemented to ensure that dependent services are available before the application starts. This includes waiting loops with clear logging messages for each service.
+- An update to the Keycloak Dockerfile to expose the new port (9000) alongside the existing one.
+
+These changes are targeted at improving the resilience of the container-based deployment by confirming that critical services are healthy before initiating the application processes.

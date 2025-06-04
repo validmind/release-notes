@@ -1,0 +1,20 @@
+---
+title: "remove debug mode"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1490
+---
+#### What
+<!-- Describe what the change is doing, including behavior before and after the change -->
+
+#### Breaking Changes
+<!-- List any breaking changes -->
+
+#### Screenshots/Videos (Frontend Only)
+<!-- Add screenshots or videos showing before/after -->
+
+# PR Summary
+
+This PR removes the debugpy integration from the API service startup command in the docker-entrypoint.sh file. Previously, the container launched the API service with debugpy enabled (listening on 0.0.0.0:5678). With this change, the command now directly starts the API service using ddtrace-run without invoking debugpy. This adjustment simplifies the startup process for production deployments where remote debugging is not required or desired.

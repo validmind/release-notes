@@ -1,0 +1,41 @@
+---
+title: "CRIT Unauthorized Access to Inventory Model Documents via Insecure Direct Object Reference (IDOR)"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1464
+---
+#### What
+This PR enhances security for the UI assets proxy endpoint by:
+1. Adding authentication requirement to the endpoint that was previously unprotected
+2. Implementing organization-level access control to ensure users can only access assets from their own organization
+3. Adding support for auth token retrieval from cookies as a fallback when the Authorization header is not present
+4. Adding validation logic that checks if the requested asset belongs to the user's organization
+
+Before this change, the assets proxy endpoint did not require authentication and had no organization-level access controls, potentially allowing unauthorized access to private assets.
+
+After this change, the endpoint is protected with authentication and organization-level access control.
+
+#### Why
+This change addresses a security vulnerability where unauthorized users could potentially access private assets from other organizations. By adding authentication and proper access controls, we ensure that users can only access assets that belong to their own organization, protecting sensitive data.
+
+#### External Release Notes
+This release strengthens security by adding authentication and organization-level access controls to protect private assets. Users will now only be able to access assets from their own organization, enhancing data isolation and security.
+
+#### Additional Notes
+This PR enhances the security posture of our application by ensuring proper authentication and authorization for asset access.
+
+# PR Summary
+
+This PR introduces key changes in the authentication and authorization logic of the backend. The main changes are as follows:
+
+1. A new function, get_token_auth_cookie, is added to obtain an access token from an authorization cookie if it is not present in the headers. 
+
+2. The function get_token_auth_header_or_cookie combines both header and cookie approaches to retrieve the token, ensuring flexibility in token extraction. This function is then used in place of the previous get_token_auth_header method in the authentication decorators, thus allowing fallback from header to cookie.
+
+3. In the asset serving endpoint within the UI Assets Proxy, an authentication decorator (@requires_auth()) is added to enforce that the API is accessed by authenticated users.
+
+4. Additionally, the endpoint now performs an authorization check by validating that if the asset key contains an organization identifier, it must match the current user's organization. If there is a mismatch, an appropriate unauthorized error is raised.
+
+Overall, these changes improve the authentication mechanism by supporting multiple token sources and ensure that assets are only accessible within the correct organizational context.

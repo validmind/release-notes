@@ -1,0 +1,11 @@
+---
+title: "feat: limit concurrency of testing workflow"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1428
+---
+# PR Summary
+
+This pull request introduces a new configuration block to the GitHub Actions workflow for the Python application. The addition of the concurrency settings ensures that only the most recent workflow run is active by grouping runs by the workflow and branch reference. This change is intended to cancel any in-progress runs when a new run is triggered, helping to save CI resources and reduce potential conflicts from concurrent executions.

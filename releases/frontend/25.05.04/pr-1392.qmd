@@ -1,0 +1,40 @@
+---
+title: "Setting a cookie with the value of the access token."
+categories: [frontend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/frontend/pull/1392
+---
+#### What
+This PR adds support for cookie-based authentication as an alternative to authorization headers for accessing assets.
+
+Before this change, assets could only be accessed with an Authorization header, but HTML img tags and similar elements can't set custom headers when requesting assets. This meant assets embedded in HTML were inaccessible when authentication was required.
+
+After this change, the system will first try to authenticate using the Authorization header, and if that fails, it will attempt to authenticate using the "authToken" cookie, making assets accessible to properly authenticated users even in HTML contexts.
+
+#### Why
+Assets are typically embedded into HTML img tags which lack the ability to set an auth header. Without this change, authenticated users can't view assets embedded in HTML documentation, reports, and other UI components. Cookie-based authentication provides a secure alternative authentication method for these scenarios.
+
+This also fixes a security issue where unauthorized users could potentially access assets from organizations they don't belong to.
+
+#### External Release Notes
+Added support for authentication via cookies when accessing assets. This improves the display of images and other media in documentation, reports, and other sections of the application.
+
+#### Screenshots/Videos (Frontend Only)
+<!-- Add before/after screenshots showing the improvement in asset loading -->
+
+#### Additional Notes
+This change is part of a broader security enhancement to prevent unauthorized access to organization-specific assets. The backend changes include organization-level access control validation to ensure users can only access assets from their own organization.
+
+# PR Summary
+
+This pull request introduces a few functional and non-functional improvements in the MainApp component and related modules. The key changes are as follows:
+
+1. A new functionality has been added to set an authentication token as a cookie when an access token is present. This cookie is intended as an alternative to using the auth token, particularly for serving assets. This change ensures that asset requests can verify user authentication through the cookie.
+
+2. Several onSuccess and event handler callbacks have been refactored to consistently wrap arrow function parameters in parentheses. This improves readability and consistency across the codebase.
+
+3. Minor refactoring has been applied to code formatting in the mapping of roles and permissions as well as in the JSX routing components. This standardizes the styling without changing the underlying functionality.
+
+Overall, aside from style consistency improvements, the main functional enhancement is the injection of the auth token as a cookie.

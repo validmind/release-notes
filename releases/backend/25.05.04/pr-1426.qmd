@@ -1,0 +1,11 @@
+---
+title: "Cullen/cherry pick 1417 prod"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1426
+---
+# PR Summary
+
+This pull request updates the deployment workflow configurations for AWS secondary, production, and staging environments. Specifically, instead of copying the old template file (values.yaml), the workflows now copy the new template file (values-new.yaml) into the manifests directory. The sed commands for performing template substitutions remain unchanged. This change ensures that deployments utilize the updated configuration template for newer deployment requirements.

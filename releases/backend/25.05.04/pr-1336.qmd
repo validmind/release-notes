@@ -1,0 +1,16 @@
+---
+title: "feat: add keycloak entrypoint to dockerfile"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1336
+---
+# PR Summary
+This pull request makes two primary changes to the Keycloak service configuration:
+
+1. The volume mounts for the Keycloak configuration (realm-export.json, themes, and entrypoint.sh) in the docker-compose file have been removed. Instead, these files are now copied into the Docker image via updates in the Dockerfile. This change aims to streamline deployment by baking in the required assets during image build time.
+
+2. An environment variable was modified from `KC_DB_DATABASE` to `KC_DB_DtATABASE`. This appears to be either an intentional change or a typo. It should be verified whether the new variable name is correct and consistent with the expected configuration in downstream components.
+
+Overall, the PR enhances the deployment process by embedding configuration files in the image, reducing reliance on host-based volume mounts. However, caution should be exercised regarding the environment variable change to ensure it does not introduce unexpected issues.

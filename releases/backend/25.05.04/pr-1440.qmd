@@ -1,0 +1,20 @@
+---
+title: "fixing validation of trigger type on update"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1440
+---
+#### What
+Fixes issue where a workflow PUT was returning error on validate trigger type since it was returning itself and complaining of existing workflow with same trigger type
+
+# PR Summary
+
+This PR improves the workflow validation logic in the backend by adding an additional parameter, `update_cuid`, to the `validate_trigger_type` method. This change ensures that when updating an existing workflow, the current workflow record is excluded from a duplicate check (based on `cuid`).
+
+Specifically, the diff modifies the query filtering for existing workflows, adding a filter condition to exclude the workflow having the `cuid` passed in via `update_cuid`. This prevents false positives when updating a workflow after validating its fields.
+
+Additionally, in the UI workflows route (`src/backend/routes/ui_workflows.py`), the exception handling has been slightly refined. A `BadRequestError` gets explicitly re-raised, providing clearer error propagation and distinguishing it from general exceptions which are wrapped in an `InternalServerError`.
+
+Overall, these changes refine the update logic to ensure that workflow duplication is correctly checked and errors are handled appropriately during update operations.

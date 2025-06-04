@@ -1,0 +1,30 @@
+---
+title: "[SC-10291] validating owners list against selected group"
+categories: [backend, 25.05.04, hotfix, security]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1465
+---
+#### What
+Critical vulnerability where a user can be added to the owners list and subsequently obtain PII (with no checks if belongs to org)
+
+#### Why
+Protecting PII, ensuring users can see only data from organization (and group)
+
+#### Breaking Changes
+<!-- List any breaking changes -->
+
+#### Screenshots/Videos (Frontend Only)
+<!-- Add screenshots or videos showing before/after -->
+
+# PR Summary
+This PR introduces several functional improvements to enhance the handling of user membership and ownership in the application:
+
+1. In the backend API module, the unused import of flask_migrate has been removed, cleaning up the dependencies of the project.
+
+2. In the authentication module, the RolePermission import has been repositioned. While its functional impact is minimal, this change contributes to clearer dependency management.
+
+3. A new method, is_member, has been added to the Group class. This method iterates over group members to check whether a given user is already a member. This helper function centralizes group membership checks and clarifies the intent of the membership logic.
+
+4. In the UI inventory models route, the logic for adding an owner to the inventory model has been enhanced. The route now checks if the user exists and is a member of the group before adding them as an owner or developer. This prevents non-existent or unauthorized users from being mistakenly added, ensuring more robust handling of ownership assignments.

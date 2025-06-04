@@ -1,0 +1,33 @@
+---
+title: "[SC-9985] Add workflow-run step"
+categories: [frontend, 25.05.04, hotfix, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/frontend/pull/1393
+---
+#### What
+Adds a new workflow step "Run Workflow" that can target any manual-trigger workflow and run it.
+
+- Updates a lot of the styling for the workflow node boxes to make them more consistent with coloring, outline, selection, etc. for the zoom-in and zoom-out versions of both configured and unconfigured node boxes.
+- Updates for the breaking change in https://github.com/validmind/backend/pull/1463
+
+#### External Release Notes
+- Add new workflow step type "Run Workflow" that can run another workflow
+
+#### Screenshots/Videos (Frontend Only)
+https://github.com/user-attachments/assets/3ffbdfb1-e330-4d8f-be3a-5eb9cb962559
+
+# PR Summary
+
+This PR introduces several key functional enhancements and bugfixes:
+
+1. UI & Spinner Update: Multiple components across the application have been updated to remove hardcoded color properties from spinners. They now rely on theme defaults (defined in the spinner theme file), ensuring consistent styling.
+
+2. Workflow API Enhancements: The API functions for fetching workflows have been enhanced. The GetWorkflows function now supports pagination and optional filtering by trigger type. A new API function, GetWorkflowDependencies, has been added to retrieve both the model dependency count and a list of workflows that are dependent on a given workflow. This assists in making deletion decisions.
+
+3. Workflow Deletion Modal Improvements: The delete modal for workflows has been improved to handle dependency errors gracefully. If a workflow cannot be deleted due to existing dependencies, a warning alert is shown, along with a list of dependent workflows (with links to their details), and the delete button becomes disabled.
+
+4. New Run Workflow Feature: A new run workflow node, along with its associated panel, has been implemented. This node allows users to trigger another workflow and is integrated into the workflow canvas with proper UI components. It supports configuration via an inline dropdown that paginates the workflow options using the new useWorkflows hook.
+
+5. UI Consistency & Debug Enhancements: Several node components have received minor UI tweaks (e.g., border styling changes and updated rounding) and added inline inspection popovers to aid debugging. Additional components like NodeBox now display contextual data to assist builders in troubleshooting workflows.

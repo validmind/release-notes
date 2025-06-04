@@ -1,0 +1,24 @@
+---
+title: "training: Updated Validator Fundamentals courses"
+categories: [documentation, 25.05.04, hotfix, documentation, highlight]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/documentation/pull/713
+---
+#### # Validator Fundamentals
+[**REGISTRATION PAGE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8468/update-validator-fundamentals-course/training/validator-fundamentals/validator-fundamentals-register.html) — 🚨 SEE COURSE MODULE PREVIEW DISCLAIMER BELOW!!!! 🚨
+
+- Like the Developer Fundamentals, I updated this course to be much more comprehensive yet straightforward. 
+- There are now updated versions of the login instructions, individual module learning outcomes, module summaries, additional slides for things not previously covered, etc.
+- I thoroughly tested & timed these courses to make sure the instructions and the estimates made sense.
+
+#### ## Validator Fundamentals
+With the goal of delivering more approachable and comprehensive training, we've overhauled our **Validator Fundamentals** course into four modules with clear learning outcomes:
+
+1. **Module 1** — Using ValidMind for Model Validation
+7. **Module 2** — Running Data Quality Tests
+8. **Module 3** — Developing Challenger Models
+9. **Module 4** — Finalizing Validation Reports
+
+This training series walks you through the basics of using ValidMind to validate datasets and models, from running and logging tests with the ValidMind Library to finalizing your model's validation report in the ValidMind Platform. You'll learn how to use ValidMind to automate testing, populate evidence in your validation report, track finding resolution, and more — register to take the course now!

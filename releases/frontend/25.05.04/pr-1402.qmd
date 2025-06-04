@@ -1,0 +1,30 @@
+---
+title: "Safely using dangerouslySetInnerHTML"
+categories: [frontend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/frontend/pull/1402
+---
+#### What
+Added DOMPurify library to sanitize HTML content before using dangerouslySetInnerHTML in React components, preventing Cross-Site Scripting (XSS) attacks. Before this change, unsanitized HTML was being directly rendered, creating potential security vulnerabilities. After the change, all HTML is sanitized through a centralized utility function before rendering.
+
+#### Why
+Using React's dangerouslySetInnerHTML without sanitization can expose the application to XSS attacks. This change enhances security by ensuring all HTML content is properly sanitized before rendering.
+
+#### External Release Notes
+Enhanced security for HTML rendering in the UI by implementing sanitization that prevents XSS (Cross-Site Scripting) attacks while maintaining proper content display.
+
+#### Additional Notes
+This PR implements DOMPurify version 3.2.5. The sanitizeHtml utility function has been configured to allow the "target" attribute on links while sanitizing all other potentially dangerous HTML content.
+
+# PR Summary
+
+This pull request introduces a security enhancement by integrating DOMPurify into the codebase to sanitize HTML content before it is rendered using React's dangerouslySetInnerHTML. The changes include:
+
+- Adding the DOMPurify dependency to package.json and package-lock.json to enable HTML sanitization.
+- Introducing a new utility function called sanitizeHtml in the utils module that wraps DOMPurify.sanitize, which is then used across multiple components.
+- Updating various components (e.g., CommandPalette, DocumentChecker, FindingsList, GenerateWithAIModal, JSONLogicHumanizer, CustomText, TemplateEditor components, and others) to sanitize dynamic HTML content before rendering. This helps prevent potential cross-site scripting (XSS) attacks by ensuring that any HTML string passed to dangerouslySetInnerHTML is properly cleaned.
+- Minor code formatting improvements in utility functions and other small refactors in some components to ensure consistency.
+
+Overall, these changes enhance the security of the application by ensuring that any user-generated or dynamic HTML content undergoes sanitization before being injected into the DOM. This contributes to a safer rendering process while displaying content from external sources or user inputs.

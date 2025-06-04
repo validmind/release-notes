@@ -1,0 +1,24 @@
+---
+title: "Prevent unauthorized workflow status modification"
+categories: [backend, 25.05.04, hotfix, bug, python, security]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1462
+---
+#### What
+<!-- Describe what the change is doing, including behavior before and after the change -->
+This adds additional validation to the `PUT /api/v1/statuses-workflows/{id}/status` endpoint in order to stop users from modifying workflow status of orgs they are not a member of.
+
+#### External Release Notes
+<!--- REPLACE THIS COMMENT WITH YOUR DESCRIPTION --->
+This removes a potential security issue where someone could modify the workflow status of an org they are not a member of.
+
+#### Breaking Changes
+<!-- List any breaking changes -->
+
+#### Screenshots/Videos (Frontend Only)
+<!-- Add screenshots or videos showing before/after -->
+
+# PR Summary
+This PR introduces a new static method, get_status_for_org, to encapsulate the logic for retrieving a status by joining the StatusesWorkflowStatus and StatusesWorkflow tables based on organization and workflow identifiers. The new method is used in the edit endpoint, replacing redundant queries with a more streamlined and clear data access pattern. Additionally, minor refactoring has been performed on the block documentation and validation report functions to improve code formatting and readability. Unit tests have been added to verify both positive and negative cases for the new get_status_for_org function, ensuring that the method correctly handles scenarios where the organization or workflow identifiers do not match, as well as when an invalid status identifier is provided.

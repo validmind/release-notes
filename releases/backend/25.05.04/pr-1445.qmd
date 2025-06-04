@@ -1,0 +1,55 @@
+---
+title: "Ensure all model roles are considered when evaluating membership"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1445
+---
+#### What
+This change updates the model membership and content type authorization logic in `src/backend/auth/auth.py` to ensure that **all roles** a user holds for a given model are considered, rather than just the first or a single role. 
+
+**Before:**  
+- Only the first matching role for a user on a model was considered when determining membership and allowed content types.
+- Functions like `get_model_role_for_user` and `get_content_type_for_role` operated on a single role.
+
+**After:**  
+- Introduces `get_all_model_roles_for_user`, which returns all roles a user has for a model.
+- Updates logic to aggregate all content types a user is authorized for, based on all their roles.
+- Refactors `get_content_type_for_role` to `get_content_type_for_roles` to handle multiple roles.
+- Updates membership and authorization checks to use the new multi-role logic, ensuring users with multiple roles (e.g., both "developer" and "validator") are granted all appropriate permissions.
+
+#### Why
+Previously, users with multiple roles on a model (e.g., both "developer" and "validator") would only have permissions associated with the first role found. This could lead to insufficient access and authorization errors for legitimate users. The change ensures that all assigned roles are respected, improving correctness and flexibility of the authorization system.
+
+#### External Release Notes
+This update improves model membership and authorization logic to consider all roles a user holds for a model, rather than just the first. Users with multiple roles (e.g., both "developer" and "validator") will now have access to all content types and actions permitted by any of their roles. This change enhances flexibility and correctness in model access control.  
+<!-- [Learn more ...](<relative-link>) -->
+
+#### Breaking Changes
+- If any downstream code or policies assumed only a single role per user per model, those assumptions may need to be revisited.
+- The function `get_content_type_for_role` is replaced by `get_content_type_for_roles` and now expects a list of roles.
+
+#### Additional Notes
+- Consider reviewing and updating any documentation or downstream services that reference the old single-role logic.
+- This change lays groundwork for more granular or complex role-based access control in the future.
+
+# PR Summary
+
+This PR introduces significant changes to the authorization flow and role-based permissions in the backend. The key contributions are:
+
+1. Replacing the single-role lookup with a multi-role approach: 
+   - The old function get_model_role_for_user is replaced by get_all_model_roles_for_user, which now returns a list of all roles associated with a user for a specific inventory model. This supports scenarios where a user might have multiple roles.
+
+2. Updating content type resolution: 
+   - The function get_content_type_for_roles now iterates over all roles assigned to the user, filtering by their permissions using a new mapping (RolePermission.PERMISSION_TO_CONTENT_TYPE). This allows multiple documentation types to be considered based on the specific permissions granted through each role.
+   - The default setting of the content type in the decorated function leverages these permissions. There is additional logic to check for a conflicting state (e.g., when a user has properties of both developer and validator), where an AuthError is raised if both permissions (update_doc and update_vr) are found simultaneously.
+
+3. Refining the authorization chain:
+   - In the decorator and in ensure_model_membership, the PR adjusts the flow to work with the new multi-role structure. In the membership check, the authorized content types are now validated against the list of user roles rather than a singular role.
+
+4. Enhancements in the data model:
+   - A new helper method, has_permission, is added in the OrganizationRole class to abstract permission checking.
+   - The RolePermission model now includes a mapping (PERMISSION_TO_CONTENT_TYPE) that links permission action IDs to relevant content types, with a plan to expand this mapping as support for multiple document types grows.
+
+Overall, the PR aims to improve the expressiveness and flexibility of the role-based permission system, which is a key part of the security and integrity of model access and modification operations within the application.

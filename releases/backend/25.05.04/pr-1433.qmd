@@ -1,0 +1,43 @@
+---
+title: "feat: run schema migrations in separate container"
+categories: [backend, 25.05.04, hotfix, enhancement, do not merge, breaking-change]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1433
+---
+#### What
+This will change the docker-entrypoint script and docker-compose config so that schema migrations, as well as the scripts for creating analytics views and managing rbac are run first in their own separate container. The rest of the containers related to the ValidMind backend will wait for this container to run to completion before starting up.
+
+An associated change to our helm chart will need to merge with this, and I will link it for visibility.
+
+#### External Release Notes
+* Schema migrations are now expected to run once per-deploy using a kubernetes `job` resource. Failure to implement this `job` resource by either not pulling the latest version of the helm chart or failing to implement it in a custom deployment method will result in system degradation, as the database schema will be out of date with what the ValidMind backend expects.
+
+#### Breaking Changes
+* Schema migrations are now expected to run once per-deploy using a kubernetes `job` resource. Failure to implement this `job` resource by either not pulling the latest version of the helm chart or failing to implement it in a custom deployment method will result in system degradation, as the database schema will be out of date with what the ValidMind backend expects.
+
+# PR Summary
+This PR introduces several functional improvements across deployment pipelines, documentation, Docker configurations, and startup scripts:
+
+1. GitHub Actions workflow (deploy.yaml):
+   - Removed custom steps for retrieving and outputting the ECR registry information. Instead, the workflow now leverages the official aws-actions/amazon-ecr-login@v2 action to log into ECR, simplifying the process and reducing potential points of failure.
+   - Updated docker build tags and cache parameters to use output variables from the new login action.
+
+2. Documentation Updates (README.md):
+   - Enhanced local development instructions by adding make targets for running database migrations, installing RBAC, and creating analytics views. This provides clearer guidance for initializing the development environment.
+   - Clarified instructions for recreating the ValidMind schema by suggesting use of the migrations task instead of starting the API.
+
+3. Docker Compose Enhancements (docker-compose.yaml):
+   - Introduced a new service configuration for migrations. This service builds from the backend Dockerfile and is configured to run schema migrations in a controlled environment.
+   - Added dependency conditions to ensure that the migrations service completes successfully before dependent services proceed.
+
+4. Startup Script Adjustments (docker-entrypoint.sh):
+   - Updated the Keycloak port reference to pull from KEYCLOAK_SERVICE_PORT, aligning with service naming conventions.
+   - Modified the Redis startup check to conditionally skip waiting when running in migration mode, allowing migrations to run without unnecessary delays.
+   - Streamlined the startup flow to differentiate between migration, worker, and API startup modes.
+
+5. Code Cleanup (src/backend/api.py):
+   - Removed redundant Flask-Migrate initialization, likely because the migrations are now handled through a dedicated service or task.
+
+Overall, these changes aim to simplify the deployment process, improve clarity in developer guidance, and ensure that the application's startup and migration procedures are better managed across different environments.

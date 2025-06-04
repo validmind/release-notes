@@ -1,0 +1,43 @@
+---
+title: "Add ability to export comments in validation reports"
+categories: [backend, 25.05.04, hotfix, enhancement, python]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1429
+---
+#### What
+<!-- Describe what the change is doing, including behavior before and after the change -->
+We would like the ability for comments to be exported from validation reports. Same as the existing flags, exporting comments defaults to off.
+
+With the corresponding frontend PR, we now have a "include comments left on document" checkbox when exporting the validation report. 
+<img width="1542" alt="Screenshot 2025-05-05 at 08 55 55" src="https://github.com/user-attachments/assets/b6b886e6-60cd-4c05-8ac3-46e3edbad7b8" />
+
+#### Why
+<!-- Explain why the change is being made and needed -->
+Customers would like the option to have their contributors comments saved.
+
+#### Breaking Changes
+<!-- List any breaking changes -->
+No
+
+#### Screenshots/Videos (Frontend Only)
+<!-- Add screenshots or videos showing before/after -->
+
+# PR Summary
+
+This PR enhances the reporting functionality by integrating user comments into the generated reports. Key changes include:
+
+1. In the Annotation model (annotation.py), a new static method, get_user_comments_by_model_id, is added to query and join annotation data with related comments and the user who created them.
+
+2. The report serialization process is updated across several modules. Changes in model_inventory.py and reports.py now support an additional flag ('include_comments') for embedding user comments into reports, affecting both the document generation and the content structure.
+
+3. The UI reporting routes (ui_reporting.py) now parse an additional parameter for comments inclusion. A helper method, parse_generate_report_params, consolidates all report parameters including the new include_comments flag.
+
+4. In the report render helpers, a new function get_comment_text_for_doc is introduced. This function processes the retrieved comments, stripping HTML formatting and organizing them in a styled text block that is then converted to a document fragment.
+
+5. A new dataclass ExportAnnotation in util_models.py is added to facilitate clean export of comment details including user name, text content, created date, and context.
+
+6. Several unit tests were added in test_reports.py to verify the functionality: testing serialization with comments, ensuring that comments appear as expected in document fragments, and validating that HTML is properly cleaned before being embedded in the final report.
+
+Overall, these changes aim to provide a more comprehensive report output by ensuring that user comments are properly queried, formatted, and integrated within the generated reports.

@@ -1,0 +1,21 @@
+---
+title: "Have ruff always scan all files in order to avoid warnings getting skipped"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1424
+---
+# PR Summary
+
+This pull request introduces several enhancements focused on improving code formatting consistency and cleaning up lint exception comments. The changes include:
+
+- Updating the Makefile to run ruff commands with the `--no-cache` option. This ensures that the latest code analysis is used without cached results, potentially catching new issues more reliably.
+
+- Modifying various migration scripts by removing the verbose `# noqa: B950` markers and replacing them with a shorter `# noqa`. This simplifies the code without affecting the intended lint suppression.
+
+- Reordering some import statements in a couple of modules to improve consistency and possibly resolve minor dependency ordering issues.
+
+- Adjusting a test in the object storage service to use the same simplified `# noqa` format for the KMS key configuration string.
+
+Overall, the functionality remains unchanged, with the primary impact being on code formatting and clarity.

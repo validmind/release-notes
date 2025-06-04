@@ -1,0 +1,19 @@
+---
+title: "Initial flattening"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1403
+---
+# PR Summary
+
+This PR introduces several improvements to template handling within the application. The main changes include:
+
+1. In the installation script, the call to the upsert function now includes an additional `template_type` parameter to better differentiate templates.
+
+2. In the backend database models for templates and template versions, validation functions (@validates decorators) have been added to ensure that the template data is properly processed each time it is set or updated. These functions leverage the new `flatten_sections` utility function to convert nested section structures into a flat JSON-safe format.
+
+3. Two new utility functions, `extract_clean_section` and `flatten_sections`, have been implemented. These functions recursively traverse nested sections, removing unwanted keys such as 'order', 'index', and 'sections', and output a cleaned flat structure. This mechanism facilitates easier storage and processing of template metadata.
+
+4. Unit tests have been extended and added for the new flattening functionality. The tests verify that nested sections are flattened correctly, handle cases where the sections key might be missing, and manage deeply nested structures appropriately. Additionally, the tests ensure that existing functionalities, like template serialization, handle the updated structure (e.g., using 'sections' instead of 'pages') properly.

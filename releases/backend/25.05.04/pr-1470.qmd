@@ -1,0 +1,26 @@
+---
+title: "[SC-10301] Check model permissions on /api/v1/workflows/targets/{cuid}/executions"
+categories: [backend, 25.05.04, hotfix, bug, security]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1470
+---
+#### What
+The api route `/api/v1/workflows/targets/{cuid}/executions` calls `Workflow.get_workflow` and `Execution.get_by_target`. The first call passes the user and only selects workflows within that user's organization, but the second selects executions by target (model) from all organizations.
+
+This commit changes the `Execution.get_by_target` to also take a user and only select executions by target from the user's organization.
+
+# PR Summary
+
+This PR refactors the workflow retrieval methods to base lookups on the associated organization rather than the user object. The key changes include:
+
+- In src/backend/db/workflow.py, the get_workflow method signature is updated to accept an organization and a cuid. It now checks if the organization is provided, raising a ValueError with a descriptive message if it is not.
+
+- Similarly, the get_by_target method has been enhanced to accept an organization parameter and filters the query using the organization associated with the Workflow. This ensures that the workflow executions returned are scoped correctly by organization.
+
+- In the REST API endpoints in src/backend/routes/ui_workflows.py, all calls to Workflow.get_workflow have been updated to pass g.current_user_org instead of g.current_user. This aligns the data retrieval with the new workflow model requirements.
+
+- The corresponding unit tests in tests/unit/test_workflows.py have been modified to use the organization parameter when fetching workflows and testing execution queries. This ensures consistency in how workflows are retrieved throughout the project.
+
+Overall, the changes centralize the context on organization-level access, improving consistency, and helping avoid potential mismatches that could occur by using user information directly.

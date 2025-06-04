@@ -1,0 +1,14 @@
+---
+title: "hotfix: ensure sqlalchemy pool vars are ints"
+categories: [backend, 25.05.04, hotfix, bug]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1472
+---
+#### What
+The k8s pod spec does not allow for env vars to be set to integers, so you end up having to wrap them in quotes. Because of this, python will interpret them as strings and sqlalchemy doesn't handle that gracefully. This will ensure these values are cast to ints when the env var is actually present and set by the k8s pod spec. Up until now, we've been relying on the defaults.
+
+# PR Summary
+
+This pull request improves the configuration of the Flask application by ensuring that the SQLAlchemy-related environment variables, namely `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW`, are explicitly cast to integers. Previously, these values were directly taken from environment variables as strings, which could lead to type mismatches. With this change, the application will now have proper type enforcement, reducing potential runtime errors related to database connection pooling configurations.

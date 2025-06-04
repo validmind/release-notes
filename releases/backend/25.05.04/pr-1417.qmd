@@ -1,0 +1,11 @@
+---
+title: "chore: update staging,prod to  new values format"
+categories: [backend, 25.05.04, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "May 23, 2025"
+# PR URL: https://github.com/validmind/backend/pull/1417
+---
+# PR Summary
+
+This pull request modifies the deployment workflow configurations in three YAML files (deploy_aws_secondary.yaml, deploy_prod.yaml, and deploy_staging.yaml). The primary change is to update the copy operation so that the workflows now use the new template file (values-new.yaml) located in the templates/validmind directory instead of the old values.yaml. This change ensures that deployments will use the updated configuration settings. The sed commands remain responsible for replacing templated placeholder strings with environment-specific values (such as site, environment, vault id, repository, and API SHA), ensuring consistency across deployments.
