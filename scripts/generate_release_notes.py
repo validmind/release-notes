@@ -184,6 +184,7 @@ from urllib.parse import urlparse, urljoin
 from playwright.sync_api import sync_playwright
 import base64
 import imghdr
+from difflib import SequenceMatcher
 
 ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
 
@@ -508,7 +509,7 @@ class PR:
             max_attempts = 10
             initial_delay = 1
             delay = initial_delay
-            max_delay = 30  # Cap maximum delay at 30 seconds
+            max_delay = 3
             last_validation_result = None
             failure_patterns = {}  # Track patterns in failures
             content_for_reedit = None
@@ -607,7 +608,21 @@ class PR:
             
             # Set the content based on type
             if content_type == 'title':
-                self.cleaned_title = edited_content.rstrip('.')
+                # If all attempts failed and the title is substantially different, add a comment
+                if not is_valid and attempt == max_attempts - 1:
+                    # Check for substantial difference (simple check: not substring, or Levenshtein distance > threshold)
+                    orig = content.rstrip('.')
+                    new = edited_content.rstrip('.')
+                    ratio = SequenceMatcher(None, orig.lower(), new.lower()).ratio()
+                    if orig.lower() not in new.lower() and ratio < 0.7:
+                        comment = f"<!--- CHECK: Title substantially different from original --->\n<!--- ORIGINAL: {orig} --->\n"
+                        self.cleaned_title = comment + new
+                        if self.debug:
+                            print(f"DEBUG: [edit_content] Title difference detected, comment added.")
+                    else:
+                        self.cleaned_title = new
+                else:
+                    self.cleaned_title = edited_content.rstrip('.')
                 if self.debug:
                     print(f"DEBUG: [edit_content] Set cleaned_title: {self.cleaned_title}")
             elif content_type == 'summary':
@@ -644,7 +659,7 @@ class PR:
         max_attempts = 10
         initial_delay = 1
         delay = initial_delay
-        max_delay = 30
+        max_delay = 3
         last_validation_result = None
         failure_patterns = {}
         content_for_reedit = None
@@ -780,9 +795,9 @@ class PR:
             for criterion in validation_criteria[content_type]:
                 validation_prompt += f"- {criterion}\n"
 
-        max_retries = 10
+        max_retries = 5
         retry_delay = 1
-        max_delay = 30  # Cap maximum delay at 30 seconds
+        max_delay = 3
         last_error = None
 
         for attempt in range(max_retries):
