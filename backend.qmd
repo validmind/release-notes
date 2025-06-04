@@ -4,6 +4,7 @@ listing:
   contents: releases/backend
   fields: [date, title, categories, description]
   sort: "date desc"
+  max-description-length: 300
   type: default
   categories: true
   sort-ui: true

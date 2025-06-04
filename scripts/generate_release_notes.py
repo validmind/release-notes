@@ -2085,9 +2085,23 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                     content.append('\n'.join(filtered_content))
         
         # --- Add high-level summary logic here ---
+        def has_user_facing_content(commit):
+            return bool(
+                (commit.get('external_notes') and commit['external_notes'].strip()) or
+                (commit.get('pr_summary') and commit['pr_summary'].strip())
+            )
         def generate_highlevel_summary(commits, char_limit=250):
-            enhancement_titles = [c.get('cleaned_title') or c.get('title') for c in commits if 'enhancement' in (c.get('labels') or [])]
-            other_titles = [c.get('cleaned_title') or c.get('title') for c in commits if 'enhancement' not in (c.get('labels') or [])]
+            # Only include PRs with user-facing content
+            enhancement_titles = [
+                c.get('cleaned_title') or c.get('title')
+                for c in commits
+                if 'enhancement' in (c.get('labels') or []) and has_user_facing_content(c)
+            ]
+            other_titles = [
+                c.get('cleaned_title') or c.get('title')
+                for c in commits
+                if 'enhancement' not in (c.get('labels') or []) and has_user_facing_content(c)
+            ]
             ordered_titles = [t for t in enhancement_titles if t] + [t for t in other_titles if t]
             if not ordered_titles:
                 return "This release includes no user-facing changes."
@@ -2162,7 +2176,11 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                         print(f"Proofread attempt {attempt+1} failed: {e}")
             # Fallback to original if all attempts fail
             return summary
-        enhancement_titles = [c.get('cleaned_title') or c.get('title') for c in all_commits if 'enhancement' in (c.get('labels') or [])]
+        enhancement_titles = [
+            c.get('cleaned_title') or c.get('title')
+            for c in all_commits
+            if 'enhancement' in (c.get('labels') or []) and has_user_facing_content(c)
+        ]
         summary = generate_highlevel_summary(all_commits)
         summary = proofread_summary_with_llm(summary, max_tries=5, debug=debug)
         is_valid = validate_summary(summary, enhancement_titles)
