@@ -1,0 +1,34 @@
+---
+title: "Add new custom fields permissions API (#1531)"
+categories: [backend, 25.06, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-04 13:02
+# Content validated by AI - 2025-06-04 13:02
+# Content overwritten from an earlier version - 2025-06-04 13:02
+# PR URL: https://github.com/validmind/backend/pull/1531
+---
+
+New routes have been added to retrieve permissions for custom fields.
+
+This update improves workflow, user management, and API functionality while addressing several bugs. Key changes include:
+
+- The CASBIN database URI in GitHub Actions now uses `db` as the service alias.
+- Admin user management scripts utilize the Flask app context for better database access.
+- RBAC utilities use context managers for safer file handling, with enhanced error logging and rollback on failure.
+- The Custom Fields API has been refactored to consolidate endpoints and add a method for retrieving roles with permissions.
+- Enhanced logging and error handling have been implemented across modules.
+- Integration tests have been updated for XSS sanitization and file validations.
+
+The CASBIN database URI in GitHub Actions now uses `db` instead of `host.docker.internal`.
+
+Admin user management scripts now explicitly use the Flask app context (`with app.app_context()`) for proper database and resource access. User upsertion logic has been clarified.
+
+RBAC utilities now use context managers (`with open(...)`) for improved resource safety and error handling. The role-based access control initialization function verifies required SQL files, logs processes, and handles exceptions with rollbacks.
+
+Custom fields endpoints have been refactored, consolidating code into a new namespace (`ui_custom_fields.py`) and adding a method (`get_roles_for_custom_field`) to retrieve roles with read/write permissions for a given custom field key.
+
+Enhanced logging has been added across modules to aid troubleshooting and monitoring.
+
+Integration tests for text editor file uploads and custom field endpoints ensure XSS sanitization, file size validations, and proper serialization of role data, covering unauthorized access and non-existent custom fields.

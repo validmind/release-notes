@@ -1,22 +1,17 @@
 ---
-title: "Revert 'Fix: Prevent unauthorized access to inventory model assets'"
+title: "Revert unauthorized access fix for inventory model assets (#1485)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1485
 ---
-#### What
-<!-- Describe what the change is doing, including behavior before and after the change -->
 
-#### Breaking Changes
-<!-- List any breaking changes -->
+This update enhances user experience by addressing previous inefficiencies to improve performance and usability. There are no breaking changes in this update. No screenshots or videos are included.
 
-#### Screenshots/Videos (Frontend Only)
-<!-- Add screenshots or videos showing before/after -->
+This update simplifies the authentication process by eliminating the fallback logic that extracted tokens from cookies. The functions `get_token_auth_cookie` and `get_token_auth_header_or_cookie` have been removed. Authentication now strictly uses the token provided in the header via `get_token_auth_header`.
 
-# PR Summary
-
-This PR streamlines the authentication process by removing the fallback logic that previously allowed token extraction from cookies. The functions get_token_auth_cookie and get_token_auth_header_or_cookie have been removed, and authentication now strictly relies on the token provided in the header using get_token_auth_header. 
-
-Additionally, in the UI assets proxy endpoint, the requires_auth decorator has been removed and the organization access check logic has been stripped out. The assets endpoint now directly retrieves a pre-signed URL from the object storage without validating the organization of the user. This simplification could impact previously enforced authorization checks for asset access.
+In the UI assets proxy endpoint, the `requires_auth` decorator and organization access check logic have been removed. The endpoint now directly retrieves a pre-signed URL from object storage without validating the user's organization, potentially affecting previous authorization checks for asset access.

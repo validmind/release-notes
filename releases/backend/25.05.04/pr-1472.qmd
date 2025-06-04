@@ -1,14 +1,15 @@
 ---
-title: "hotfix: ensure sqlalchemy pool vars are ints"
+title: "Ensure `SQLAlchemy` pool variables are integers (#1472)"
 categories: [backend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1472
 ---
-#### What
-The k8s pod spec does not allow for env vars to be set to integers, so you end up having to wrap them in quotes. Because of this, python will interpret them as strings and sqlalchemy doesn't handle that gracefully. This will ensure these values are cast to ints when the env var is actually present and set by the k8s pod spec. Up until now, we've been relying on the defaults.
 
-# PR Summary
+Kubernetes pod specifications require environment variables to be enclosed in quotes, which causes Python to interpret them as strings. This can lead to issues with SQLAlchemy, which expects integer values. This update ensures that when these environment variables are set by the Kubernetes pod specification, they are correctly cast to integers.
 
-This pull request improves the configuration of the Flask application by ensuring that the SQLAlchemy-related environment variables, namely `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW`, are explicitly cast to integers. Previously, these values were directly taken from environment variables as strings, which could lead to type mismatches. With this change, the application will now have proper type enforcement, reducing potential runtime errors related to database connection pooling configurations.
+This pull request improves the Flask application's configuration by ensuring that the SQLAlchemy environment variables `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW` are explicitly converted to integers. Previously, these values were used directly from environment variables as strings, which could lead to type mismatches. This update enforces the correct data type, reducing potential runtime errors related to database connection pooling configurations.

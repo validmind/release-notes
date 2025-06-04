@@ -1,27 +1,19 @@
 ---
-title: "Remove privledge escalation issue"
+title: "Remove privilege escalation issue (#1458)"
 categories: [backend, 25.05.04, hotfix, bug, security]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1458
 ---
-#### What
-<!-- Describe what the change is doing, including behavior before and after the change -->
-We have an issue where normal users are able to escalate their permissions by turning themselves into admins.
 
-#### External Release Notes
-<!--- REPLACE THIS COMMENT WITH YOUR DESCRIPTION --->
-Remove privilege escalation vulnerability.
+We have fixed a vulnerability that allowed normal users to escalate their permissions and become admins. This change eliminates the privilege escalation issue.
 
-#### Breaking Changes
-<!-- List any breaking changes -->
+This update enhances user role management endpoints by refining the authorization mechanism and improving variable naming for clarity.
 
-#### Screenshots/Videos (Frontend Only)
-<!-- Add screenshots or videos showing before/after -->
+The POST endpoint's authorization now specifies `resource="Role"` and `action="create"`, replacing the generic `refresh="api-async"` parameter for more precise control. Similarly, the DELETE endpoint uses `resource="Role"` and `action="delete"` to better reflect permission requirements.
 
-# PR Summary
-
-This PR enhances the user role management endpoints by updating the authorization mechanism and improving variable naming for clarity. In the POST endpoint, the authorization decorator has been changed from using a generic `refresh="api-async"` parameter to a more fine-grained control with `resource="Role"` and `action="create"`. Similarly, in the DELETE endpoint, the authorization decorator now uses `resource="Role"` with `action="delete"` to better reflect permission requirements.
-
-Additionally, the variable previously named `user` has been renamed to `to_update_user` to more clearly represent the user that will be updated. This ensures consistency when checking organization membership and creating the role assignment. The event publishing call now also correctly references the updated user variable, ensuring that events are generated with the intended user information.
+The variable `user` has been renamed to `to_update_user` for clarity, ensuring consistency in organization membership checks and role assignments. The event publishing call now correctly references this updated variable, ensuring accurate event generation.

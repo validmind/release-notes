@@ -1,23 +1,15 @@
 ---
-title: "[SC-9891] Improve Auth0 unhappy path flow"
+title: "Improve Auth0 error handling for organization onboarding (#1336)"
 categories: [frontend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/frontend/pull/1336
 ---
-#### What
-Before this PR, any errors raised by the backend are only presented by their error code. After this PR, helpful error messages from the backend can be presented to the user. If no message is presented then the old default message is still presented.
 
-#### External Release Notes
--->
-Bugfix: Organization on-boarding flow error handling improvements
+This update enhances error handling by displaying detailed error messages from the backend instead of just error codes. If a specific message is unavailable, the default message will still appear. Additionally, a bug fix improves error handling during the organization onboarding process.
 
-#### Screenshots/Videos (Frontend Only)
-![frontend-initial-error-password](https://github.com/user-attachments/assets/b826d6c5-7a84-4ba2-b5f9-59b2ad50c381)
-
-# PR Summary
-
-This PR enhances the error handling logic in the BootstrapForm component. The form now prioritizes displaying a detailed error message retrieved from the API response (via error.response?.data?.message) over the generic error.message. This change improves the clarity of error feedback provided to the user during organization creation failures. Specifically, the code now stores the chosen error message in a local variable (errorMessage) and uses it consistently in both inline error displays and toast notifications.
-
-These updates ensure that if the backend supplies a more descriptive error message, it will be used, making troubleshooting and user guidance more effective.
+This update improves error handling in the `BootstrapForm` component by prioritizing detailed API response error messages (`error.response?.data?.message`) over generic ones (`error.message`). This change enhances clarity in error feedback during organization creation failures. The selected error message is stored in a local variable (`errorMessage`) and consistently used in both inline error displays and toast notifications, ensuring more effective troubleshooting and user guidance.

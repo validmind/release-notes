@@ -1,67 +1,15 @@
 ---
-title: "Docs: Updated content block features"
+title: "Updated content block features and documentation templates (#707)"
 categories: [documentation, 25.05.04, hotfix, documentation]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/documentation/pull/707
 ---
-#### # New templates section
-Since templates and reusable text blocks apply to more than just model documentation (validation reports, ongoing monitoring), I moved the guides under here into a new sub-section:
 
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8990/documentation-saving-text-block-to-block/guide/guides.html)
+The documentation has been reorganized to enhance clarity and usability. Templates and reusable text blocks, applicable to model documentation, validation reports, and ongoing monitoring, have been moved to a new sub-section. Broken links have been fixed, and aliases added to old URLs. A new page details the block library feature, and updates reflect UI changes, including the new chat interface for "Generate Text with AI." Test results and metrics over time pages now include updated UX information. The ValidMind Platform's template guides have been expanded and relocated under **Guides** in the **templates** section.
 
-| Sidenav | Documentation guides listing | Validation guides listing | Monitoring guides listing |
-|--|--|--|--|
-| <img width="194" alt="Screenshot 2025-05-01 at 5 47 48 PM" src="https://github.com/user-attachments/assets/a5ee118b-c53a-4a51-8748-74e56d319346" /> | <img width="947" alt="Screenshot 2025-05-01 at 5 50 09 PM" src="https://github.com/user-attachments/assets/b1254fb6-acc2-459d-bf8f-afe755509ac3" /> | <img width="1183" alt="Screenshot 2025-05-01 at 5 50 16 PM" src="https://github.com/user-attachments/assets/1f1ab27c-be6c-4100-9d48-c957515d2bfb" /> | <img width="919" alt="Screenshot 2025-05-01 at 5 50 23 PM" src="https://github.com/user-attachments/assets/2595196b-6e2c-4a2d-a202-66ce1f38a909" /> |
-
-> [!NOTE]
-> - Broken links have been resolved
->  - I also fixed them over in the `installation` repo as our online check was catching "broken" links from those files: 
->    - [FAILED QUARTO RUN](https://github.com/validmind/documentation/actions/runs/14786287883/job/41515188930?pr=707)
->    - [HOTFIX](https://github.com/validmind/installation/commit/ff2703ea72b54d48dc6e9798a47056ecba7fa081)  — **EDIT:** @nrichers reverted this; I'm going to leave this until the PR is approved so we can stop changing it back and forth.
-> - Aliases have been applied to the old URLs
-
-#### ## Manage text block library
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8990/documentation-saving-text-block-to-block/guide/templates/manage-text-block-library.html)
-
-Net-new page for sc-8990 covering the new block library feature:
-
-![Screenshot 2025-05-01 at 5 51 30 PM](https://github.com/user-attachments/assets/0320abec-a754-40e5-abde-0edc19a1a6f1)
-
-#### # Updated docs
-#### Work with content blocks
-
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8990/documentation-saving-text-block-to-block/guide/model-documentation/work-with-content-blocks.html)
-
-- Since the insertion (and management) of blocks has changed with the block library, I updated this page to reflect the new UI:
-
-| Updated explanation of content block types | "Add content blocks" reflects new UX | "Remove content blocks" reflects new UX |
-|--|--|--|
-| <img width="935" alt="Screenshot 2025-05-01 at 5 52 14 PM" src="https://github.com/user-attachments/assets/c899d77e-a013-4016-98fb-70d103ab9cec" /> | <img width="1140" alt="Screenshot 2025-05-01 at 5 52 40 PM" src="https://github.com/user-attachments/assets/2ba05a9d-24b6-42e6-8a74-2c115608e813" /> | <img width="1078" alt="Screenshot 2025-05-01 at 5 53 03 PM" src="https://github.com/user-attachments/assets/42191c9a-436e-4522-b13d-0ab616913f8e" /> |
-
-- For sc-9386, I also updated the "Generate Text with AI" section to reflect the new chat interface:
-
-<img width="588" alt="Screenshot 2025-05-01 at 5 53 25 PM" src="https://github.com/user-attachments/assets/e03785d4-d4d7-44c0-91c2-16e3307495f0" />
-
-#### ## Work with test results
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8990/documentation-saving-text-block-to-block/guide/model-documentation/work-with-test-results.html)
-
-- This page now also reflects the new test-driven block menu UX:
-  ![Screenshot 2025-05-01 at 5 55 39 PM](https://github.com/user-attachments/assets/c26e4843-5c89-4747-a1eb-d63c37ec4cc4)
-
-- For sc-9447, I added a section on configuring the display of test results once inserted:
-  <img width="1260" alt="Screenshot 2025-05-01 at 5 55 50 PM" src="https://github.com/user-attachments/assets/6a69b4e0-c38e-4056-b0c4-acdc2c461c46" />
-
-#### ## Work with metrics over time
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8990/documentation-saving-text-block-to-block/guide/monitoring/work-with-metrics-over-time.html)
-
-This page now also reflects the new metric over time block menu UX:
-
-#### External Release Notes
-To support the release of our updated content block interface and the text block library, we've reorganized and expanded our documentation on templates within the ValidMind Platform. 
-
-You can now find guides on managing templates for model documentation, validation reports, and ongoing monitoring reports under our **Guides** in the **[templates]{.smallcaps}** section, alongside a new guide on how to manage your text block library.
-
-# PR Summary
-This pull request refactors the paths for documentation templates by moving them from the `model-documentation` directory to a new `templates` directory. This change affects various files across the project, including configuration files, guides, and release notes. Additionally, the PR introduces enhancements to the content block management system, allowing for better organization and reuse of text blocks. New features include the ability to manage a library of reusable text blocks, configure test result displays, and improve the user interface for adding and removing content blocks.
+This pull request refactors the paths for documentation templates, moving them from the `model-documentation` directory to a new `templates` directory. This change impacts various files, including configuration files, guides, and release notes. Additionally, enhancements to the content block management system have been introduced. These include managing a library of reusable text blocks, configuring test result displays, and improving the user interface for adding and removing content blocks.

@@ -1,30 +1,27 @@
 ---
-title: "feat(templates): Implement improved template swap/merge experience"
+title: "Implement improved template swap/merge experience (#1328)"
 categories: [frontend, 25.05.04, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/frontend/pull/1328
 ---
-#### External Release Notes
-- Added a new feature to allow documents to be "Update(d) from Template"
-- This feature allows one to merge a template into an existing template, while selectively choosing to add, ignore, delete, and  keep changes.
 
-# PR Summary
+A new feature has been added that allows users to update documents using a template. This feature enables merging a template into an existing document, offering options to selectively add, ignore, delete, or retain changes.
 
-This PR introduces several significant functional enhancements and UI improvements:
+This update introduces key functional enhancements and UI improvements:
 
-1. Dependency Updates: The project version has been bumped (from 1.33.3 to 1.33.4) and new dependencies related to drag-and-drop functionality (such as @minoru/react-dnd-treeview and react-dnd) have been added. These additions enable advanced template manipulation capabilities.
+- **Dependency Updates**: The project version is now 1.33.4. New dependencies like `@minoru/react-dnd-treeview` and `react-dnd` enhance drag-and-drop capabilities for template manipulation.
 
-2. API Enhancements: The old SwapTemplate function has been removed and replaced by a new function, CreateAndSwapTemplate, which consolidates the creation and swapping of document templates into a single API call. This improves clarity and reusability in handling template updates.
+- **API Enhancements**: The `SwapTemplate` function is replaced by `CreateAndSwapTemplate`, consolidating template creation and swapping into one API call for better clarity and reusability.
 
-3. UI Modifications and Component Updates: Several UI components (e.g., AddFindingModal, AttributesRailDocumentOverview, AttributesRailMonitoringOverview, and AttributesRailValidationReportOverview) have been updated to refine user interactions. Notable changes include:
-   - Updated trigger labels (e.g., "Add Finding" modified to "Add Model Finding") for improved clarity.
-   - Enhanced layout and integration of menu components with options to view template details or initiate a template update.
-   - Consistent use of Chakra UI components with added modals and menus for handling template view and swap operations.
+- **UI Modifications**: Updates to components such as `AddFindingModal` and `AttributesRailDocumentOverview` refine user interactions. Changes include updated trigger labels, enhanced menu layouts, and consistent use of Chakra UI components for template operations.
 
-4. Swap Template Modal: A comprehensive new component (SwapTemplateModal) has been introduced. This modal provides a drag-and-drop tree view allowing users to compare the active working template with a selected template version. Users can mark sections and blocks with statuses such as ADD, KEEP, IGNORE, or DELETE, and the UI guides them to resolve any invalid configurations before applying changes.
+- **Swap Template Modal**: A new `SwapTemplateModal` component offers a drag-and-drop tree view for comparing templates. Users can mark sections with statuses like ADD, KEEP, IGNORE, or DELETE, and resolve invalid configurations before applying changes.
 
-5. Template Model Adjustments: Minor modifications in the template model include making the parent section optional and introducing a global_id field, which help support the new swapping logic.
+- **Template Model Adjustments**: Minor model changes include making the parent section optional and adding a `global_id` field to support new swapping logic.
 
-Overall, these changes focus on providing a more streamlined and interactive approach to managing and swapping document templates within the application.
+These updates aim to streamline and enhance the management and swapping of document templates.

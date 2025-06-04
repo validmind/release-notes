@@ -1,20 +1,15 @@
 ---
-title: "fixing validation of trigger type on update"
+title: "Fix validation of trigger type on update (#1440)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1440
 ---
-#### What
-Fixes issue where a workflow PUT was returning error on validate trigger type since it was returning itself and complaining of existing workflow with same trigger type
 
-# PR Summary
+This update resolves an issue where a `PUT` request for a workflow resulted in an error due to a validation conflict with the trigger type. The error was caused by the workflow returning itself, which conflicted with an existing workflow sharing the same trigger type.
 
-This PR improves the workflow validation logic in the backend by adding an additional parameter, `update_cuid`, to the `validate_trigger_type` method. This change ensures that when updating an existing workflow, the current workflow record is excluded from a duplicate check (based on `cuid`).
-
-Specifically, the diff modifies the query filtering for existing workflows, adding a filter condition to exclude the workflow having the `cuid` passed in via `update_cuid`. This prevents false positives when updating a workflow after validating its fields.
-
-Additionally, in the UI workflows route (`src/backend/routes/ui_workflows.py`), the exception handling has been slightly refined. A `BadRequestError` gets explicitly re-raised, providing clearer error propagation and distinguishing it from general exceptions which are wrapped in an `InternalServerError`.
-
-Overall, these changes refine the update logic to ensure that workflow duplication is correctly checked and errors are handled appropriately during update operations.
+This update improves workflow validation by adding the `update_cuid` parameter to the `validate_trigger_type` method. This ensures that the current workflow record is excluded from duplicate checks when updating. The query now filters out the workflow with the `cuid` specified by `update_cuid`, preventing false positives. In `src/backend/routes/ui_workflows.py`, exception handling is refined to re-raise `BadRequestError` for clearer error propagation, distinguishing it from general exceptions. These changes enhance duplication checks and error handling during updates.

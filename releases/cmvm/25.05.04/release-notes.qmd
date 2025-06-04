@@ -1,15 +1,17 @@
 ---
 title: "25.05.04 Hotfix release notes"
-date: "May 23, 2025"
+date: "May 16, 2025"
 categories: [cmvm, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-# Content edited by AI - 2025-06-04 12:01
-# Content validated by AI - 2025-06-04 12:01
-# Content overwritten from an earlier version - 2025-06-04 12:01
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 ---
 
-This release includes the ability to soft delete workflows, run schema migrations in a separate container, enable or disable LLM support with `OfflineFlags` for Barclays, and export comments in validation reports, among other enhancements.
+This release includes enabling soft delete for workflows with dependency checks and a `DELETE` endpoint, running schema migrations in a separate container, and adding the ability to export comments in validation reports, among other enhancements.
+
+<!-- WARNING: Summary may not mention an enhancement PR -->
 
 # Backend
 <!--- Tag: [cmvm/25.05.04](https://github.com/validmind/backend/releases/tag/cmvm/25.05.04) --->
@@ -20,77 +22,96 @@ This release includes the ability to soft delete workflows, run schema migration
 
 <!--- PR #1400: https://github.com/validmind/backend/pull/1400 --->
 <!--- Labels: enhancement --->
-### Add ability to soft delete workflows (#1400)
+### Enable soft delete for workflows with dependency checks and a `DELETE` endpoint (#1400)
 
-This update introduces a soft delete feature for workflows and a dependency check endpoint. Key changes include adding `deleted_at` and `deleted_by_id` columns to the `workflows` table, updating the Workflow model to support soft deletion, and excluding soft-deleted workflows from queries. A new DELETE endpoint allows workflows to be soft deleted, and another endpoint checks workflow dependencies. Tests ensure soft-deleted workflows are excluded from queries and dependencies are accurately tracked.
+This update introduces a soft delete feature for workflows and a dependency check endpoint. Key changes include adding `deleted_at` and `deleted_by_id` columns to the `workflows` table, updating the Workflow model to support soft deletion, and excluding soft-deleted workflows from queries. A new method calculates workflow dependencies, and a DELETE endpoint allows soft deletion. Tests ensure workflows are correctly excluded and dependencies are accurately tracked.
 
-The pull request includes:
+This pull request introduces a soft delete mechanism for workflows and a corresponding dependency check endpoint. The main changes include:
 
-- A migration that adds `deleted_at` and `deleted_by_id` columns to the `workflows` table.
+- A migration adds two new columns to the `workflows` table: one for storing the deletion timestamp (`deleted_at`) and another for the ID of the user who performed the deletion (`deleted_by_id`).
 
-- Workflow model updates:
+- Updates to the Workflow model:
   
-  - Addition of `deleted_at` and `deleted_by_id` columns.
+  - New columns (`deleted_at`, `deleted_by_id`) are added to support soft deletion.
   
-  - Update to the `serialize` method to include `deleted_at`.
+  - The `serialize` method is updated to include the `deleted_at` field.
   
-  - Query adjustments to exclude soft-deleted workflows by filtering for `deleted_at` as `NULL`.
+  - The query for retrieving workflows now excludes soft-deleted workflows by filtering for records where `deleted_at` is `NULL`.
   
-  - A class method `get_workflow_dependencies` to count dependent inventory models.
+  - A new class method `get_workflow_dependencies` is provided to calculate the count of dependent inventory models for a given workflow.
   
-  - An instance method `mark_as_deleted` to set the `deleted_at` timestamp and record the user who deleted the workflow.
+  - A new instance method `mark_as_deleted` is introduced, which sets the `deleted_at` timestamp and records the user who deleted the workflow before committing the change.
 
-- UI route updates:
+- Updates to the UI routes:
   
-  - A DELETE endpoint for soft deleting workflows using `mark_as_deleted`, returning appropriate HTTP status codes.
+  - A new DELETE endpoint is added to soft delete a workflow. The endpoint uses the `mark_as_deleted` method and returns the appropriate HTTP status codes based on the outcome.
   
-  - An endpoint to check workflow dependencies by counting inventory models dependent on the specified workflow.
+  - A new endpoint is implemented to check workflow dependencies by returning the count of inventory models relying on the specified workflow.
 
-- New and updated test cases:
+- New and updated test cases to ensure correct functionality:
   
-  - Verification that soft-deleted workflows are excluded from active queries.
+  - Tests now verify that soft-deleted workflows are excluded from active workflow queries.
   
-  - Checks on dependency counts before and after workflow executions.
+  - Tests check that dependencies are correctly counted before and after workflow executions are started.
+
+Overall, these changes add a robust mechanism to handle workflow deletion in a soft manner, improving data integrity and allowing for dependency tracking on workflows.
 
 
 <!--- PR #1433: https://github.com/validmind/backend/pull/1433 --->
 <!--- Labels: enhancement, do not merge, breaking-change --->
-### Run schema migrations in a separate container (#1433)
+### Run schema migrations in separate container (#1433)
 
-This update enhances the `docker-entrypoint` script and `docker-compose` configuration. Schema migrations, along with scripts for creating analytics views and managing RBAC, will now execute first in a separate container. Other ValidMind backend containers will wait for this process to complete before starting. Schema migrations should run once per deployment using a Kubernetes `job` resource. Failure to implement this may result in system degradation due to outdated database schemas. An associated Helm chart update is required.
+This update modifies the `docker-entrypoint` script and `docker-compose` configuration to ensure schema migrations, along with scripts for creating analytics views and managing RBAC, are executed first in a separate container. Other containers related to the ValidMind backend will wait for this container to complete before starting.
 
-This update enhances deployment pipelines, documentation, Docker configurations, and startup scripts. Key improvements include using the `aws-actions/amazon-ecr-login@v2` for ECR login in GitHub Actions, refining local development instructions in `README.md`, and adding a new migration service in `docker-compose.yaml`. The startup script now aligns Keycloak port references and optimizes Redis checks. These changes streamline deployment, clarify developer guidance, and improve startup and migration management.
+Schema migrations are now expected to run once per deployment using a Kubernetes `job` resource. Not implementing this `job` resource, either by not updating to the latest version of the helm chart or failing to incorporate it in a custom deployment method, will lead to system degradation. This is because the database schema will not match what the ValidMind backend requires. An associated change to our helm chart will need to merge with this update.
 
-- GitHub Actions workflow (`deploy.yaml`):
-  - Simplified ECR login by using the `aws-actions/amazon-ecr-login@v2` action, removing custom steps and reducing failure points.
-  - Updated Docker build tags and cache parameters to use output variables from the new login action.
+This PR introduces improvements to deployment pipelines, documentation, Docker configurations, and startup scripts:
 
-- Documentation Updates (`README.md`):
-  - Added `make` targets for running database migrations, installing RBAC, and creating analytics views, enhancing local development instructions.
-  - Suggested using the migrations task for recreating the ValidMind schema instead of starting the API.
+- The GitHub Actions workflow (`deploy.yaml`) now uses the `aws-actions/amazon-ecr-login@v2` action for ECR login, simplifying the process and reducing failure points. Docker build tags and cache parameters utilize output variables from this action.
 
-- Docker Compose Enhancements (`docker-compose.yaml`):
-  - Added a new service configuration for migrations, ensuring schema migrations run in a controlled environment.
-  - Set dependency conditions to ensure migrations complete before dependent services proceed.
+- `README.md` updates enhance local development instructions with `make` targets for database migrations, RBAC installation, and analytics views creation. ValidMind schema recreation instructions now recommend using the migrations task.
 
-- Startup Script Adjustments (`docker-entrypoint.sh`):
-  - Updated Keycloak port reference to use `KEYCLOAK_SERVICE_PORT`.
-  - Modified Redis startup check to skip waiting in migration mode, reducing delays.
-  - Differentiated startup flow for migration, worker, and API modes.
+- `docker-compose.yaml` includes a new service for migrations, building from the backend Dockerfile to run schema migrations in a controlled environment. Dependencies ensure migrations complete before other services proceed.
 
-- Code Cleanup (`src/backend/api.py`):
-  - Removed redundant Flask-Migrate initialization, as migrations are now managed through a dedicated service or task.
+- `docker-entrypoint.sh` updates include using `KEYCLOAK_SERVICE_PORT` for Keycloak port references and modifying the Redis startup check to skip waiting in migration mode, streamlining startup flows for different modes.
+
+- In `src/backend/api.py`, redundant Flask-Migrate initialization has been removed, as migrations are now handled through a dedicated service or task.
+
+These changes simplify deployment, enhance developer guidance, and improve startup and migration management across environments.
+
+
+<!--- PR #1429: https://github.com/validmind/backend/pull/1429 --->
+<!--- Labels: enhancement, python --->
+### Add ability to export comments in validation reports (#1429)
+
+We have added the ability to export comments from validation reports. Previously, only flags could be exported, excluding comments. Now, you can choose to include comments when exporting a validation report. This feature is controlled by a checkbox labeled "Include comments left on document," which is unchecked by default. This update addresses customer requests for saving contributor comments.
+
+This update enhances reporting by integrating user comments into generated reports. Key changes include:
+
+- A new static method `get_user_comments_by_model_id` in `annotation.py` queries and joins annotation data with related comments and their creators.
+  
+- The report serialization in `model_inventory.py` and `reports.py` now supports an `include_comments` flag to embed user comments, affecting document generation and structure.
+
+- `ui_reporting.py` updates UI reporting routes to parse a new parameter for comments inclusion. The helper method `parse_generate_report_params` consolidates all report parameters, including `include_comments`.
+
+- A new function `get_comment_text_for_doc` in report render helpers processes comments, strips HTML, and organizes them into styled text blocks for document fragments.
+
+- A new dataclass `ExportAnnotation` in `util_models.py` facilitates clean export of comment details, including user name, text content, created date, and context.
+
+- Unit tests in `test_reports.py` verify functionality: testing serialization with comments, ensuring comments appear correctly in document fragments, and validating HTML cleaning before embedding in reports.
+
+These changes ensure user comments are properly queried, formatted, and integrated into reports for comprehensive output.
 
 
 <!--- PR #1431: https://github.com/validmind/backend/pull/1431 --->
 <!--- Labels: enhancement --->
 ### Enable or disable LLM support with `OfflineFlags` for Barclays (#1431)
 
-This update introduces offline feature flag support and enhances the feature flags codebase. Key improvements include offline feature flag configuration via environment variables, providing an alternative when LaunchDarkly is unavailable. Comprehensive docstrings have been added to all feature flag functions, and feature flag access has been refactored to use a centralized, context-aware function. Unused feature flags have been removed, and type hints added for better maintainability and type safety.
+This update introduces offline feature flag support and enhances the feature flags codebase. Key improvements include:
 
-- Offline feature flag functionality can now be configured using environment variables, providing an alternative to LaunchDarkly when its integration is unavailable.
+- Offline feature flag functionality can now be configured through environment variables, enabling use in environments where LaunchDarkly integration is not feasible, such as VM deployments.
 
-- Comprehensive docstrings have been added to all feature flag functions to improve documentation.
+- Comprehensive docstrings have been added to all feature flag functions, enhancing code documentation.
 
 - Feature flag access has been refactored to use a new centralized, context-aware function, reducing code duplication.
 
@@ -98,169 +119,102 @@ This update introduces offline feature flag support and enhances the feature fla
 
 - Type hints have been added to improve code maintainability and type safety.
 
-These changes enable feature flag functionality in environments where LaunchDarkly integration is not possible, such as virtual machine deployments, and improve overall code maintainability.
-
-This update enhances the feature flag system by adding offline flag support and improved context handling for LaunchDarkly evaluations.
-
-- The `.env.example` file now includes a `FEATURE_FLAGS` JSON string for offline environments, allowing feature flag evaluation without LaunchDarkly by using a predefined JSON of flags.
-
-- The `feature_flags.py` file introduces new functions: `get_offline_feature_flag` retrieves flag values from offline configurations, and `get_feature_flag_with_context` checks offline configurations before LaunchDarkly evaluations, improving offline reliability.
-
-- Two context functions have been improved. The `context_from_user` function now has an enhanced docstring, and a new function, `context_from_user_and_organization`, creates a multi-context using both user and organization information for more granular feature flag evaluations.
-
-- The backend tracking route now uses `get_feature_flag_with_context` instead of directly accessing `ldclient`, decoupling feature flag evaluation from the LaunchDarkly client for better offline support.
-
-- Comprehensive unit tests in `tests/unit/test_feature_flags.py` cover scenarios including context creation, offline and online flag evaluation, and handling cases where user or organization data may be missing.
-
-
-<!--- PR #1429: https://github.com/validmind/backend/pull/1429 --->
-<!--- Labels: enhancement, python --->
-### Add ability to export comments in validation reports (#1429)
-
-We have added the ability to export comments from validation reports. Previously, only flags could be exported, and exporting comments was not possible. By default, exporting comments is turned off.
-
-With the corresponding frontend update, there is now an "Include comments left on document" checkbox available when exporting the validation report. This change was made in response to customer requests for the option to save contributor comments.
-
-This update enhances reporting by integrating user comments into generated reports. Key changes include:
-
-- A new static method, `get_user_comments_by_model_id`, in `annotation.py` queries and joins annotation data with related comments and their creators.
-  
-- The report serialization process in `model_inventory.py` and `reports.py` now supports an `include_comments` flag to embed user comments, affecting document generation and structure.
-
-- UI reporting routes in `ui_reporting.py` parse an additional parameter for comments inclusion. The helper method `parse_generate_report_params` consolidates all report parameters, including `include_comments`.
-
-- A function, `get_comment_text_for_doc`, in report render helpers processes comments, strips HTML, and organizes them into styled text blocks for document fragments.
-
-- A new dataclass, `ExportAnnotation`, in `util_models.py` facilitates the export of comment details, including user name, text content, created date, and context.
-
-- Unit tests in `test_reports.py` verify functionality: testing serialization with comments, ensuring comments appear correctly in document fragments, and validating HTML cleaning before embedding in the final report.
-
-These changes ensure user comments are properly queried, formatted, and integrated into reports for comprehensive output.
+This update enhances the feature flag system by adding offline flag support and improving context handling for LaunchDarkly evaluations. The `.env.example` file now includes a `FEATURE_FLAGS` JSON string for offline environments, enabling offline evaluation of feature flags. The `feature_flags.py` file introduces new functions: `get_offline_feature_flag` retrieves flag values from offline configurations, and `get_feature_flag_with_context` checks offline configurations before LaunchDarkly evaluations. Context functions have been improved, with `context_from_user` now featuring an enhanced docstring and a new `context_from_user_and_organization` function for multi-context evaluations. The backend tracking route now uses `get_feature_flag_with_context`, decoupling it from the LaunchDarkly client for flexible offline support. Comprehensive unit tests in `tests/unit/test_feature_flags.py` cover various scenarios, including context creation and flag evaluation.
 
 ## Bug fixes
 
 
-<!--- PR #1471: https://github.com/validmind/backend/pull/1471 --->
-<!--- Labels: bug, security --->
-### Check workflow permissions for states (#1471)
+<!--- PR #1462: https://github.com/validmind/backend/pull/1462 --->
+<!--- Labels: bug, python, security --->
+### Prevent unauthorized modification of workflow status (#1462)
 
-This PR does not introduce any user-facing changes, deployment notes, or breaking changes. Local testing has been completed, and documentation updates have been made as necessary. There are no special review areas or additional notes.
+This update improves the validation for the `PUT /api/v1/statuses-workflows/{id}/status` endpoint. It now prevents users from altering the workflow status of organizations they are not part of, thereby addressing a potential security issue.
 
-This update enhances security and error handling for UI workflow states endpoints by enforcing organization-specific data access. Workflows are now accessed through the current user's organization using `g.current_user_org.workflows`, applicable to GET, POST, PATCH, and DELETE requests. This change minimizes data leakage risks between organizations. Additionally, `ResourceNotFoundError` exceptions are explicitly rethrown for precise error signaling, while other exceptions are returned as `InternalServerError`.
+This update introduces the `get_status_for_org` static method, streamlining the retrieval of status by joining the `StatusesWorkflowStatus` and `StatusesWorkflow` tables using organization and workflow identifiers. This method replaces redundant queries in the edit endpoint, improving data access efficiency. Minor refactoring has enhanced code formatting and readability. Unit tests verify the method's accuracy in handling both valid and invalid organization, workflow, and status identifiers.
 
 
-<!--- PR #1470: https://github.com/validmind/backend/pull/1470 --->
-<!--- Labels: bug, security --->
-### Check model permissions on `/api/v1/workflows/targets/{cuid}/executions` (#1470)
+<!--- PR #1441: https://github.com/validmind/backend/pull/1441 --->
+<!--- Labels: bug --->
+### Add logging to workflow Celery tasks (#1441)
 
-The API route `/api/v1/workflows/targets/{cuid}/executions` has been updated for improved security. Previously, `Workflow.get_workflow` filtered workflows by the user's organization, but `Execution.get_by_target` selected executions by target from all organizations. Now, `Execution.get_by_target` also requires a user, ensuring that executions by target are selected only from the user's organization.
+This update introduces logging capabilities and increases the maximum number of worker threads.
 
-This update refactors workflow retrieval methods to focus on organization-based lookups instead of user-based ones. Key changes include:
+This update includes two key changes:
 
-- In `src/backend/db/workflow.py`, the `get_workflow` method now requires an organization and a `cuid`. If the organization is not provided, it raises a `ValueError` with a descriptive message.
+- The worker concurrency in the Celery configuration has been increased from 4 to 6. This change, located in the `celery_config.py` file, is intended to improve performance by enabling more tasks to be processed simultaneously, especially during high workloads.
 
-- The `get_by_target` method now also accepts an organization parameter, filtering queries by the organization associated with the workflow. This ensures workflow executions are correctly scoped by organization.
-
-- In the REST API endpoints within `src/backend/routes/ui_workflows.py`, all calls to `Workflow.get_workflow` have been updated to use `g.current_user_org` instead of `g.current_user`, aligning data retrieval with the new workflow model requirements.
-
-- Unit tests in `tests/unit/test_workflows.py` have been updated to use the organization parameter when fetching workflows and testing execution queries, ensuring consistency in workflow retrieval across the project.
-
-These changes centralize access at the organization level, improving consistency and preventing potential mismatches that could arise from using user information directly.
+- A new logging statement has been added to the workflow tasks module (`workflows.py`). This log captures the process of identifying available workflows when a field changes, detailing the field key and the associated organization. This addition is meant to aid in debugging and tracking the execution flow during workflow queries.
 
 
 <!--- PR #1396: https://github.com/validmind/backend/pull/1396 --->
 <!--- Labels: bug, python --->
 ### Improve Auth0 error handling and debugging capabilities (#1396)
 
-In the initial onboarding setup, choosing a weak password previously resulted in a 500 error without explanation. Although Auth0 generated a helpful error message, it was not shown to the user. With this update, at least one informative message from Auth0 is now clearly displayed to the user.
+This update enhances the initial onboarding process by displaying helpful error messages from Auth0 when a weak password is chosen, addressing a previous issue where users received a backend error without explanation. 
 
-Bugfix: Enhanced error handling in the organization onboarding process.
+Bugfix: Improved error handling in the organization onboarding flow.
 
-This PR introduces key functional improvements, including enhanced debugging capabilities, improved authentication error handling, code and utility enhancements, and extended unit tests.
+This update introduces several functional improvements, including enhanced debugging capabilities, improved error handling for authentication, code and utility enhancements, and extended unit tests.
 
-- **Debugging Enhancements:**
-  
-  - A new remote debugging configuration is added to the VS Code launch file (`.vscode/launch.json`) for attaching a debugger (`debugpy`) to the API service in Docker. The README now includes usage instructions.
-  
-  - Docker Compose now exposes port 5678 and mounts relevant backend volumes for smoother debugging in a containerized environment.
-  
-  - The `docker-entrypoint.sh` script launches the Python application with `debugpy` using the `-m debugpy --listen 0.0.0.0:5678` flag for remote debugging.
+- **Debugging Enhancements**: A new remote debugging configuration has been added to the VS Code launch file (`.vscode/launch.json`). This allows users to attach a debugger via `debugpy` to the API service running in Docker. The README now includes instructions for using this configuration. The Docker Compose setup has been updated to expose port 5678 and mount relevant volumes from the backend, improving the debugging experience in a containerized environment. The `docker-entrypoint.sh` script now launches the Python application with `debugpy` using the `-m debugpy --listen 0.0.0.0:5678` flag for remote debugging.
 
-- **Auth Error Handling Improvements:**
-  
-  - Enhanced error handling in `src/backend/auth/auth_provider.py` checks for password strength errors. A `PasswordStrengthError` triggers an error with an `INVALID_FIELD` code and detailed information. Other errors default to a generic unauthorized error.
-  
-  - Updates in `src/backend/routes/admin/organizations.py` ensure `AuthError` is caught and re-raised for appropriate handling.
+- **Auth Error Handling Improvements**: Error handling in the authentication provider code (`src/backend/auth/auth_provider.py`) now checks for password strength errors. When a `PasswordStrengthError` is detected in the API response, an error is raised with a new `INVALID_FIELD` code and detailed error information. Otherwise, it defaults to a generic unauthorized error. The route handling in `src/backend/routes/admin/organizations.py` has been updated to catch and re-raise `AuthError`, ensuring these errors are managed appropriately by the calling context.
 
-- **Code and Utility Enhancements:**
-  
-  - The JSON encoder in `src/backend/utils/__init__.py` now handles objects with a `to_dict` method, improving custom object serialization.
-  
-  - Logging in `src/backend/errors/handlers.py` is updated from exception level to error level to reduce excessive stack traces for expected issues.
+- **Code and Utility Enhancements**: The JSON encoder (`src/backend/utils/__init__.py`) now handles objects implementing a `to_dict` method, improving custom object serialization. Logging in the generic error handler (`src/backend/errors/handlers.py`) has been updated from exception level to error level to prevent excessive stack traces for expected issues.
 
-- **Extended Unit Tests:**
-  
-  - New unit tests for `Auth0AuthProvider` in `tests/unit/test_auth0_provider.py` cover scenarios like weak passwords, successful user creation, and error cases. Tests use mocks to simulate API interactions and validate error signaling and token management.
-
-
-<!--- PR #1458: https://github.com/validmind/backend/pull/1458 --->
-<!--- Labels: bug, security --->
-### Fix privilege escalation issue (#1458)
-
-We have fixed a vulnerability that allowed normal users to escalate their permissions and become admins. This change eliminates the privilege escalation issue.
-
-This update enhances user role management by refining the authorization mechanism and improving variable naming for clarity. In the POST endpoint, authorization now uses `resource="Role"` and `action="create"` for precise control, replacing the generic `refresh="api-async"` parameter. Similarly, the DELETE endpoint uses `resource="Role"` with `action="delete"` to align with permission requirements. The variable `user` is renamed to `to_update_user` for accuracy, ensuring consistency in organization membership checks and role assignments. The event publishing call now correctly references the updated user variable, ensuring events are generated with accurate user information.
-
-
-<!--- PR #1462: https://github.com/validmind/backend/pull/1462 --->
-<!--- Labels: bug, python, security --->
-### Prevent unauthorized changes to workflow status (#1462)
-
-This update improves the validation process for the `PUT /api/v1/statuses-workflows/{id}/status` endpoint. It now prevents users from changing the workflow status of organizations they are not members of, addressing a potential security issue.
-
-This update introduces a static method, `get_status_for_org`, to efficiently retrieve a status by joining the `StatusesWorkflowStatus` and `StatusesWorkflow` tables using organization and workflow identifiers. This method replaces redundant queries in the edit endpoint, improving data access efficiency. Minor refactoring enhances code readability, and unit tests verify the method's handling of both matching and non-matching identifiers, as well as invalid status identifiers.
-
-
-<!--- PR #1441: https://github.com/validmind/backend/pull/1441 --->
-<!--- Labels: bug --->
-### Add logging to `workflows` Celery task (#1441)
-
-This update introduces logging functionality and increases the maximum number of worker threads.
-
-This pull request introduces two key changes:
-
-- The worker concurrency in the Celery configuration has been increased from 4 to 6 in the `celery_config.py` file. This adjustment aims to enhance performance by allowing more tasks to be processed simultaneously, especially under increased application workloads.
-
-- A new logging statement has been added to the `workflows.py` module. It logs the process of finding available workflows based on a field change, including the field key and associated organization. This aids in debugging and tracking execution flow during workflow queries.
+- **Extended Unit Tests**: A comprehensive set of unit tests for `Auth0AuthProvider` has been added in `tests/unit/test_auth0_provider.py`. These tests cover scenarios such as handling weak passwords, successful user creation, and other error cases. The tests use mocks to simulate API interactions and validate correct error signaling and token management.
 
 
 <!--- PR #1472: https://github.com/validmind/backend/pull/1472 --->
 <!--- Labels: bug --->
 ### Ensure `SQLAlchemy` pool variables are integers (#1472)
 
-Kubernetes pod specifications require environment variables to be wrapped in quotes, which causes Python to interpret them as strings. This update ensures that when these environment variables are set, they are correctly cast to integers, allowing SQLAlchemy to handle them properly.
+Kubernetes pod specifications require environment variables to be enclosed in quotes, which causes Python to interpret them as strings. This can lead to issues with SQLAlchemy, which expects integer values. This update ensures that when these environment variables are set by the Kubernetes pod specification, they are correctly cast to integers.
 
-This pull request improves the Flask application's configuration by converting the `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW` environment variables to integers. Previously, these values were used as strings, leading to potential type mismatches. This update ensures the correct data type is used, minimizing runtime errors related to database connection pooling configurations.
+This pull request improves the Flask application's configuration by ensuring that the SQLAlchemy environment variables `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW` are explicitly converted to integers. Previously, these values were used directly from environment variables as strings, which could lead to type mismatches. This update enforces the correct data type, reducing potential runtime errors related to database connection pooling configurations.
+
+
+<!--- PR #1470: https://github.com/validmind/backend/pull/1470 --->
+<!--- Labels: bug, security --->
+### Check model permissions on `/api/v1/workflows/targets/{cuid}/executions` (#1470)
+
+This update enhances the API route `/api/v1/workflows/targets/{cuid}/executions` by refining how executions are filtered. Previously, while `Workflow.get_workflow` correctly filtered workflows by the user's organization, `Execution.get_by_target` did not. Now, `Execution.get_by_target` includes a user parameter to ensure that executions by target (model) are also filtered to only include those from the user's organization.
+
+This update refactors workflow retrieval methods to focus on the associated organization rather than the user object. Key changes include:
+
+- In `src/backend/db/workflow.py`, the `get_workflow` method now requires an organization and a `cuid`. It raises a `ValueError` with a descriptive message if the organization is not provided.
+
+- The `get_by_target` method now accepts an organization parameter, filtering queries using the organization associated with the workflow. This ensures workflow executions are correctly scoped by organization.
+
+- In the REST API endpoints within `src/backend/routes/ui_workflows.py`, calls to `Workflow.get_workflow` now use `g.current_user_org` instead of `g.current_user`, aligning data retrieval with the new workflow model requirements.
+
+- Unit tests in `tests/unit/test_workflows.py` have been updated to use the organization parameter when fetching workflows and testing execution queries, ensuring consistency in workflow retrieval across the project.
+
+These changes centralize access at the organization level, improving consistency and preventing potential mismatches that could occur by using user information directly.
+
+
+<!--- PR #1471: https://github.com/validmind/backend/pull/1471 --->
+<!--- Labels: bug, security --->
+### Check workflow permissions for states (#1471)
+
+This release does not include any user-facing changes or updates. All necessary steps for the PR process have been completed, including writing release notes and updating documentation if needed. There are no special review areas or additional notes provided.
+
+This update improves the UI workflow states endpoints by ensuring organization-specific data access. Workflows are now retrieved through the current user's organization using `g.current_user_org.workflows`, rather than querying the global `Workflow` model. This change affects GET, POST, PATCH, and DELETE endpoints, limiting access to workflows associated with the user's organization and reducing data leakage risks. Additionally, `ResourceNotFoundError` exceptions are now explicitly rethrown for precise error signaling, while other exceptions are returned as `InternalServerError`. These enhancements boost security and clarify error handling in workflow state management.
+
+
+<!--- PR #1458: https://github.com/validmind/backend/pull/1458 --->
+<!--- Labels: bug, security --->
+### Remove privilege escalation issue (#1458)
+
+We have fixed a vulnerability that allowed normal users to escalate their permissions and become admins. This change eliminates the privilege escalation issue.
+
+This update enhances user role management endpoints by refining the authorization mechanism and improving variable naming for clarity.
+
+The POST endpoint's authorization now specifies `resource="Role"` and `action="create"`, replacing the generic `refresh="api-async"` parameter for more precise control. Similarly, the DELETE endpoint uses `resource="Role"` and `action="delete"` to better reflect permission requirements.
+
+The variable `user` has been renamed to `to_update_user` for clarity, ensuring consistency in organization membership checks and role assignments. The event publishing call now correctly references this updated variable, ensuring accurate event generation.
 
 <!-- ### Changes with no label -->
-
-
-<!--- PR #1486: https://github.com/validmind/backend/pull/1486 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.30.8) (#1486) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1491: https://github.com/validmind/backend/pull/1491 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.30.8) (#1491) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1487: https://github.com/validmind/backend/pull/1487 --->
-<!--- Labels: none --->
-<!--- ### Cullen/merge staging into prod (#1487) --->
-<!-- No release notes or summary provided. -->
 
 
 <!--- PR #1492: https://github.com/validmind/backend/pull/1492 --->
@@ -269,366 +223,18 @@ This pull request improves the Flask application's configuration by converting t
 <!-- No release notes or summary provided. -->
 
 
-<!--- PR #1411: https://github.com/validmind/backend/pull/1411 --->
+<!--- PR #1408: https://github.com/validmind/backend/pull/1408 --->
 <!--- Labels: none --->
-<!--- ### Clarify keycloak deployment docs (#1411) --->
-<!-- No release notes or summary provided. -->
+### Added `global_id` to template serialization (#1408)
+
+This update improves template serialization in the backend by adding a `global_id` key to the payload generated by the `serialize_template` function. The `global_id`, derived from the `base_template` property, is included alongside metadata like `template_cuid`, `template`, and `created_at`. This addition enhances traceability and consistency across the system by providing a unique global identifier for each template.
 
 
 <!--- PR #1336: https://github.com/validmind/backend/pull/1336 --->
 <!--- Labels: none --->
 ### Add Keycloak entrypoint to `Dockerfile` (#1336)
 
-This update to the Keycloak service configuration includes two main changes. First, volume mounts for Keycloak configuration files like `realm-export.json`, themes, and `entrypoint.sh` have been removed from the `docker-compose` file. These files are now embedded directly into the Docker image via the `Dockerfile`, simplifying deployment. Second, the environment variable `KC_DB_DATABASE` has been changed to `KC_DB_DtATABASE`. Verify this change to ensure it aligns with downstream components. These adjustments aim to streamline deployment but require careful attention to the environment variable modification to avoid potential issues.
-
-
-<!--- PR #1417: https://github.com/validmind/backend/pull/1417 --->
-<!--- Labels: none --->
-### Update deployment configurations to new values format (#1417)
-
-This pull request updates the deployment workflow configurations in three YAML files: `deploy_aws_secondary.yaml`, `deploy_prod.yaml`, and `deploy_staging.yaml`. The main change involves using the new template file `values-new.yaml` from the `templates/validmind` directory instead of the old `values.yaml`. This ensures deployments utilize the latest configuration settings. The `sed` commands still replace placeholder strings with environment-specific values like site, environment, vault ID, repository, and API SHA, maintaining consistency across deployments.
-
-
-<!--- PR #1455: https://github.com/validmind/backend/pull/1455 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.30.8) (#1455) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1466: https://github.com/validmind/backend/pull/1466 --->
-<!--- Labels: none --->
-### Remove legacy logic for implicit text blocks (#1466)
-
-This update refines how the API endpoint manages the `contents` field in UI inventory models. Previously, if a section lacked a `contents` key, the code defaulted to a list with a dictionary containing a `content_id` (set to the section ID) and a `content_type` of `text`. The new logic uses the dictionary `get()` method to retrieve `contents`, defaulting to an empty list if absent. This change is consistently applied across endpoints processing section data.
-
-This simplification reduces code complexity and clarifies behavior when `contents` is missing. API users should ensure that returning an empty list, instead of a default content block, does not cause unintended effects.
-
-
-<!--- PR #1484: https://github.com/validmind/backend/pull/1484 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.30.8) (#1484) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1405: https://github.com/validmind/backend/pull/1405 --->
-<!--- Labels: none --->
-### Trigger workflow when a model attribute changes (#1405)
-
-This update enhances the workflow trigger mechanism and inventory model field update handling. Key improvements include increased Celery worker concurrency from 5 to 6, a new optional `trigger_field_key` column in the workflows table, and updates to the `InventoryModel` update method to return both updated field information and old values. The Workflow model now supports additional trigger types and events, with new helper properties for status checking. API endpoints and validation methods have been updated to incorporate these changes, improving robustness and error handling.
-
-- Increased Celery worker concurrency from 5 to 6 in the `Makefile`, potentially improving parallel task processing.
-
-- Added a new migration to introduce the optional column `trigger_field_key` in the workflows table, supporting triggers based on specific field changes in inventory models.
-
-- Updated the `InventoryModel` update method to return both updated field information and the old value, allowing further processing by triggering background tasks.
-
-- Expanded the Workflow model:
-  - Supports an additional trigger type and extended allowed entities and events with a new `InventoryModel.field` type and an `updated` event type.
-  - Added new helper properties (`is_deleted` and `is_enabled`) for easier status checking.
-  - The workflow serialization method now includes the new `trigger_field_key`.
-
-- Enhanced workflow validation methods to validate the `trigger_field_key` along with type, entity name, and event type. Validation errors now use a custom `BadRequestError` with more descriptive messages.
-
-- Updated API endpoints in the UI routes for workflows and inventory models to pass and process the `trigger_field_key`. A new Celery task (`on_model_field_change`) is triggered when a model field changes to process workflow executions.
-
-- The `WorkflowManager`'s `start_execution` method now includes type hints and improved documentation. Minor adjustments in test files ensure date comparisons use timezone-aware datetime objects.
-
-These changes improve the robustness and clarity of the workflow triggering mechanism with extended support for specific field updates in inventory models and refined error handling.
-
-
-<!--- PR #1454: https://github.com/validmind/backend/pull/1454 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.30.8) (#1454) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1424: https://github.com/validmind/backend/pull/1424 --->
-<!--- Labels: none --->
-### Ensure `ruff` scans all files to prevent skipped warnings (#1424)
-
-This update enhances code formatting consistency and cleans up lint exception comments. Key changes include:
-
-- The `Makefile` now runs `ruff` commands with the `--no-cache` option to ensure the latest code analysis is used, potentially identifying new issues more reliably.
-  
-- Migration scripts have been simplified by replacing verbose `# noqa: B950` markers with `# noqa`, maintaining lint suppression without affecting functionality.
-
-- Import statements in some modules have been reordered for consistency and to address minor dependency issues.
-
-- A test in the object storage service now uses the simplified `# noqa` format for the KMS key configuration string.
-
-These changes focus on improving code clarity without altering functionality.
-
-
-<!--- PR #1408: https://github.com/validmind/backend/pull/1408 --->
-<!--- Labels: none --->
-### Added `global_id` to template serialization (#1408)
-
-This update improves the backend template serialization process by adding a `global_id` key to the payload generated by the `serialize_template` function. The `global_id` is derived from the `base_template` property of the template object and is included alongside other metadata like `template_cuid`, `template`, and `created_at`. This change enhances traceability and consistency across the system by providing a unique global identifier in the serialized output.
-
-
-<!--- PR #1358: https://github.com/validmind/backend/pull/1358 --->
-<!--- Labels: none --->
-### Add startup checks for datastores and Keycloak (#1358)
-
-This update improves Docker configuration and startup logic for better service orchestration and dependency management.
-
-- The `Dockerfile` now installs `jq`, `postgresql-client-15`, and `redis-tools` to support enhanced operations and debugging.
-  
-- The `docker-compose.yaml` file includes a new port mapping (9000) for Keycloak and sets the environment variable `KC_HEALTH_ENABLED` for health checking.
-
-- The `docker-entrypoint.sh` script adds readiness checks for Postgres, Redis, and optionally Keycloak, ensuring services are available before the application starts.
-
-- The Keycloak `Dockerfile` now exposes port 9000.
-
-These changes enhance container deployment resilience by ensuring critical services are healthy before application processes begin.
-
-
-<!--- PR #1418: https://github.com/validmind/backend/pull/1418 --->
-<!--- Labels: none --->
-### Allow Keycloak theme to enable local user registration (#1418)
-
-This update introduces two key changes: 
-
-1. The self-registration feature in the Keycloak realm configuration is now disabled by default by setting the `registrationAllowed` flag to `false`. This prevents users from creating accounts via the registration link.
-
-2. The FreeMarker templates for login and registration have been updated. The login template now shows the registration link only if `registrationAllowed` is `true`. The registration template includes a hidden debug block to display form fields, explicitly defines required fields for validation, and renders additional fields only if they are not required fields.
-
-These changes enhance control over user registration and improve the registration form's structure and debugging capabilities.
-
-
-<!--- PR #1442: https://github.com/validmind/backend/pull/1442 --->
-<!--- Labels: none --->
-### Increase worker concurrency (#1442)
-
-This update enhances system performance by increasing worker concurrency, allowing more tasks to be processed simultaneously. This change optimizes resource utilization and improves overall efficiency.
-
-This pull request increases the Celery worker concurrency from 4 to 6 in `docker-entrypoint.sh`. This change enables the worker to handle more tasks simultaneously, potentially enhancing performance under load. The rest of the command remains unchanged, ensuring the worker starts with the correct work directory and Celery application context.
-
-
-<!--- PR #1420: https://github.com/validmind/backend/pull/1420 --->
-<!--- Labels: none --->
-### Remove `poetry.lock` from Dockerfile build process (#1420)
-
-This update modifies the Dockerfile for the customer-managed environment by removing the `poetry.lock` file from the application directory during the container build process. This change prevents issues with dependency resolution or outdated lock files in the container. It ensures clean dependency management, allowing the project to generate an updated lock file in subsequent steps or during runtime.
-
-
-<!--- PR #1379: https://github.com/validmind/backend/pull/1379 --->
-<!--- Labels: dependencies, go --->
-### Bump `golang.org/x/net` from 0.34.0 to 0.38.0 in `casbin-server` (#1379)
-
-This update upgrades the Go toolchain from `go1.23.1` to `go1.24.1` and updates several indirect dependencies by modifying the `go.mod` and `go.sum` files. Modules such as `golang.org/x/crypto`, `golang.org/x/net`, `golang.org/x/sys`, and `golang.org/x/text` are also updated. These changes ensure the project remains current with the latest features, improvements, and compatibility enhancements in the Go ecosystem. The update does not alter any functional business logic.
-
-
-<!--- PR #1465: https://github.com/validmind/backend/pull/1465 --->
-<!--- Labels: security --->
-### Validate owners list against selected group (#1465)
-
-A critical vulnerability has been fixed, preventing unauthorized users from being added to the owners list and accessing personally identifiable information (PII) without verification of their organizational affiliation. This update enhances PII protection by ensuring users can only view data from their own organization and group.
-
-This update enhances user membership and ownership management in the application:
-
-- Removed the unused `flask_migrate` import from the backend API module to streamline dependencies.
-  
-- Repositioned the `RolePermission` import in the authentication module for clearer dependency management.
-
-- Added a new `is_member` method to the `Group` class to centralize and clarify group membership checks.
-
-- Improved the UI inventory models route by verifying user existence and group membership before assigning ownership, preventing unauthorized user additions.
-
-
-<!--- PR #1445: https://github.com/validmind/backend/pull/1445 --->
-<!--- Labels: none --->
-### Ensure all model roles are considered when evaluating membership (#1445)
-
-This update enhances the model membership and authorization logic to consider all roles a user holds for a model, rather than just the first. Users with multiple roles will now have access to all content types and actions permitted by any of their roles, improving flexibility and correctness in model access control.
-
-Previously, only the first matching role for a user on a model was considered, potentially leading to insufficient access. Now, the system uses `get_all_model_roles_for_user` to return all roles a user has for a model, and `get_content_type_for_roles` to handle multiple roles. This ensures users with multiple roles, such as "developer" and "validator," receive all appropriate permissions.
-
-If any downstream code or policies assumed a single role per user per model, those assumptions may need to be revisited. The function `get_content_type_for_role` is replaced by `get_content_type_for_roles` and now expects a list of roles.
-
-Additional Notes:
-
-- Consider reviewing and updating any documentation or downstream services that reference the old single-role logic.
-- This change lays the groundwork for more granular or complex role-based access control in the future.
-
-This update enhances the authorization flow and role-based permissions in the backend, introducing a multi-role system for users. The function `get_model_role_for_user` is now `get_all_model_roles_for_user`, returning all roles for a user in a specific inventory model. The `get_content_type_for_roles` function iterates over user roles, filtering by permissions using `RolePermission.PERMISSION_TO_CONTENT_TYPE`. Authorization checks now validate content types against user roles. A new `has_permission` method in `OrganizationRole` simplifies permission checks. These changes improve the flexibility and security of model access and modification operations.
-
-- Multi-Role Approach: Replaces single-role lookup with a multi-role system, supporting scenarios where users have multiple roles.
-
-- Content Type Resolution: Iterates over user roles, filtering by permissions with `RolePermission.PERMISSION_TO_CONTENT_TYPE`. Raises `AuthError` for conflicting permissions.
-
-- Authorization Chain Refinement: Adjusts membership checks to validate against user roles.
-
-- Data Model Enhancements: Adds `has_permission` method to `OrganizationRole` and expands `RolePermission` model mapping.
-
-
-<!--- PR #1464: https://github.com/validmind/backend/pull/1464 --->
-<!--- Labels: none --->
-### Enhance security for inventory model documents by fixing unauthorized access vulnerability (#1464)
-
-This update enhances security for the UI assets proxy endpoint by implementing authentication and organization-level access control. Key changes include:
-
-- Authentication is now required for the previously unprotected endpoint.
-- Users can only access assets from their own organization.
-- Authentication tokens can be retrieved from cookies if the `Authorization` header is absent.
-- Validation ensures requested assets belong to the user's organization.
-
-These enhancements address a security vulnerability, preventing unauthorized access to private assets from other organizations.
-
-This update enhances the backend's authentication and authorization logic by introducing several key changes. A new function, `get_token_auth_cookie`, retrieves an access token from an authorization cookie if it's not found in the headers. The function `get_token_auth_header_or_cookie` now combines both header and cookie methods for token extraction, replacing the previous `get_token_auth_header` method. An authentication decorator, `@requires_auth()`, has been added to the asset serving endpoint in the UI Assets Proxy, ensuring API access is restricted to authenticated users. Additionally, an authorization check now validates that the asset key's organization identifier matches the current user's organization, raising an unauthorized error if there's a mismatch. These changes support multiple token sources and ensure assets are accessible only within the correct organizational context.
-
-
-<!--- PR #1481: https://github.com/validmind/backend/pull/1481 --->
-<!--- Labels: none --->
-<!--- ### chore: ensure deploy workflows use correct values (#1481) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1394: https://github.com/validmind/backend/pull/1394 --->
-<!--- Labels: none --->
-### Replace `Black` with `Ruff` for code formatting (#1394)
-
-This update refactors import statements and adjusts code formatting across the project. Imports have been reordered and grouped in source code, migration scripts, and utility modules to better reflect dependencies. The code formatting tool in the `Makefile` has been switched from Black to Ruff, enhancing style consistency and readability. Minor whitespace and line-break adjustments have been made in various files, including API handlers and service modules, without changing functionality.
-
-Key functional changes:
-
-- Standardized and reorganized import ordering in multiple files, such as migration scripts, API modules, and utility scripts.
-- Updated the `Makefile` to run Ruff for both formatting and linting, improving style enforcement.
-- Cleaned up redundant whitespace and adjusted formatting for inline strings and dictionary keys without altering program logic.
-
-These improvements streamline the codebase, making future maintenance easier and reducing dependency issues without affecting business logic.
-
-
-<!--- PR #1403: https://github.com/validmind/backend/pull/1403 --->
-<!--- Labels: none --->
-### Enhance template handling with `flatten_sections` utility (#1403)
-
-This update enhances template handling within the application by introducing several improvements:
-
-- The installation script now includes a `template_type` parameter in the `upsert` function call, improving template differentiation.
-
-- Validation functions have been added to backend database models for templates and template versions. These functions ensure proper processing of template data using the new `flatten_sections` utility, which converts nested structures into a flat JSON-safe format.
-
-- Two new utility functions, `extract_clean_section` and `flatten_sections`, have been implemented. They clean and flatten nested sections by removing unwanted keys like `order`, `index`, and `sections`, facilitating easier storage and processing of template metadata.
-
-- Unit tests have been expanded to cover the new flattening functionality. These tests confirm correct flattening of nested sections, handle missing `sections` keys, and manage deeply nested structures. They also ensure that existing functionalities, such as template serialization, adapt to the updated structure, using `sections` instead of `pages`.
-
-
-<!--- PR #1482: https://github.com/validmind/backend/pull/1482 --->
-<!--- Labels: none --->
-### Prevent admins from modifying staff roles (#1482)
-
-Admins can no longer modify staff roles using the `PATCH /api/v1/roles/<protected_role_id>/permissions` endpoint. This update addresses a potential security vulnerability.
-
-This update refactors the role management endpoints in the backend to enhance code readability and enforce role-based restrictions. Key changes include renaming the variable `orgRole` to `org_role` for consistency, adding a protection check to prevent modifications to `staff` roles in the PATCH endpoint, and making minor logic adjustments. These improvements ensure that both `admin` and `staff` roles remain immutable, enhancing maintainability and security.
-
-The primary changes include:
-
-- Consistent Naming: The variable previously named `orgRole` has been renamed to `org_role` throughout the GET and PATCH endpoints to follow snake_case conventions and improve code readability.
-
-- Enhanced Role Protection: In the PATCH endpoint, an additional check has been introduced to prevent modifications to roles marked as `staff`, similar to the existing constraint for `admin` roles. This ensures that both admin and staff roles remain immutable via this endpoint.
-
-- Minor Refactoring: Systematic renaming and minor logic adjustments have been made to maintain consistency across related queries and handling of permissions. Overall, these changes should improve maintainability and enforce proper role-based restrictions within the application.
-
-
-<!--- PR #1485: https://github.com/validmind/backend/pull/1485 --->
-<!--- Labels: none --->
-### Revert unauthorized access fix for inventory model assets (#1485)
-
-This update does not affect any user-facing features or behaviors, resulting in no visible differences before and after the change. There is no impact on the user interface or functionality, so screenshots or videos are not required.
-
-This update simplifies the authentication process by eliminating the fallback logic for token extraction from cookies. The functions `get_token_auth_cookie` and `get_token_auth_header_or_cookie` have been removed. Authentication now strictly uses the token provided in the header via `get_token_auth_header`.
-
-In the UI assets proxy endpoint, the `requires_auth` decorator and organization access check logic have been removed. The endpoint now directly retrieves a pre-signed URL from object storage without validating the user's organization, potentially impacting previous authorization checks for asset access.
-
-
-<!--- PR #1427: https://github.com/validmind/backend/pull/1427 --->
-<!--- Labels: none --->
-<!--- ### feat: allow frontend deploys from branches in dev (#1427) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1475: https://github.com/validmind/backend/pull/1475 --->
-<!--- Labels: none --->
-### Prevent cross-tenant template overwrite by adding `X-Organization-Id` check (#1475)
-
-This update does not include any user-facing changes. No frontend modifications are documented with screenshots or videos.
-
-This update introduces two key changes for improved code readability and security:
-
-- In `src/backend/api.py`, the `SQLALCHEMY_MAX_OVERFLOW` setting assignment has been reformatted for consistency with other multiline assignments, without altering functionality.
-
-- The template retrieval logic in `src/backend/routes/ui_templates.py` now filters by the user's organization, ensuring access is restricted to templates within their organization, enhancing data integrity and security.
-
-Additionally, minor import reordering and cleanup in `src/backend/routes/ui_assets_proxy.py` improve code organization.
-
-
-<!--- PR #1495: https://github.com/validmind/backend/pull/1495 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.30.8) (#1495) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1428: https://github.com/validmind/backend/pull/1428 --->
-<!--- Labels: none --->
-### Limit concurrency of testing workflow in GitHub Actions (#1428)
-
-This pull request adds a new configuration block to the GitHub Actions workflow for the Python application. The concurrency settings ensure that only the most recent workflow run remains active by grouping runs by the workflow and branch reference. This change cancels any in-progress runs when a new run is triggered, saving CI resources and reducing potential conflicts from concurrent executions.
-
-
-<!--- PR #1496: https://github.com/validmind/backend/pull/1496 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.30.8) (#1496) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1490: https://github.com/validmind/backend/pull/1490 --->
-<!--- Labels: none --->
-### Remove `debugpy` from API service startup (#1490)
-
-This update does not introduce any user-facing changes and does not affect the frontend. No screenshots or videos are provided.
-
-This update removes the `debugpy` integration from the API service startup command in the `docker-entrypoint.sh` file. Previously, the container launched the API service with `debugpy` enabled, listening on `0.0.0.0:5678`. Now, the command directly starts the API service using `ddtrace-run` without invoking `debugpy`. This change simplifies the startup process for production deployments where remote debugging is not needed.
-
-
-<!--- PR #1426: https://github.com/validmind/backend/pull/1426 --->
-<!--- Labels: none --->
-### Update deployment workflows to use `values-new.yaml` in AWS environments (#1426)
-
-This pull request updates the deployment workflow configurations for AWS secondary, production, and staging environments. The workflows now copy the new template file (`values-new.yaml`) into the manifests directory instead of the old template file (`values.yaml`). The `sed` commands for template substitutions remain unchanged. This update ensures deployments use the latest configuration template to meet newer deployment requirements.
-
-
-<!--- PR #1439: https://github.com/validmind/backend/pull/1439 --->
-<!--- Labels: none --->
-### Support exporting comments for documentation and monitoring reports; fix database query (#1439)
-
-This update introduces two key changes: 
-
-- You can now export comments in both documentation and monitoring reports.
-- A database query issue related to exporting comments has been fixed.
-
-These enhancements were implemented in response to customer requests for viewing comments.
-
-This update improves the management and display of user comments linked to inventory models in reports. Key enhancements include:
-
-- The `get_user_comments_by_model_id` method now accepts a `content_type` parameter, allowing comments to be filtered and joined with the Metadata table based on report type.
-
-- A new helper function, `render_comment_fragments`, centralizes the logic for rendering comments, formatting text, and handling nullable fields like `context` and `created_at`. Context is included only when present.
-
-- Report serialization functions now support an `include_comments` option, appending a 'Comments' section to reports when enabled.
-
-- Unit tests have been updated to validate these functionalities, ensuring irrelevant comments are filtered out and the helper function supports the enhanced annotation structure.
-
-These changes enhance the robustness and flexibility of comment handling, allowing for better report customization and filtering.
-
-
-<!--- PR #1483: https://github.com/validmind/backend/pull/1483 --->
-<!--- Labels: none --->
-### Add `pg_stat_statements` migration script (#1483)
-
-An extension for profiling has been added.
-
-This update introduces a migration script to manage the `pg_stat_statements` extension in PostgreSQL. The script checks for the extension's existence and creates it if absent. The upgrade function connects to the database, verifies the extension, and creates it if needed, while also retrieving and displaying the current version for reference. The downgrade function is a placeholder with no rollback logic. These changes ensure the `pg_stat_statements` monitoring features are available without duplication.
+This update to the Keycloak service configuration includes two key changes. First, volume mounts for configuration files like `realm-export.json`, themes, and `entrypoint.sh` have been removed from the `docker-compose` file. These files are now integrated directly into the Docker image via the `Dockerfile`, simplifying deployment. Second, the environment variable `KC_DB_DATABASE` has been altered to `KC_DB_DtATABASE`. Verify this change to ensure it aligns with downstream configurations. These adjustments streamline deployment by embedding necessary files within the image, though caution is advised regarding the environment variable modification to prevent potential issues.
 
 
 <!--- PR #1425: https://github.com/validmind/backend/pull/1425 --->
@@ -637,11 +243,313 @@ This update introduces a migration script to manage the `pg_stat_statements` ext
 <!-- No release notes or summary provided. -->
 
 
+<!--- PR #1417: https://github.com/validmind/backend/pull/1417 --->
+<!--- Labels: none --->
+### Update deployment configurations to new values format (#1417)
+
+This update modifies the deployment workflow configurations in three YAML files: `deploy_aws_secondary.yaml`, `deploy_prod.yaml`, and `deploy_staging.yaml`. The workflows now use the new template file `values-new.yaml` from the `templates/validmind` directory instead of the old `values.yaml`. This ensures deployments utilize the updated configuration settings. The `sed` commands still replace templated placeholders with environment-specific values like site, environment, vault ID, repository, and API SHA, maintaining consistency across deployments.
+
+
+<!--- PR #1427: https://github.com/validmind/backend/pull/1427 --->
+<!--- Labels: none --->
+<!--- ### feat: allow frontend deploys from branches in dev (#1427) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1481: https://github.com/validmind/backend/pull/1481 --->
+<!--- Labels: none --->
+<!--- ### chore: ensure deploy workflows use correct values (#1481) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1405: https://github.com/validmind/backend/pull/1405 --->
+<!--- Labels: none --->
+### Trigger workflow when a model attribute changes (#1405)
+
+This update enhances the workflow trigger mechanism and inventory model field update handling. Key improvements include increased Celery worker concurrency, a new `trigger_field_key` in workflows for specific field change triggers, and updates to the `InventoryModel` update method to return both updated and old values. The Workflow model now supports additional trigger types, and validation methods have been improved. API endpoints have been updated to handle `trigger_field_key`, and the `WorkflowManager` now includes type hints and better documentation.
+
+- Increased Celery worker concurrency from 5 to 6 in the `Makefile`, potentially improving parallel task processing.
+
+- Added a new migration to introduce the optional column `trigger_field_key` in the workflows table. This field supports triggering workflows based on specific field changes in inventory models.
+
+- Updated the `InventoryModel` update method to return both the updated field information and the old value, allowing further processing by triggering background tasks.
+
+- Expanded the Workflow model:
+  - Now supports an additional trigger type and extended its allowed entities and events with a new `InventoryModel.field` type and an `updated` event type.
+  - New helper properties (`is_deleted` and `is_enabled`) were added for easier status checking.
+  - The workflow serialization method now includes the new `trigger_field_key`.
+
+- Enhanced the workflow validation methods to validate the `trigger_field_key` along with type, entity name, and event type. Validation errors now use a custom `BadRequestError` with more descriptive error messages.
+
+- Updated the API endpoints in the UI routes for workflows and inventory models to pass and process the `trigger_field_key`. When a model field changes, a new Celery task (`on_model_field_change`) is triggered to process workflow executions.
+
+- The `WorkflowManager`'s `start_execution` method now includes type hints and improved documentation. Minor adjustments in test files ensure that date comparisons use timezone-aware datetime objects.
+
+These changes improve the robustness and clarity of the workflow triggering mechanism with extended support for specific field updates in inventory models and refined error handling.
+
+
+<!--- PR #1491: https://github.com/validmind/backend/pull/1491 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Staging (staging-1.30.8) (#1491) --->
+<!-- No release notes or summary provided. -->
+
+
 <!--- PR #1329: https://github.com/validmind/backend/pull/1329 --->
 <!--- Labels: dependencies, python --->
-### Update `werkzeug` from version 2.3.8 to 3.0.6 (#1329)
+### Update `werkzeug` from 2.3.8 to 3.0.6 (#1329)
 
-This update changes the `werkzeug` dependency version from `^2.3.0` to `^3.0.6` in the `pyproject.toml` file. The newer version may offer bug fixes, performance enhancements, and new features. It is crucial to ensure that this update does not affect any application components that depend on `werkzeug`, especially those related to routing, request handling, or middleware integration.
+The `werkzeug` dependency version in the `pyproject.toml` file has been updated from `^2.3.0` to `^3.0.6`. This update may bring bug fixes, performance enhancements, and new features. Users should verify that this change does not affect any application components that depend on `werkzeug`, especially those related to routing, request handling, or middleware integration.
+
+
+<!--- PR #1486: https://github.com/validmind/backend/pull/1486 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Staging (staging-1.30.8) (#1486) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1454: https://github.com/validmind/backend/pull/1454 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Staging (staging-1.30.8) (#1454) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1418: https://github.com/validmind/backend/pull/1418 --->
+<!--- Labels: none --->
+### Allow Keycloak theme to enable local user registration (#1418)
+
+This update introduces two key changes to the Keycloak realm configuration and templates. First, self-registration is disabled by setting the `registrationAllowed` flag to false, preventing end users from creating accounts via the registration link. Second, the login and registration FreeMarker templates are updated. The login template now shows the registration link only if `registrationAllowed` is true. The registration template includes a debug block for form fields, explicitly defines required fields, and renders additional fields not predefined.
+
+This pull request introduces two main changes:
+
+- In the Keycloak realm configuration, the self-registration capability is disabled by setting the `registrationAllowed` flag to false. This change ensures that end users can no longer create accounts via the registration link.
+
+- The login and registration FreeMarker templates have been updated. In the login template, the registration link is now conditionally displayed only when the realm's `registrationAllowed` flag is true. In the registration template, additional enhancements have been made:
+
+  - A debug block has been added to display available form fields (hidden by default via CSS style `display: none;`).
+
+  - The registration form explicitly defines required fields (`username`, `email`, `first name`, `last name`, `password`, and `password confirmation`) to ensure proper validation.
+
+  - Additional fields from the provided form data are iterated and rendered only if they are not among the explicitly defined required fields.
+
+These changes improve the control over user self-registration and enhance the registration form's structure and debugging capabilities.
+
+
+<!--- PR #1455: https://github.com/validmind/backend/pull/1455 --->
+<!--- Labels: none --->
+<!--- ### Merge Staging into Prod (prod-1.30.8) (#1455) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1496: https://github.com/validmind/backend/pull/1496 --->
+<!--- Labels: none --->
+<!--- ### Merge Staging into Prod (prod-1.30.8) (#1496) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1440: https://github.com/validmind/backend/pull/1440 --->
+<!--- Labels: none --->
+### Fix validation of trigger type on update (#1440)
+
+This update resolves an issue where a `PUT` request for a workflow resulted in an error due to a validation conflict with the trigger type. The error was caused by the workflow returning itself, which conflicted with an existing workflow sharing the same trigger type.
+
+This update improves workflow validation by adding the `update_cuid` parameter to the `validate_trigger_type` method. This ensures that the current workflow record is excluded from duplicate checks when updating. The query now filters out the workflow with the `cuid` specified by `update_cuid`, preventing false positives. In `src/backend/routes/ui_workflows.py`, exception handling is refined to re-raise `BadRequestError` for clearer error propagation, distinguishing it from general exceptions. These changes enhance duplication checks and error handling during updates.
+
+
+<!--- PR #1394: https://github.com/validmind/backend/pull/1394 --->
+<!--- Labels: none --->
+### Replace `black` with `ruff` for code formatting and linting (#1394)
+
+This update involves a comprehensive refactoring of import statements and code formatting across the project. Import statements in source code, migration scripts, and utility modules have been reordered and grouped to better reflect dependencies. The code formatting tool in the `Makefile` has been switched from Black to Ruff, enhancing style consistency and readability. Minor whitespace and line-break adjustments were made in various files, including API handlers and tests. While functionality remains unchanged, the maintainability and clarity of the code have been significantly improved.
+
+Key functional changes:
+
+- Standardized and reorganized import ordering in multiple files, such as migration scripts, API modules, and utility scripts.
+- Updated the `Makefile` to run Ruff for both formatting and linting, improving style enforcement.
+- Cleaned up redundant whitespace and adjusted formatting for inline strings and dictionary keys without altering program logic.
+
+Overall, these improvements aim to streamline the codebase, making future maintenance easier and reducing the risk of dependency issues without affecting business logic.
+
+
+<!--- PR #1420: https://github.com/validmind/backend/pull/1420 --->
+<!--- Labels: none --->
+### Remove `poetry.lock` from Dockerfile build process (#1420)
+
+This update modifies the Dockerfile for the customer-managed environment by removing the `poetry.lock` file from the application directory during the container build process. This change prevents issues with dependency resolution or outdated locks in the container, ensuring clean dependency management. By explicitly removing the file, the integrity of the container build is maintained, allowing the project to generate an updated lock file in later steps or during runtime.
+
+
+<!--- PR #1411: https://github.com/validmind/backend/pull/1411 --->
+<!--- Labels: none --->
+<!--- ### Clarify keycloak deployment docs (#1411) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1495: https://github.com/validmind/backend/pull/1495 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Staging (staging-1.30.8) (#1495) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1424: https://github.com/validmind/backend/pull/1424 --->
+<!--- Labels: none --->
+### Ensure `ruff` always scans all files to prevent skipped warnings (#1424)
+
+This pull request enhances code formatting consistency and cleans up lint exception comments. Key changes include updating the `Makefile` to run `ruff` with the `--no-cache` option for more reliable code analysis, simplifying `# noqa: B950` markers to `# noqa` in migration scripts, reordering import statements for consistency, and adjusting a test in the object storage service to use the simplified `# noqa` format. These changes improve code clarity without altering functionality.
+
+- Updating the `Makefile` to run `ruff` commands with the `--no-cache` option. This ensures that the latest code analysis is used without cached results, potentially catching new issues more reliably.
+
+- Modifying various migration scripts by removing the verbose `# noqa: B950` markers and replacing them with a shorter `# noqa`. This simplifies the code without affecting the intended lint suppression.
+
+- Reordering some import statements in a couple of modules to improve consistency and possibly resolve minor dependency ordering issues.
+
+- Adjusting a test in the object storage service to use the same simplified `# noqa` format for the KMS key configuration string.
+
+Overall, the functionality remains unchanged, with the primary impact being on code formatting and clarity.
+
+
+<!--- PR #1403: https://github.com/validmind/backend/pull/1403 --->
+<!--- Labels: none --->
+### Enhance template handling with improvements to `flatten_sections` utility
+
+This update enhances template handling in the application by introducing several key improvements:
+
+- The installation script now includes a `template_type` parameter in the `upsert` function call, improving template differentiation.
+
+- Validation functions have been added to the backend database models for templates and template versions using `@validates` decorators. These functions ensure proper processing of template data with the new `flatten_sections` utility, which converts nested structures into a flat, JSON-safe format.
+
+- Two new utility functions, `extract_clean_section` and `flatten_sections`, have been implemented. They recursively clean and flatten nested sections by removing unwanted keys like `order`, `index`, and `sections`, facilitating easier storage and processing of template metadata.
+
+- Unit tests have been expanded to cover the new flattening functionality. These tests confirm correct flattening of nested sections, handle missing `sections` keys, and manage deeply nested structures. They also ensure that existing functionalities, such as template serialization, adapt to the updated structure, using `sections` instead of `pages` (#1403)
+
+This update enhances template handling in the application by introducing several key improvements:
+
+- The installation script now includes a `template_type` parameter in the `upsert` function call, improving template differentiation.
+
+- Validation functions have been added to the backend database models for templates and template versions using `@validates` decorators. These functions ensure proper processing of template data with the new `flatten_sections` utility, which converts nested structures into a flat, JSON-safe format.
+
+- Two new utility functions, `extract_clean_section` and `flatten_sections`, have been implemented. They recursively clean and flatten nested sections by removing unwanted keys like `order`, `index`, and `sections`, facilitating easier storage and processing of template metadata.
+
+- Unit tests have been expanded to cover the new flattening functionality. These tests confirm correct flattening of nested sections, handle missing `sections` keys, and manage deeply nested structures. They also ensure that existing functionalities, such as template serialization, adapt to the updated structure, using `sections` instead of `pages`.
+
+
+<!--- PR #1428: https://github.com/validmind/backend/pull/1428 --->
+<!--- Labels: none --->
+### Limit concurrency of testing workflow in GitHub Actions (#1428)
+
+This pull request adds a new configuration block to the GitHub Actions workflow for the Python application. The concurrency settings ensure that only the most recent workflow run remains active by grouping runs by workflow and branch reference. This change cancels any in-progress runs when a new run is triggered, saving CI resources and reducing potential conflicts from concurrent executions.
+
+
+<!--- PR #1490: https://github.com/validmind/backend/pull/1490 --->
+<!--- Labels: none --->
+### Remove `debugpy` from API service startup
+
+This update eliminates the `debugpy` integration from the API service startup command in the `docker-entrypoint.sh` file. Previously, the container started the API service with `debugpy` enabled, listening on `0.0.0.0:5678`. Now, the command directly starts the API service using `ddtrace-run` without `debugpy`. This change simplifies the startup process for production deployments where remote debugging is unnecessary (#1490)
+
+This update enhances existing functionality without affecting frontend visual elements. No screenshots or videos are included.
+
+This update removes the `debugpy` integration from the API service startup command in the `docker-entrypoint.sh` file. Previously, the container launched the API service with `debugpy` enabled, listening on `0.0.0.0:5678`. Now, the command directly starts the API service using `ddtrace-run` without `debugpy`. This change simplifies the startup process for production deployments where remote debugging is unnecessary.
+
+
+<!--- PR #1442: https://github.com/validmind/backend/pull/1442 --->
+<!--- Labels: none --->
+### Increase worker concurrency (#1442)
+
+This update enhances system performance by increasing worker concurrency. This change allows for more tasks to be processed simultaneously, improving overall efficiency and speed.
+
+This pull request increases the Celery worker concurrency from 4 to 6 in the `docker-entrypoint.sh` file. This change enables the worker to handle more tasks simultaneously, potentially enhancing performance under load. The rest of the command remains unchanged, ensuring the worker starts with the correct working directory and Celery application context.
+
+
+<!--- PR #1379: https://github.com/validmind/backend/pull/1379 --->
+<!--- Labels: dependencies, go --->
+### Bump `golang.org/x/net` from `0.34.0` to `0.38.0` in `/casbin-server` (#1379)
+
+This update refreshes the `go.mod` and `go.sum` files to align with newer releases of the Go toolchain and several indirect dependencies. The toolchain is upgraded from `go1.23.1` to `go1.24.1`, and versions for modules such as `golang.org/x/crypto`, `golang.org/x/net`, `golang.org/x/sys`, and `golang.org/x/text` are also updated. These changes ensure the project benefits from the latest features, improvements, and compatibility enhancements in the Go ecosystem without altering any functional business logic.
+
+
+<!--- PR #1358: https://github.com/validmind/backend/pull/1358 --->
+<!--- Labels: none --->
+### Add startup checks for datastores and Keycloak (#1358)
+
+This update enhances Docker configuration and startup logic to improve service orchestration and dependency management. Key changes include:
+
+- Updated `Dockerfile` to install utilities like `jq`, `postgresql-client-15`, and `redis-tools` for better operations and debugging.
+  
+- Modified `docker-compose.yaml` to add port mapping (9000) for Keycloak and set `KC_HEALTH_ENABLED` for health checks.
+  
+- Improved `docker-entrypoint.sh` with readiness checks for Postgres, Redis, and Keycloak, ensuring services are available before starting the application.
+  
+- Updated Keycloak `Dockerfile` to expose port 9000.
+
+These enhancements ensure critical services are healthy before application processes begin, improving deployment resilience.
+
+
+<!--- PR #1466: https://github.com/validmind/backend/pull/1466 --->
+<!--- Labels: none --->
+### Remove legacy logic for implicit text blocks (#1466)
+
+This update refactors the API endpoint's handling of the `contents` field in UI inventory models. Previously, if a section lacked a `contents` key, the code defaulted to a list with a dictionary containing a `content_id` (set to the section ID) and a `content_type` of `text`. The new logic uses the dictionary `get()` method to retrieve `contents`, defaulting to an empty list if absent. This change is applied consistently across endpoints processing section data.
+
+This simplification reduces unnecessary code and clarifies expected behavior when `contents` is missing. API users should ensure that returning an empty list, instead of a default content block, does not cause unintended effects.
+
+
+<!--- PR #1487: https://github.com/validmind/backend/pull/1487 --->
+<!--- Labels: none --->
+<!--- ### Cullen/merge staging into prod (#1487) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1484: https://github.com/validmind/backend/pull/1484 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Staging (staging-1.30.8) (#1484) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1445: https://github.com/validmind/backend/pull/1445 --->
+<!--- Labels: none --->
+### Ensure all model roles are considered when evaluating membership (#1445)
+
+This update enhances the model membership and content type authorization logic in `src/backend/auth/auth.py` to consider all roles a user holds for a given model. Previously, only the first matching role was considered, potentially leading to insufficient access. Now, `get_all_model_roles_for_user` aggregates all roles, and `get_content_type_for_roles` handles multiple roles, ensuring users receive all appropriate permissions. This change may require revisiting assumptions about single-role logic in downstream code.
+
+The model membership and content type authorization logic has been updated:
+
+- Previously, only the first matching role for a user on a model was considered for membership and content type authorization.
+- Functions like `get_model_role_for_user` and `get_content_type_for_role` operated on a single role.
+
+Now:
+
+- `get_all_model_roles_for_user` returns all roles a user has for a model.
+- Logic aggregates all content types a user is authorized for, based on all their roles.
+- `get_content_type_for_role` is refactored to `get_content_type_for_roles` to handle multiple roles.
+- Membership and authorization checks use the new multi-role logic, ensuring users with multiple roles receive all appropriate permissions.
+
+Breaking Changes:
+
+- Downstream code or policies assuming a single role per user per model may need revision.
+- `get_content_type_for_role` is replaced by `get_content_type_for_roles`, which expects a list of roles.
+
+Additional Notes:
+
+- Review and update any documentation or services referencing the old single-role logic.
+- This change supports more granular or complex role-based access control in the future.
+
+This update enhances the authorization flow and role-based permissions in the backend, focusing on multi-role support, content type resolution, authorization chain refinement, and data model enhancements.
+
+1. Multi-Role Support:
+   
+   - The function `get_model_role_for_user` is replaced by `get_all_model_roles_for_user`, returning all roles associated with a user for a specific inventory model, allowing for multiple roles per user.
+
+2. Content Type Resolution:
+   
+   - `get_content_type_for_roles` now evaluates all user roles, filtering by permissions using `RolePermission.PERMISSION_TO_CONTENT_TYPE`. This supports multiple documentation types based on granted permissions. An `AuthError` is raised if conflicting permissions (`update_doc` and `update_vr`) are found.
+
+3. Authorization Chain Refinement:
+   
+   - The decorator and `ensure_model_membership` are updated to validate authorized content types against multiple user roles instead of a single role.
+
+4. Data Model Enhancements:
+   
+   - A new `has_permission` method in `OrganizationRole` abstracts permission checking. The `RolePermission` model includes a `PERMISSION_TO_CONTENT_TYPE` mapping, linking permission action IDs to content types, with plans for expansion.
+
+These changes enhance the flexibility and security of the role-based permission system, improving model access and modification operations.
 
 
 <!--- PR #1436: https://github.com/validmind/backend/pull/1436 --->
@@ -650,30 +558,130 @@ This update changes the `werkzeug` dependency version from `^2.3.0` to `^3.0.6` 
 <!-- No release notes or summary provided. -->
 
 
-<!--- PR #1440: https://github.com/validmind/backend/pull/1440 --->
+<!--- PR #1426: https://github.com/validmind/backend/pull/1426 --->
 <!--- Labels: none --->
-### Fix validation of trigger type during update (#1440)
+### Update deployment workflows to use `values-new.yaml` for AWS environments (#1426)
 
-This update resolves an issue where a `PUT` request for a workflow would return an error. The error was caused by incorrect trigger type validation, where the workflow mistakenly returned itself, conflicting with an existing workflow using the same trigger type.
+This pull request updates the deployment workflow configurations for AWS secondary, production, and staging environments. The workflows now copy the new template file (`values-new.yaml`) into the manifests directory instead of the old template file (`values.yaml`). The `sed` commands for template substitutions remain unchanged. This update ensures that deployments use the latest configuration template to meet newer deployment requirements.
 
-This update enhances backend workflow validation by introducing an `update_cuid` parameter to the `validate_trigger_type` method. This parameter ensures that the current workflow record is excluded from duplicate checks when updating an existing workflow, preventing false positives. Additionally, exception handling in the UI workflows route has been refined to re-raise `BadRequestError` for clearer error propagation, while general exceptions are wrapped in an `InternalServerError`.
 
-The query filtering for existing workflows now includes a condition to exclude the workflow with the `cuid` provided via `update_cuid`. This adjustment prevents false positives when updating a workflow after validating its fields.
+<!--- PR #1483: https://github.com/validmind/backend/pull/1483 --->
+<!--- Labels: none --->
+### Add `pg_stat` migration for PostgreSQL extension management (#1483)
 
-In the UI workflows route (`src/backend/routes/ui_workflows.py`), exception handling has been refined. A `BadRequestError` is explicitly re-raised, providing clearer error propagation and distinguishing it from general exceptions, which are wrapped in an `InternalServerError`.
+An extension has been added for profiling.
 
-These changes improve the update logic to ensure correct workflow duplication checks and appropriate error handling during update operations.
+This update introduces a migration script to manage the `pg_stat_statements` extension in a PostgreSQL database. The script checks for the extension's existence and creates it if absent. The upgrade function connects to the database, verifies the extension's installation, and conditionally creates it if missing. It then retrieves and prints the current version for information. The downgrade function is a placeholder with no rollback logic. These changes ensure monitoring features are available without duplicating the extension.
 
 
 <!--- PR #1493: https://github.com/validmind/backend/pull/1493 --->
 <!--- Labels: none --->
-### Remove `-m` flag from entrypoint script for API service (#1493)
+### Remove `-m` flag from entrypoint without module (#1493)
 
-<!-- List any breaking changes -->
-
-<!-- Add screenshots or videos showing before/after -->
+This update does not introduce any breaking changes. There are no screenshots or videos available to demonstrate changes before and after this update.
 
 This PR updates the startup command for the API service in the Docker entrypoint script. Previously, the command used the Python module flag `-m` with a file path, which might not have worked as expected. The updated command removes the `-m` flag and directly executes the script file using `ddtrace-run`. This change ensures the API service starts correctly, utilizing `ddtrace` for instrumentation as intended.
+
+
+<!--- PR #1475: https://github.com/validmind/backend/pull/1475 --->
+<!--- Labels: none --->
+### Prevent cross-tenant template overwrite by adding `X-Organization-Id` check (#1475)
+
+This update introduces no user-facing changes and does not impact the frontend. Therefore, there are no screenshots or videos to display.
+
+This update introduces two key changes for improved code readability and data security:
+
+- In `src/backend/api.py`, the `SQLALCHEMY_MAX_OVERFLOW` setting has been reformatted for consistency with other multiline assignments, without altering its functionality.
+
+- The template retrieval logic in `src/backend/routes/ui_templates.py` now filters by the user's organization ID, ensuring users access only their organization's templates, enhancing data integrity and security.
+
+Additionally, minor import reordering in `src/backend/routes/ui_assets_proxy.py` improves code organization.
+
+
+<!--- PR #1439: https://github.com/validmind/backend/pull/1439 --->
+<!--- Labels: none --->
+### Support exporting comments in documentation and monitoring reports; fix database query (#1439)
+
+This update introduces two key changes:
+
+- You can now export comments in both documentation and monitoring reports.
+- A database query issue related to exporting comments has been fixed.
+
+These improvements respond to customer requests for better access to comments.
+
+This update improves the management and display of user comments linked to inventory models in various reports. Key enhancements include:
+
+- The `get_user_comments_by_model_id` method in the Annotation model now accepts a `content_type` parameter to filter and join the Metadata table, ensuring comments are fetched correctly based on report type.
+
+- A new helper function, `render_comment_fragments`, centralizes the logic for rendering comment fragments. It queries comments with the correct filters, formats comment text by stripping HTML tags, and handles nullable fields like `context` and `created_at`. The output now conditionally includes the context only when present.
+
+- Report serialization functions (`serialize_documentation_report` and `serialize_monitoring_report`) now support an `include_comments` option. When enabled, reports append a 'Comments' section in both the template structure and the list of rendered fragments.
+
+- Unit tests have been updated to validate the new functionality. Tests cover scenarios such as:
+  - Comment rendering with and without the `include_comments` flag.
+  - Filtering out irrelevant comments, such as those with a content type not matching the report type or unresolved annotations.
+  - Ensuring the helper function `_create_annotation_helper` supports creating annotations with the enhanced structure.
+
+These changes enhance the robustness and flexibility of the comment handling mechanism in the backend, allowing for better report customization and filtering.
+
+
+<!--- PR #1485: https://github.com/validmind/backend/pull/1485 --->
+<!--- Labels: none --->
+### Revert unauthorized access fix for inventory model assets (#1485)
+
+This update enhances user experience by addressing previous inefficiencies to improve performance and usability. There are no breaking changes in this update. No screenshots or videos are included.
+
+This update simplifies the authentication process by eliminating the fallback logic that extracted tokens from cookies. The functions `get_token_auth_cookie` and `get_token_auth_header_or_cookie` have been removed. Authentication now strictly uses the token provided in the header via `get_token_auth_header`.
+
+In the UI assets proxy endpoint, the `requires_auth` decorator and organization access check logic have been removed. The endpoint now directly retrieves a pre-signed URL from object storage without validating the user's organization, potentially affecting previous authorization checks for asset access.
+
+
+<!--- PR #1465: https://github.com/validmind/backend/pull/1465 --->
+<!--- Labels: security --->
+### Validate owners list against selected group (#1465)
+
+A critical vulnerability has been fixed to enhance data security. Previously, users could be added to the owners list and access personally identifiable information (PII) without verifying their organization membership. This update ensures that users can only access data from their own organization and group, thereby protecting sensitive information.
+
+This update enhances user membership and ownership handling in the application:
+
+- The unused `flask_migrate` import has been removed from the backend API module, simplifying project dependencies.
+
+- The `RolePermission` import in the authentication module has been repositioned for clearer dependency management.
+
+- A new `is_member` method in the `Group` class checks if a user is already a member, centralizing membership checks.
+
+- The UI inventory models route now verifies user existence and group membership before adding them as an owner or developer, ensuring robust ownership assignments.
+
+
+<!--- PR #1464: https://github.com/validmind/backend/pull/1464 --->
+<!--- Labels: none --->
+### Enhance security for inventory model documents by fixing IDOR vulnerability (#1464)
+
+This update enhances security for the UI assets proxy endpoint by implementing authentication and organization-level access control. Key changes include:
+
+- Authentication is now required for the previously unprotected endpoint.
+- Organization-level access control ensures users can only access assets from their own organization.
+- If the `Authorization` header is absent, authentication tokens can be retrieved from cookies.
+- Validation logic checks if the requested asset belongs to the user's organization.
+
+These changes address a security vulnerability, ensuring only authorized access to assets. Special attention is needed for the authentication flow with token fallback from cookies and the organization-level access control implementation.
+
+This update enhances the backend's authentication and authorization logic by introducing new methods for token retrieval and enforcing stricter access controls. A new function, `get_token_auth_cookie`, retrieves an access token from an authorization cookie if it's not in the headers. The `get_token_auth_header_or_cookie` function combines header and cookie methods for flexible token extraction, replacing the old `get_token_auth_header` method. Additionally, an authentication decorator is added to the UI Assets Proxy endpoint, ensuring only authenticated users can access the API. The endpoint now checks that the asset key's organization identifier matches the current user's organization, raising an unauthorized error if there's a mismatch. These changes support multiple token sources and ensure assets are accessed within the correct organizational context.
+
+
+<!--- PR #1482: https://github.com/validmind/backend/pull/1482 --->
+<!--- Labels: none --->
+### Prevent admins from modifying staff roles (#1482)
+
+Admins can no longer modify staff roles using the `PATCH /api/v1/roles/<protected_role_id>/permissions` endpoint. This change addresses a potential security vulnerability.
+
+This update refactors role management endpoints in the backend, focusing on consistent naming and enhanced role protection. The variable `orgRole` is now `org_role` in the GET and PATCH endpoints for better readability. A new check in the PATCH endpoint prevents changes to roles marked as `staff`, ensuring both `admin` and `staff` roles remain immutable. Minor refactoring includes systematic renaming and logic adjustments to maintain consistency and enforce role-based restrictions.
+
+- Consistent Naming: The variable `orgRole` is now `org_role` in the GET and PATCH endpoints, following snake_case conventions for improved readability.
+
+- Enhanced Role Protection: The PATCH endpoint now includes a check to prevent modifications to `staff` roles, similar to the existing protection for `admin` roles, ensuring immutability.
+
+- Minor Refactoring: Systematic renaming and logic adjustments enhance consistency and enforce role-based restrictions.
 
 
 # Frontend
@@ -685,127 +693,168 @@ This PR updates the startup command for the API service in the Docker entrypoint
 
 <!--- PR #1351: https://github.com/validmind/frontend/pull/1351 --->
 <!--- Labels: enhancement, refactor --->
-### Approval process notes added to activity log (#1351)
+### Add approval process notes to activity log (#1351)
 
 Workflow approval step voter notes have been added to the activity log.
 
-This update introduces several UI enhancements and refactors to improve functionality and maintainability. Key changes include collapsible content in the `EventRowLayout` component for displaying additional details like vote notes, with an `IconButton` to toggle visibility. New components for workflow approvals include `ApprovalActionButtons`, `ApprovalHeader`, `ApprovalVoterCard`, `VoteDetailsModal`, and `VoterStatusColumn`, each enhancing usability and consistency. Redundant code has been cleaned up, increasing modularity and readability.
+This PR introduces several UI enhancements and refactors to improve functionality and user experience. Key changes include collapsible content in the `EventRowLayout` component for displaying additional details like vote notes, with an `IconButton` to toggle visibility. New components for workflow approvals have been added, such as `ApprovalActionButtons`, `ApprovalHeader`, `ApprovalVoterCard`, `VoteDetailsModal`, and `VoterStatusColumn`, enhancing usability and organization. Redundant code has been cleaned up, increasing modularity and maintainability.
 
 The `EventRowLayout` component now features collapsible content to show extra details, such as vote notes, when available. An `IconButton` toggles a `Collapse` element, with the icon switching between a downward and upward chevron.
 
 New workflow approval components include:
 
-- `ApprovalActionButtons`: A consistent button group for approving or rejecting votes with appropriate colors and icons.
+- `ApprovalActionButtons`: A button group for approving or rejecting votes with appropriate colors and icons.
 - `ApprovalHeader`: Displays the approval title and message in a structured layout.
-- `ApprovalVoterCard`: Renders voter information with an optional popover for vote notes.
-- `VoteDetailsModal`: Provides a modal for detailed viewing of vote notes in a read-only textarea.
-- `VoterStatusColumn` and associated constants: Organize and display voter statuses in columns based on their vote state with a uniform look.
+- `ApprovalVoterCard`: Shows voter information with an optional popover for vote notes.
+- `VoteDetailsModal`: A modal for viewing vote notes in a read-only textarea.
+- `VoterStatusColumn` and constants: Organizes and displays voter statuses in columns with a consistent look.
 
-Redundant code and inline comments have been replaced with reusable components, enhancing maintainability and readability. Overall, these changes increase code modularity and offer a richer, more interactive UI for event and workflow approval processes.
+Redundant code and inline comments have been replaced with reusable components, enhancing maintainability and readability. Overall, this PR improves code modularity and provides a more interactive UI for event and workflow approvals.
 
 
 <!--- PR #1347: https://github.com/validmind/frontend/pull/1347 --->
 <!--- Labels: enhancement --->
 ### Trigger workflow on field change (#1347)
 
-A new trigger type, "On Model Field Change," is now available when creating workflows. This feature lets you monitor specific inventory model fields for changes, initiating workflow execution when a change is detected.
+A new trigger type, "On Model Field Change," is now available when creating workflows. This feature lets you monitor changes in a specific inventory model field before initiating workflow execution.
 
-This update enhances the workflow management component and its API service, improving flexibility and user interface dynamics. Key changes include API adjustments for URL formatting and the addition of an optional `triggerFieldKey` parameter in the `PostWorkflow` API call. The Workflow Modal now supports a new trigger type, `MODEL_FIELD_CHANGE`, allowing users to select specific fields to trigger workflows. Enumerations for `TriggerType`, `EntityName`, and `EntityEventType` have been updated to support these enhancements.
+This update enhances the workflow management component and its API service, improving flexibility and user interface dynamics for workflow creation and editing.
 
-- **API Changes**: The GET endpoint now correctly formats the URL string by removing an unnecessary line break. A new optional parameter, `triggerFieldKey`, has been added to the `PostWorkflow` API call for capturing a custom trigger field key.
+- **API Changes:**
+  - The `GET` endpoint now correctly formats the URL string by removing an unnecessary line break.
+  - A new optional parameter, `triggerFieldKey`, is available in the `PostWorkflow` API call to capture a custom trigger field key.
 
-- **Workflow Modal Enhancements**: The modal imports additional context and utility methods, using `UsersContext` and `getSchemaPropertyByKey` to build a list of fields from the organization's inventory model schema. A new trigger type, `MODEL_FIELD_CHANGE`, allows users to select a specific field to trigger the workflow. The modal supports dynamic behavior based on the trigger type, resetting error states upon open/close and adjusting entity names and event types accordingly.
+- **Workflow Modal Enhancements:**
+  - The modal imports additional context and utility methods, using `UsersContext` and `getSchemaPropertyByKey` to build a list of fields from the organization's inventory model schema.
+  - A new trigger type, `MODEL_FIELD_CHANGE`, allows users to select a specific field to trigger the workflow.
+  - The modal supports dynamic behavior based on the trigger type, capturing and passing the `field_name` to the API when `MODEL_FIELD_CHANGE` is selected.
+  - Error states reset upon modal open/close, and entity names and event types adjust based on the trigger type.
 
-- **Model Updates**: Enumerations for `TriggerType`, `EntityName`, and `EntityEventType` have been extended to support the new `MODEL_FIELD_CHANGE` trigger, enabling workflows to handle both field-based modifications and traditional events.
-
-
-<!--- PR #1328: https://github.com/validmind/frontend/pull/1328 --->
-<!--- Labels: enhancement --->
-### Implement improved template swap/merge experience (#1328)
-
-A new feature has been added that allows users to update documents using a template. This feature enables merging a template into an existing document, providing options to selectively add, ignore, delete, or retain changes.
-
-This update introduces key functional enhancements and UI improvements to streamline document template management. The project version is updated to 1.33.4, adding dependencies like `@minoru/react-dnd-treeview` and `react-dnd` for advanced drag-and-drop capabilities. The `SwapTemplate` function is replaced by `CreateAndSwapTemplate` for improved API efficiency. UI components such as `AddFindingModal` and `AttributesRailDocumentOverview` have been refined for better user interaction. A new `SwapTemplateModal` allows users to compare and manage template versions using a drag-and-drop interface. Template model adjustments include optional parent sections and a new `global_id` field to support enhanced swapping logic.
-
-- **Dependency Updates**: Project version updated to 1.33.4 with new drag-and-drop dependencies.
-
-- **API Enhancements**: Replaced `SwapTemplate` with `CreateAndSwapTemplate` for better template handling.
-
-- **UI Modifications**: Improved components for clearer user interactions and consistent use of Chakra UI.
-
-- **Swap Template Modal**: New component for comparing and managing templates with drag-and-drop.
-
-- **Template Model Adjustments**: Optional parent sections and new `global_id` field added.
+- **Model Updates:**
+  - Enumerations for `TriggerType`, `EntityName`, and `EntityEventType` now include the `MODEL_FIELD_CHANGE` trigger, supporting both field-based modifications and traditional events.
 
 
 <!--- PR #1339: https://github.com/validmind/frontend/pull/1339 --->
 <!--- Labels: enhancement --->
 ### Ability to delete a workflow (#1339)
 
-This update introduces a new feature for 'soft-deleting' workflows. When a workflow is deleted, users can still continue any ongoing executions using the deleted workflow. However, the workflow will be removed from the active workflows list, and future executions will be prevented from running.
+This update introduces a new feature for 'soft-deleting' workflows. When a workflow is deleted, users can continue any executions currently using the deleted workflow. However, the workflow will be removed from the active workflows listing, and future executions will be prevented from running.
 
-This update introduces the ability to delete workflows with checks for dependencies on associated models. Key changes include:
+This update enables workflow deletion while checking for dependencies between workflows and associated models.
 
-- **API Enhancements:**
-  
-  - `GetWorkflowModelDependenciesCount`: Retrieves the number of models dependent on a workflow, warning users of potential impacts before deletion.
-  
-  - `DeleteWorkflow`: Sends a DELETE request to remove a specified workflow.
+API Enhancements:
 
-- **New UI Components:**
-  
-  - `WorkflowDeleteModal`: Provides a confirmation dialog for deleting workflows, displaying warnings if models depend on the workflow and handling success and error notifications.
-  
-  - `ExecutionDetails`: Shows an alert if a workflow has been deleted, indicating that current executions continue normally despite deprecation.
-  
-  - `WorkflowList`: Includes a delete option that checks dependencies before opening the delete modal, ensuring safer workflow deletion.
+- `GetWorkflowModelDependenciesCount` retrieves the number of models depending on a workflow, warning users of potential impacts before deletion.
+- `DeleteWorkflow` sends a DELETE request to remove a specified workflow.
 
-- **Model Update:**
-  
-  - A `deleted_at` field has been added to the Workflow model to track deletions, aiding the UI in rendering warnings.
+New UI Components:
 
-These changes enhance workflow deletion by preventing accidental removal when dependencies exist and improving user feedback during the process.
+- `WorkflowDeleteModal` offers a confirmation dialog for deleting workflows, displaying warnings if models depend on the workflow and handling success and error scenarios with toast notifications.
+- `ExecutionDetails` shows an alert if a workflow has been deleted, ensuring users know that while the workflow is deprecated, current executions continue normally.
+- `WorkflowList` now includes a delete option, triggering the dependency count check and opening the delete modal for safer workflow deletion.
+
+Model Update:
+
+- A `deleted_at` field has been added to the Workflow model to track when a workflow is deleted, allowing the UI to conditionally render warnings.
+
+These changes provide a robust mechanism for workflow deletion, preventing accidental removal when dependencies exist and improving user feedback during the deletion process.
+
+
+<!--- PR #1328: https://github.com/validmind/frontend/pull/1328 --->
+<!--- Labels: enhancement --->
+### Implement improved template swap/merge experience (#1328)
+
+A new feature has been added that allows users to update documents using a template. This feature enables merging a template into an existing document, offering options to selectively add, ignore, delete, or retain changes.
+
+This update introduces key functional enhancements and UI improvements:
+
+- **Dependency Updates**: The project version is now 1.33.4. New dependencies like `@minoru/react-dnd-treeview` and `react-dnd` enhance drag-and-drop capabilities for template manipulation.
+
+- **API Enhancements**: The `SwapTemplate` function is replaced by `CreateAndSwapTemplate`, consolidating template creation and swapping into one API call for better clarity and reusability.
+
+- **UI Modifications**: Updates to components such as `AddFindingModal` and `AttributesRailDocumentOverview` refine user interactions. Changes include updated trigger labels, enhanced menu layouts, and consistent use of Chakra UI components for template operations.
+
+- **Swap Template Modal**: A new `SwapTemplateModal` component offers a drag-and-drop tree view for comparing templates. Users can mark sections with statuses like ADD, KEEP, IGNORE, or DELETE, and resolve invalid configurations before applying changes.
+
+- **Template Model Adjustments**: Minor model changes include making the parent section optional and adding a `global_id` field to support new swapping logic.
+
+These updates aim to streamline and enhance the management and swapping of document templates.
 
 
 <!--- PR #1359: https://github.com/validmind/frontend/pull/1359 --->
 <!--- Labels: enhancement, good first issue, javascript --->
 ### Add option to export comments in validation report (#1359)
 
-We have added a feature to export comments from validation reports. By default, this option is disabled, similar to existing flags. A new checkbox in the UI lets users include comments in the validation report, which will be added to the appendix upon export. This update includes a backend change to ensure comments are included in the exported report when the checkbox is selected.
+We have introduced a feature to export comments from validation reports, in addition to flags. By default, this feature is disabled. Users can enable it by selecting a new checkbox in the UI, which allows comments to be included in the report's appendix. This update includes a backend change to ensure comments are properly exported when the option is selected.
 
-This update improves the report download feature by introducing the `includeComments` option. The `DownloadReport` function in `API.ts` now accepts an optional boolean parameter to include comments in the report data. The front-end component, `DownloadValidationReportModal`, has been updated with a checkbox for users to toggle this option. The UI manages this new state, and the API call is adjusted to pass the `include_comments` parameter, ensuring comments are included when specified.
+![Screenshot showing the new "include comments left on document" checkbox in the UI](https://github.com/user-attachments/assets/deff2eda-b081-44fc-bb6f-2e3cbf759da9)
+
+This update improves the report download feature by adding an `includeComments` option. The `DownloadReport` function now accepts an optional boolean parameter to include comments in the report data. The front-end component features a checkbox for users to toggle this option. The UI is updated to handle this new state, and the API call is adjusted to pass the `include_comments` parameter, ensuring comments are included in the report when specified.
 
 
 <!--- PR #1393: https://github.com/validmind/frontend/pull/1393 --->
 <!--- Labels: enhancement --->
 ### Add workflow-run step (#1393)
 
-A new "Run Workflow" step has been introduced, allowing users to target and execute any manually triggered workflow. Additionally, the styling for workflow node boxes has been updated for consistent coloring, outline, and selection. These updates apply to both zoom-in and zoom-out versions of configured and unconfigured node boxes. For more details, refer to the screenshots and videos available at: https://github.com/user-attachments/assets/3ffbdfb1-e330-4d8f-be3a-5eb9cb962559
+A new "Run Workflow" step has been introduced, enabling users to target and execute any manually triggered workflow.
 
-This PR introduces key enhancements and bug fixes, focusing on UI updates, API improvements, and new features for workflows.
+The styling for workflow node boxes has been updated for consistent coloring, outline, and selection. These changes affect both zoom-in and zoom-out views of configured and unconfigured node boxes.
 
-- UI & Spinner Update: Spinners now use theme defaults for consistent styling across the application.
+This update introduces key enhancements and bug fixes:
 
-- Workflow API Enhancements: The `GetWorkflows` function supports pagination and filtering by trigger type. A new `GetWorkflowDependencies` function retrieves model dependency counts and dependent workflows, aiding deletion decisions.
+- **UI & Spinner Update**: Spinners now use theme defaults for consistent styling, removing hardcoded color properties.
 
-- Workflow Deletion Modal Improvements: The delete modal now shows warnings and disables the delete button if dependencies exist, listing dependent workflows with links.
+- **Workflow API Enhancements**: The `GetWorkflows` function now supports pagination and filtering by trigger type. A new `GetWorkflowDependencies` function retrieves model dependency counts and lists dependent workflows to aid in deletion decisions.
 
-- New Run Workflow Feature: A new node allows users to trigger another workflow, integrated into the workflow canvas with configuration options via an inline dropdown.
+- **Workflow Deletion Modal Improvements**: The delete modal now shows a warning alert with dependent workflows if deletion is blocked by dependencies, and disables the delete button.
 
-- UI Consistency & Debug Enhancements: Minor UI tweaks and added inline inspection popovers improve debugging. Components like `NodeBox` now display contextual data for troubleshooting workflows.
+- **New Run Workflow Feature**: A new node allows users to trigger another workflow, integrated into the workflow canvas with a configurable dropdown for workflow options.
+
+- **UI Consistency & Debug Enhancements**: Minor UI tweaks and inline inspection popovers aid debugging. Components like `NodeBox` now display contextual data for troubleshooting workflows.
+
+
+<!--- PR #1372: https://github.com/validmind/frontend/pull/1372 --->
+<!--- Labels: enhancement --->
+### Allow roles and stakeholder types to be deleted (#1372)
+
+This update introduces delete buttons with confirmation prompts on both the list and detail pages for roles and stakeholder types. The roles detail page is adapted for stakeholder types with minor differences. Group deletion now uses a reusable component with improved styling. An `API.ts` call has been implemented for deleting roles, also applicable to stakeholder type deletions. Additionally, a stakeholder type settings menu item has been added, aligning with the [documentation](https://docs.validmind.com/guide/configuration/manage-model-stakeholder-types.html).
+
+- Added delete buttons and confirmation prompts to the list and detail pages for roles and stakeholder types. The roles details page is reused for the stakeholder type detail page with slight differences.
+
+- Updated group deletion to use a reusable component and improved styling for consistency.
+
+- Implemented an `API.ts` call for deleting roles, which is also used for stakeholder type deletion requests.
+
+- Added the stakeholder type settings menu item as per the [documentation](https://docs.validmind.com/guide/configuration/manage-model-stakeholder-types.html).
+
+This update enhances role deletion and confirmation dialogs, improving user experience and consistency across the application.
+
+- A new `DeleteRole` API method supports role deletion via an Axios DELETE endpoint.
+  
+- The `DeleteConfirmationAlert` component standardizes the deletion confirmation process across pages like Group, RoleDetails, Roles, and Stakeholders, offering consistent user experience and custom messages.
+
+- Components such as `DangerMenuItem` have updated styling to clearly indicate destructive actions.
+
+- The RoleDetails page now integrates the new confirmation dialog for role and stakeholder type deletion, with detailed impact messages.
+
+- Roles and Stakeholders listing pages support role deletion through a contextual menu, using react-query mutations to ensure data reflects changes immediately.
+
+- Minor UI copy adjustments in the `AddRoleModal` clarify the distinction between adding a new role and a stakeholder type.
+
+These improvements ensure users are informed and deliberate when performing potentially destructive actions, enhancing the application's overall consistency.
 
 
 <!--- PR #1371: https://github.com/validmind/frontend/pull/1371 --->
 <!--- Labels: enhancement, good first issue, javascript --->
 ### Add ability to export comments in monitoring and documentation reports (#1371)
 
-We have introduced a feature that allows you to export comments from monitoring and documentation reports. By default, this option is disabled, similar to existing settings. This feature enables users to view comments made in these reports. When exporting, only resolved comments are included at the end of the document.
+We have introduced an option to export comments from monitoring and documentation reports. By default, this feature is disabled. When enabled, it allows users to view comments made in these reports. Exported comments are included at the end of the document, and only resolved comments are exported.
 
-This update enhances the UI and configuration options in export modals for Model Documentation, Validation Report, and Monitoring Report, improving the export experience. Key changes include a new "Include comments" checkbox for controlling comment inclusion in exports, UI improvements for better alignment and spacing, integration of the `MoreInfoPopOver` component for contextual help, and accessibility improvements to download buttons. These changes simplify the export process by focusing on a single checkbox option for comments.
+This update enhances the UI and adds configuration options in export modals for Model Documentation, Validation Report, and Monitoring Report. Key changes include a new "Include comments" checkbox in each modal, allowing users to choose whether to include comments in exported files. UI improvements involve using `HStack` for better alignment and spacing, integrating `MoreInfoPopOver` for contextual help, and adjusting button spacing and `aria-label` attributes for accessibility. These changes simplify the export configuration process.
 
 Key changes include:
 
-- A new "Include comments" checkbox in each modal allows users to control whether comments should be included in the exported file. This option is managed using a new state variable and is passed to the API call accordingly.
+- A new "Include comments" checkbox in each modal allows users to decide whether comments should be included in the exported file. This option is managed with a new state variable and is passed to the API call accordingly.
 
 - UI improvements have been made by replacing certain layout components with more consistent alternatives, such as using `HStack` for grouping text and popover components. This enhances alignment and spacing for a more coherent user experience.
 
@@ -813,117 +862,46 @@ Key changes include:
 
 - Minor adjustments to spacing and `aria-label` attributes have been added to buttons, specifically the download buttons, to improve accessibility.
 
-Overall, these changes streamline the configuration experience for generating export documents, omitting redundant file format selection in favor of a single, focused checkbox option for comments inclusion.
-
-
-<!--- PR #1372: https://github.com/validmind/frontend/pull/1372 --->
-<!--- Labels: enhancement --->
-### Allow roles and stakeholder types to be deleted (#1372)
-
-This update introduces delete buttons with confirmation prompts on both list and detail pages for roles and stakeholder types. The roles detail page is adapted for stakeholder types with minor differences. Group deletion now uses a reusable component with improved styling. An `API.ts` call has been added for deleting roles, and the same endpoint is used for stakeholder type deletions. Additionally, the stakeholder type settings menu item is now included as documented.
-
-This update enhances role deletion and confirmation dialogs in the application, ensuring a consistent and informed user experience.
-
-- Introduced a new API method, `DeleteRole`, for role deletion via an Axios DELETE endpoint.
-  
-- Implemented a standardized `DeleteConfirmationAlert` component for consistent deletion confirmations across multiple pages, including Group, RoleDetails, Roles, and Stakeholders.
-
-- Updated `DangerMenuItem` with refined styling to highlight destructive actions.
-
-- Enhanced the RoleDetails page to support role and stakeholder type deletion with detailed impact messages.
-
-- Updated Roles and Stakeholders listing pages to enable role deletion through a contextual menu, using react-query mutations to ensure immediate data updates upon successful deletion.
-
-- Made minor UI copy adjustments in the `AddRoleModal` to distinguish between adding a new role and a stakeholder type.
-
-These improvements ensure users are well-informed and deliberate when performing potentially destructive actions, enhancing the overall consistency of deletion flows throughout the application.
+Overall, these changes streamline the configuration experience for generating export documents by omitting redundant file format selection in favor of a single, focused checkbox option for comments inclusion.
 
 ## Bug fixes
 
 
 <!--- PR #1361: https://github.com/validmind/frontend/pull/1361 --->
 <!--- Labels: bug --->
-### Refactor menu rendering in `BlockExplorer` for flexibility and reuse (#1361)
+### Refactor menu rendering in `BlockExplorer` for improved flexibility and reusability (#1361)
 
-The documentation sections will no longer contain default text blocks. Instead, users will see an empty state with a prompt to "Add New Block."
+Documentation sections will no longer have default text blocks. Instead, users will see an empty state with a prompt to "Add New Block."
 
-A bug that prevented some sections from being deleted has been fixed.
+- Fixed a bug that prevented some sections from being deleted.
 
-This update refactors the menu rendering logic in the `BlockExplorer` component for enhanced flexibility and reusability. Key changes include the introduction of a `MenuWrapper` component to consolidate menu display logic with `DocumentBlockModal` configuration, reducing duplication. A new optional `customRender` property in `BlockExplorerProps` allows customized UI behavior. Updates in `DocumentationPage` utilize this feature for a cleaner, context-sensitive empty state. Minor behavior changes ensure truly empty sections when needed.
+This update refactors the menu rendering logic in the `BlockExplorer` component for enhanced flexibility and reusability. Key changes include:
 
-- A new `MenuWrapper` component consolidates menu logic, reducing duplication in `BlockExplorer`.
+- A new `MenuWrapper` component consolidates menu display logic with `DocumentBlockModal` configuration, reducing duplication across the `BlockExplorer` component.
+  
+- An optional `customRender` property is added to `BlockExplorerProps`. When used, `BlockExplorer` renders with the `customRender` method within the `MenuWrapper`, allowing for customized UI behavior, such as an empty state display with an "Add New Block" button.
 
-- The `customRender` property in `BlockExplorerProps` allows for customized UI, such as an empty state with an "Add New Block" button.
+- `DocumentationPage` now uses the `customRender` feature of `BlockExplorer`, offering a cleaner, context-sensitive empty state that prompts users to start building the section. The `MenuButton` triggers focus via the `setIsFocused` callback.
 
-- `DocumentationPage` now uses `customRender` for a cleaner empty state, prompting users to start building sections, with `MenuButton` triggering focus via `setIsFocused`.
+- The `getInitialSectionContents` function now returns an empty array instead of a default content block, ensuring sections are truly empty when needed.
 
-- `getInitialSectionContents` now returns an empty array, ensuring truly empty sections when appropriate.
-
-These changes enhance modularity, reduce duplication, and give developers more control over block and menu rendering.
+These changes improve modularity, reduce duplication, and give developers more control over block and menu rendering within the application.
 
 
 <!--- PR #1336: https://github.com/validmind/frontend/pull/1336 --->
 <!--- Labels: bug --->
-### Improve Auth0 error handling for organization creation (#1336)
+### Improve Auth0 error handling for organization onboarding (#1336)
 
-This update enhances error handling by displaying detailed error messages from the backend instead of just error codes. If a specific message isn't available, the default message will be shown. Additionally, a bug fix improves error handling during the organization onboarding process.
+This update enhances error handling by displaying detailed error messages from the backend instead of just error codes. If a specific message is unavailable, the default message will still appear. Additionally, a bug fix improves error handling during the organization onboarding process.
 
-This update improves error handling in the `BootstrapForm` component by prioritizing detailed error messages from the API response (`error.response?.data?.message`) over generic `error.message` messages. This enhancement ensures clearer error feedback during organization creation failures. The selected error message is stored in a local variable (`errorMessage`) and used consistently in both inline error displays and toast notifications, enhancing troubleshooting and user guidance.
+This update improves error handling in the `BootstrapForm` component by prioritizing detailed API response error messages (`error.response?.data?.message`) over generic ones (`error.message`). This change enhances clarity in error feedback during organization creation failures. The selected error message is stored in a local variable (`errorMessage`) and consistently used in both inline error displays and toast notifications, ensuring more effective troubleshooting and user guidance.
 
 <!-- ### Changes with no label -->
-
-
-<!--- PR #1389: https://github.com/validmind/frontend/pull/1389 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging hotfixes into Main (staging-1.33.3-to-main) (#1389) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1411: https://github.com/validmind/frontend/pull/1411 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.34.4) (#1411) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1391: https://github.com/validmind/frontend/pull/1391 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.34.2) (#1391) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1354: https://github.com/validmind/frontend/pull/1354 --->
-<!--- Labels: none --->
-<!--- ### chore: sync pr template from backend (#1354) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1390: https://github.com/validmind/frontend/pull/1390 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.34.2) (#1390) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1400: https://github.com/validmind/frontend/pull/1400 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.34.4) (#1400) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1364: https://github.com/validmind/frontend/pull/1364 --->
-<!--- Labels: none --->
-<!--- ### Repo Sync repo-sync/9683 (2025-05-05) (#1364) --->
-<!-- No release notes or summary provided. -->
 
 
 <!--- PR #1398: https://github.com/validmind/frontend/pull/1398 --->
 <!--- Labels: none --->
 <!--- ### Merge Main into Staging (staging-1.34.4) (#1398) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1412: https://github.com/validmind/frontend/pull/1412 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.34.4) (#1412) --->
 <!-- No release notes or summary provided. -->
 
 
@@ -933,40 +911,87 @@ This update improves error handling in the `BootstrapForm` component by prioriti
 <!-- No release notes or summary provided. -->
 
 
+<!--- PR #1400: https://github.com/validmind/frontend/pull/1400 --->
+<!--- Labels: none --->
+<!--- ### Merge Staging into Prod (prod-1.34.4) (#1400) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1354: https://github.com/validmind/frontend/pull/1354 --->
+<!--- Labels: none --->
+<!--- ### chore: sync pr template from backend (#1354) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1411: https://github.com/validmind/frontend/pull/1411 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Staging (staging-1.34.4) (#1411) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1364: https://github.com/validmind/frontend/pull/1364 --->
+<!--- Labels: none --->
+<!--- ### Repo Sync repo-sync/9683 (2025-05-05) (#1364) --->
+<!-- No release notes or summary provided. -->
+
+
 <!--- PR #1401: https://github.com/validmind/frontend/pull/1401 --->
 <!--- Labels: none --->
 <!--- ### Hotfix: Fixed cookie settings to work with local and deployed environments. (#1401) --->
 <!-- No release notes or summary provided. -->
 
 
+<!--- PR #1389: https://github.com/validmind/frontend/pull/1389 --->
+<!--- Labels: none --->
+<!--- ### Merge Staging hotfixes into Main (staging-1.33.3-to-main) (#1389) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1390: https://github.com/validmind/frontend/pull/1390 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Staging (staging-1.34.2) (#1390) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1391: https://github.com/validmind/frontend/pull/1391 --->
+<!--- Labels: none --->
+<!--- ### Merge Staging into Prod (prod-1.34.2) (#1391) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1412: https://github.com/validmind/frontend/pull/1412 --->
+<!--- Labels: none --->
+<!--- ### Merge Staging into Prod (prod-1.34.4) (#1412) --->
+<!-- No release notes or summary provided. -->
+
+
 <!--- PR #1402: https://github.com/validmind/frontend/pull/1402 --->
 <!--- Labels: none --->
-### Safely use `dangerouslySetInnerHTML` with `DOMPurify` for HTML sanitization (#1402)
+### Enhance security by sanitizing HTML with `DOMPurify` before using `dangerouslySetInnerHTML` (#1402)
 
-This update integrates the DOMPurify library to sanitize HTML content before using `dangerouslySetInnerHTML` in React components, effectively preventing Cross-Site Scripting (XSS) attacks. DOMPurify version 3.2.5 is implemented, and the `sanitizeHtml` utility function is configured to permit the "target" attribute on links while sanitizing other potentially harmful HTML content.
+This update integrates the DOMPurify library to sanitize HTML content before using `dangerouslySetInnerHTML` in React components, effectively preventing Cross-Site Scripting (XSS) attacks. DOMPurify version 3.2.5 is implemented, with the `sanitizeHtml` utility function configured to allow the "target" attribute on links while sanitizing all other potentially harmful HTML content.
 
-This update enhances security by integrating `DOMPurify` to sanitize HTML content before rendering with React's `dangerouslySetInnerHTML`. Key changes include adding `DOMPurify` to `package.json` and `package-lock.json`, introducing a `sanitizeHtml` utility function, and updating components like `CommandPalette` and `TemplateEditor` to sanitize HTML content. These improvements prevent XSS attacks by ensuring HTML strings are cleaned before DOM injection.
+This update enhances security by integrating DOMPurify to sanitize HTML content before rendering with React's `dangerouslySetInnerHTML`. Key changes include:
 
-The pull request includes:
-
-- Adding the `DOMPurify` dependency for HTML sanitization.
-  
-- Introducing the `sanitizeHtml` utility function in the `utils` module, wrapping `DOMPurify.sanitize`.
-
-- Updating components such as `CommandPalette`, `DocumentChecker`, `FindingsList`, `GenerateWithAIModal`, `JSONLogicHumanizer`, `CustomText`, and `TemplateEditor` to sanitize dynamic HTML content before rendering, preventing XSS attacks.
-
+- Adding DOMPurify to `package.json` and `package-lock.json` for HTML sanitization.
+- Introducing a `sanitizeHtml` utility function in the `utils` module, wrapping `DOMPurify.sanitize` for use across components.
+- Updating components like `CommandPalette`, `DocumentChecker`, `FindingsList`, `GenerateWithAIModal`, `JSONLogicHumanizer`, `CustomText`, and `TemplateEditor` to sanitize HTML content, preventing XSS attacks.
 - Implementing minor code formatting improvements and small refactors for consistency.
 
-These changes ensure user-generated or dynamic HTML content is sanitized before DOM injection, enhancing security and providing a safer rendering process.
+These changes enhance security by ensuring dynamic HTML content is sanitized before DOM injection, contributing to safer rendering of content from external sources or user inputs.
 
 
 <!--- PR #1392: https://github.com/validmind/frontend/pull/1392 --->
 <!--- Labels: none --->
-### Set a cookie with the access token value (#1392)
+### Set a cookie with the access token value for authentication (#1392)
 
-This update introduces cookie-based authentication for accessing assets, providing an alternative to the `Authorization` header. Previously, assets embedded in HTML were inaccessible due to the inability of elements like `img` tags to set custom headers. Now, the system first tries the `Authorization` header and, if unsuccessful, uses the `authToken` cookie. This change enhances security by ensuring only authenticated users can access organization-specific assets, preventing unauthorized access.
+This update introduces cookie-based authentication as an alternative to authorization headers for accessing assets. Previously, assets embedded in HTML were inaccessible due to the inability to set an `Authorization` header. Now, the system first attempts to authenticate with the `Authorization` header and, if unsuccessful, uses the `authToken` cookie. This change enhances security by ensuring only authorized users can access organization-specific assets.
 
-This pull request enhances the `MainApp` component by introducing a new feature that sets an authentication token as a cookie when an access token is available. This allows asset requests to verify user authentication via the cookie, offering an alternative to using the auth token. Additionally, `onSuccess` and event handler callbacks have been refactored for better readability, and minor code formatting adjustments have been made to standardize styling in role and permission mappings and JSX routing components. The primary functional update is the addition of the auth token as a cookie.
+The update addresses the issue where authenticated users could not view assets embedded in HTML documentation, reports, and other UI components due to the inability to set an auth header. Cookie-based authentication offers a secure alternative for these scenarios. It also resolves a security issue where unauthorized users could potentially access assets from organizations they do not belong to.
+
+This change is part of a broader security enhancement to prevent unauthorized access to organization-specific assets. The backend changes include organization-level access control validation to ensure users can only access assets from their own organization.
+
+This pull request enhances the `MainApp` component and related modules by introducing a new feature that sets an authentication token as a cookie when an access token is available. This allows asset requests to authenticate users via the cookie. Additionally, `onSuccess` and event handler callbacks have been refactored for improved readability by consistently wrapping arrow function parameters in parentheses. Minor code formatting adjustments have been made to standardize styling in role and permission mappings and JSX routing components. The primary functional update is the addition of the auth token as a cookie.
 
 
 # Agents
@@ -982,15 +1007,15 @@ This pull request enhances the `MainApp` component by introducing a new feature 
 <!-- No release notes or summary provided. -->
 
 
-<!--- PR #22: https://github.com/validmind/agents/pull/22 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Prod (prod-19097) (#22) --->
-<!-- No release notes or summary provided. -->
-
-
 <!--- PR #20: https://github.com/validmind/agents/pull/20 --->
 <!--- Labels: none --->
 <!--- ### Repo Sync repo-sync/9683 (2025-05-05) (#20) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #22: https://github.com/validmind/agents/pull/22 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Prod (prod-19097) (#22) --->
 <!-- No release notes or summary provided. -->
 
 
@@ -1006,6 +1031,7 @@ from agents import code_explainer
 
 with open("binary_classifier_code.py") as f:
     code_content = f.read()
+
 state = {
     "inputs": {
         "additional_instructions": "Preprocessing module for binary classification",
@@ -1013,6 +1039,7 @@ state = {
     },
     "output": "",
 }
+
 state = code_explainer.invoke(state)
 display(display(Markdown(state["output"])))
 ```
@@ -1030,122 +1057,86 @@ The demo notebook is available at `notebooks/code_explainer.ipynb`.
 <!--- Labels: documentation --->
 ### Add missing `Export ongoing monitoring document` section to docs (#693)
 
-This update adds a feature to the documentation, allowing users to export ongoing monitoring documentation for models. The new section provides clear, step-by-step instructions:
+This update adds a feature to the documentation, allowing users to export ongoing monitoring documentation for models. The new section provides step-by-step instructions for using the user interface to perform this export. Users should:
 
 - Click `Inventory` in the left sidebar.
-- Select a model or use filters/search to find one.
+- Select or search for a model.
 - Click `Ongoing Monitoring` in the model's sidebar.
 - Click `Export Document` in the right sidebar.
-- Download the file locally by clicking `Download File`.
+- Click `Download File` to save it locally.
 
-This enhancement improves usability by offering straightforward guidance for exporting monitoring reports.
-
-
-<!--- PR #707: https://github.com/validmind/documentation/pull/707 --->
-<!--- Labels: documentation --->
-### Updated content block features and template paths (#707)
-
-Guides for templates and reusable text blocks, applicable to model documentation, validation reports, and ongoing monitoring, have been moved to a new sub-section. Broken links have been fixed, and aliases applied to old URLs. A new page details the block library feature, offering a guide on managing text blocks. Updates include changes to content block management and a new AI chat interface. Test results and metrics pages now reflect the updated block menu experience. Documentation on templates has been reorganized and expanded.
-
-Templates and reusable text blocks now have a dedicated sub-section, addressing more than just model documentation. Broken links have been fixed, and aliases applied to old URLs. A hotfix was applied to the `installation` repository to address broken links detected by our online check, though this change was reverted for now until the PR is approved.
-
-A new page has been added covering the new block library feature, providing a comprehensive guide on managing your text block library.
-
-The page on working with content blocks has been updated to reflect changes in the insertion and management of blocks due to the new block library. The updated content includes explanations of content block types, and the "Add content blocks" and "Remove content blocks" sections now reflect the new user experience. Additionally, the "Generate Text with AI" section has been updated to showcase the new chat interface.
-
-The page on working with test results now reflects the new test-driven block menu user experience. A section has been added on configuring the display of test results once inserted.
-
-The page on working with metrics over time has been updated to reflect the new metric over time block menu user experience.
-
-To support the release of our updated content block interface and the text block library, the documentation on templates within the ValidMind Platform has been reorganized and expanded. Guides on managing templates for model documentation, validation reports, and ongoing monitoring reports are now available under the **Guides** section in **templates**, along with a new guide on managing your text block library.
-
-This update refactors documentation template paths by relocating them from the `model-documentation` directory to a new `templates` directory, impacting configuration files, guides, and release notes. It also enhances the content block management system, enabling better organization and reuse of text blocks. New features include managing a library of reusable text blocks, configuring test result displays, and improving the user interface for adding and removing content blocks.
-
-
-<!--- PR #713: https://github.com/validmind/documentation/pull/713 --->
-<!--- Labels: documentation, highlight --->
-### Updated Validator Fundamentals courses for clarity and comprehensiveness (#713)
-
-The **Validator Fundamentals** course has been updated for clarity and comprehensiveness, aligning it with the Developer Fundamentals course. Enhancements include revised login instructions, updated learning outcomes, module summaries, and additional slides for previously omitted topics. The course has been thoroughly tested to ensure accurate instructions and time estimates.
-
-The revamped course is divided into four modules, each with clear learning outcomes:
-
-- **Module 1**: Using ValidMind for Model Validation
-- **Module 2**: Running Data Quality Tests
-- **Module 3**: Developing Challenger Models
-- **Module 4**: Finalizing Validation Reports
-
-This training series covers the basics of using ValidMind to validate datasets and models. It includes running and logging tests with the ValidMind Library and finalizing validation reports in the ValidMind Platform. You'll learn to automate testing, populate evidence in your validation report, track finding resolution, and more. Register now to take the course!
+This enhancement aims to improve documentation usability by offering clear export instructions.
 
 
 <!--- PR #681: https://github.com/validmind/documentation/pull/681 --->
 <!--- Labels: documentation, highlight --->
 ### Updated developer fundamentals training (#681)
 
-The Developer Fundamentals course has been updated for clarity and comprehensiveness, featuring revised login instructions, module outcomes, and summaries. Courses have been tested for accuracy in instructions and time estimates. A workaround for the `Copy snippet to clipboard` slide addresses a CORS error, using `allow="clipboard-read; clipboard-write"` and a simplified layout.
+The Developer Fundamentals course has been updated for clarity and comprehensiveness, featuring revised login instructions, learning outcomes, and module summaries. Courses have been tested for accuracy in instructions and time estimates. A workaround for the `Copy snippet to clipboard` slide addresses a CORS-type error, using `allow="clipboard-read; clipboard-write"`. The layout now uses a simple two-column format.
 
-In the Learning Paths section, titles and descriptions have been refined for consistency and readability. Buttons for course registration status have been added. The Validator Fundamentals section is prepared for upcoming updates. An extra "Training" drop-down has been removed to enhance user experience, with potential plans for sidebar or breadcrumb navigation. The `Releases` section is now a standalone item in the drop-down menu.
+Titles and descriptions in the Learning Paths section have been refined for consistency and readability, with buttons added for course registration or announcements. The Validator Fundamentals section has been streamlined for future updates. The extra "Training" drop-down has been removed to simplify navigation, with potential plans for sidebar or breadcrumb navigation. The `Releases` section is now a standalone item in the drop-down menu.
 
-A browser compatibility message has been added to registration pages and the "Legal Ease" section on the policy page for better emphasis.
+The browser compatibility message on registration pages is now clearer and emphasized, a format also applied to the "Legal Ease" section on the policy page.
 
-This update enhances notebook execution and documentation within GitHub Actions and site content. Key improvements include updated action names and descriptions in `action.yml` files, registration of the `validmind` kernel, and expanded automated testing for multiple notebooks. New training modules and markdown files offer a comprehensive learning path for ValidMind users. The notebook directory is reorganized for clarity, with updated content and new visual aids to guide users in implementing tests and using external providers.
+This pull request enhances notebook execution and documentation within GitHub Actions and site content. Key updates include improved action names and descriptions in `action.yml` files, registration of the `validmind` kernel in workflows, and expanded notebook execution commands. New training modules and detailed markdown files enhance learning paths for ValidMind users. The notebook directory is reorganized for clarity, with updated content and new visuals to guide users in implementing custom tests and using external providers.
 
-- **GitHub Actions Enhancements**:
+- GitHub Actions Enhancements:
 
   - Updated action names and descriptions in `action.yml` files for demo, prod, and staging notebooks to reflect the execution of multiple notebooks.
-
-  - Added a step to register the `validmind` kernel in the GitHub Actions workflow, ensuring the correct environment is used for notebook execution.
-
+  
+  - Added a step to register the `validmind` kernel in the GitHub Actions workflow to ensure the correct environment is used for notebook execution.
+  
   - Modified the execution command to target a series of notebooks, improving the scope of automated testing.
 
-- **Documentation and Training Content**:
+- Documentation and Training Content:
 
   - Introduced new training modules and updated existing ones to provide a comprehensive learning path for developers, validators, and administrators using ValidMind.
-
+  
   - Added detailed markdown files for each training module, outlining learning objectives, course content, and step-by-step instructions for using ValidMind.
+  
+  - Enhanced the site content with new sections and updates to improve navigation and user experience.
 
-  - Enhanced the site content with new sections and updated existing ones to improve navigation and user experience.
-
-- **Notebook Content and Structure**:
+- Notebook Content and Structure:
 
   - Reorganized the notebook directory structure to separate executed notebooks from tutorials, improving clarity and maintainability.
-
+  
   - Updated notebook content to include new sections on implementing custom tests and using external test providers, providing users with more advanced capabilities.
-
+  
   - Added new images and GIFs to the documentation to visually guide users through the process of adding content blocks and test results.
 
-These changes aim to streamline the notebook execution process, enhance the training and documentation experience, and provide users with more robust tools for model development and validation.
+These changes streamline the notebook execution process, enhance the training and documentation experience, and provide users with more robust tools for model development and validation.
+
+
+<!--- PR #707: https://github.com/validmind/documentation/pull/707 --->
+<!--- Labels: documentation --->
+### Updated content block features and documentation templates (#707)
+
+The documentation has been reorganized to enhance clarity and usability. Templates and reusable text blocks, applicable to model documentation, validation reports, and ongoing monitoring, have been moved to a new sub-section. Broken links have been fixed, and aliases added to old URLs. A new page details the block library feature, and updates reflect UI changes, including the new chat interface for "Generate Text with AI." Test results and metrics over time pages now include updated UX information. The ValidMind Platform's template guides have been expanded and relocated under **Guides** in the **templates** section.
+
+This pull request refactors the paths for documentation templates, moving them from the `model-documentation` directory to a new `templates` directory. This change impacts various files, including configuration files, guides, and release notes. Additionally, enhancements to the content block management system have been introduced. These include managing a library of reusable text blocks, configuring test result displays, and improving the user interface for adding and removing content blocks.
+
+
+<!--- PR #713: https://github.com/validmind/documentation/pull/713 --->
+<!--- Labels: documentation, highlight --->
+### Updated Validator Fundamentals courses (#713)
+
+The **Validator Fundamentals** course has been enhanced for clarity and comprehensiveness, aligning it with the Developer Fundamentals course. Updates include revised login instructions, detailed module learning outcomes, module summaries, and additional slides on previously omitted topics. The course has been thoroughly tested to ensure accurate instructions and time estimates.
+
+The revamped course consists of four modules, each with specific learning outcomes:
+
+- **Module 1**: Using ValidMind for Model Validation
+- **Module 2**: Running Data Quality Tests
+- **Module 3**: Developing Challenger Models
+- **Module 4**: Finalizing Validation Reports
+
+This training series introduces the basics of using ValidMind for dataset and model validation. It covers running and logging tests with the ValidMind Library and completing your model's validation report on the ValidMind Platform. You'll learn to automate testing, populate evidence in your validation report, track finding resolution, and more. Register to take the course now!
 
 <!-- ### Changes with no label -->
 
 
-<!--- PR #718: https://github.com/validmind/documentation/pull/718 --->
+<!--- PR #700: https://github.com/validmind/documentation/pull/700 --->
 <!--- Labels: none --->
-<!--- ### Merge main into staging (#718) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #723: https://github.com/validmind/documentation/pull/723 --->
-<!--- Labels: none --->
-<!--- ### Merge main into staging (#723) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #724: https://github.com/validmind/documentation/pull/724 --->
-<!--- Labels: none --->
-<!--- ### Merge main into staging (#724) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #709: https://github.com/validmind/documentation/pull/709 --->
-<!--- Labels: none --->
-<!--- ### Merge main into staging (#709) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #703: https://github.com/validmind/documentation/pull/703 --->
-<!--- Labels: none --->
-<!--- ### fix: remove helm repo path from s3 sync commands (#703) --->
+<!--- ### Merge main into staging (#700) --->
 <!-- No release notes or summary provided. -->
 
 
@@ -1155,9 +1146,9 @@ These changes aim to streamline the notebook execution process, enhance the trai
 <!-- No release notes or summary provided. -->
 
 
-<!--- PR #700: https://github.com/validmind/documentation/pull/700 --->
+<!--- PR #705: https://github.com/validmind/documentation/pull/705 --->
 <!--- Labels: none --->
-<!--- ### Merge main into staging (#700) --->
+<!--- ### Merge main into staging (#705) --->
 <!-- No release notes or summary provided. -->
 
 
@@ -1173,27 +1164,51 @@ These changes aim to streamline the notebook execution process, enhance the trai
 <!-- No release notes or summary provided. -->
 
 
-<!--- PR #725: https://github.com/validmind/documentation/pull/725 --->
+<!--- PR #703: https://github.com/validmind/documentation/pull/703 --->
 <!--- Labels: none --->
-<!--- ### Merge main into staging (#725) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #705: https://github.com/validmind/documentation/pull/705 --->
-<!--- Labels: none --->
-<!--- ### Merge main into staging (#705) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #701: https://github.com/validmind/documentation/pull/701 --->
-<!--- Labels: none --->
-<!--- ### Merge main into staging (#701) --->
+<!--- ### fix: remove helm repo path from s3 sync commands (#703) --->
 <!-- No release notes or summary provided. -->
 
 
 <!--- PR #712: https://github.com/validmind/documentation/pull/712 --->
 <!--- Labels: none --->
 <!--- ### Fix merge conflicts for prod deploy #711 (#712) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #709: https://github.com/validmind/documentation/pull/709 --->
+<!--- Labels: none --->
+<!--- ### Merge main into staging (#709) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #723: https://github.com/validmind/documentation/pull/723 --->
+<!--- Labels: none --->
+<!--- ### Merge main into staging (#723) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #724: https://github.com/validmind/documentation/pull/724 --->
+<!--- Labels: none --->
+<!--- ### Merge main into staging (#724) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #725: https://github.com/validmind/documentation/pull/725 --->
+<!--- Labels: none --->
+<!--- ### Merge main into staging (#725) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #718: https://github.com/validmind/documentation/pull/718 --->
+<!--- Labels: none --->
+<!--- ### Merge main into staging (#718) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #701: https://github.com/validmind/documentation/pull/701 --->
+<!--- Labels: none --->
+<!--- ### Merge main into staging (#701) --->
 <!-- No release notes or summary provided. -->
 
 

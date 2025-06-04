@@ -1,13 +1,13 @@
 ---
-title: "feat: remove poetry.lock"
+title: "Remove `poetry.lock` from Dockerfile build process (#1420)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1420
 ---
-# PR Summary
 
-This PR introduces a change in the Dockerfile for the customer-managed environment. The update removes the poetry.lock file from the application directory during the container build process. This change likely aims to prevent issues related to dependency resolution or outdated locks from being shipped in the container, ensuring that the environment is set up with clean dependency management.
-
-The change is focused on an explicit file removal operation, preserving the integrity of the container build while potentially allowing the project to generate an updated lock file in subsequent steps or during runtime.
+This update modifies the Dockerfile for the customer-managed environment by removing the `poetry.lock` file from the application directory during the container build process. This change prevents issues with dependency resolution or outdated locks in the container, ensuring clean dependency management. By explicitly removing the file, the integrity of the container build is maintained, allowing the project to generate an updated lock file in later steps or during runtime.

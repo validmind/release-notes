@@ -1,20 +1,27 @@
 ---
-title: "[SC-#] Allow keycloak theme to enable local user registration"
+title: "Allow Keycloak theme to enable local user registration (#1418)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1418
 ---
-# PR Summary
+
+This update introduces two key changes to the Keycloak realm configuration and templates. First, self-registration is disabled by setting the `registrationAllowed` flag to false, preventing end users from creating accounts via the registration link. Second, the login and registration FreeMarker templates are updated. The login template now shows the registration link only if `registrationAllowed` is true. The registration template includes a debug block for form fields, explicitly defines required fields, and renders additional fields not predefined.
 
 This pull request introduces two main changes:
 
-1. In the Keycloak realm configuration, the self-registration capability is disabled by setting the `registrationAllowed` flag to false. This change ensures that end users can no longer create accounts via the registration link.
+- In the Keycloak realm configuration, the self-registration capability is disabled by setting the `registrationAllowed` flag to false. This change ensures that end users can no longer create accounts via the registration link.
 
-2. The login and registration FreeMarker templates have been updated. In the login template, the registration link is now conditionally displayed only when the realm's `registrationAllowed` flag is true. In the registration template, additional enhancements have been made:
-   - A debug block has been added to display available form fields (hidden by default via CSS style `display: none;`).
-   - The registration form explicitly defines required fields (username, email, first name, last name, password, and password confirmation) to ensure proper validation.
-   - Additional fields from the provided form data are iterated and rendered only if they are not among the explicitly defined required fields.
+- The login and registration FreeMarker templates have been updated. In the login template, the registration link is now conditionally displayed only when the realm's `registrationAllowed` flag is true. In the registration template, additional enhancements have been made:
+
+  - A debug block has been added to display available form fields (hidden by default via CSS style `display: none;`).
+
+  - The registration form explicitly defines required fields (`username`, `email`, `first name`, `last name`, `password`, and `password confirmation`) to ensure proper validation.
+
+  - Additional fields from the provided form data are iterated and rendered only if they are not among the explicitly defined required fields.
 
 These changes improve the control over user self-registration and enhance the registration form's structure and debugging capabilities.

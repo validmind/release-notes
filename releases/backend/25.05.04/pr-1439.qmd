@@ -1,40 +1,33 @@
 ---
-title: "Support exporting comments for Documenation and monitoring reports. Also fix db query"
+title: "Support exporting comments in documentation and monitoring reports; fix database query (#1439)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1439
 ---
-#### What
-<!-- Describe what the change is doing, including behavior before and after the change -->
-There are 2 main changes here
-1) Adds the ability to export comments in documentation reports and monitoring reports
-2) Fixes an issue with the get comments to export db query
 
-#### Why
-<!-- Explain why the change is being made and needed -->
-Customers want the option to view comments that were made
+This update introduces two key changes:
 
-#### Breaking Changes
-<!-- List any breaking changes -->
+- You can now export comments in both documentation and monitoring reports.
+- A database query issue related to exporting comments has been fixed.
 
-#### Screenshots/Videos (Frontend Only)
-<!-- Add screenshots or videos showing before/after -->
+These improvements respond to customer requests for better access to comments.
 
-# PR Summary
+This update improves the management and display of user comments linked to inventory models in various reports. Key enhancements include:
 
-This PR improves the management and rendering of user comments associated with inventory models in various reports. Key changes include:
+- The `get_user_comments_by_model_id` method in the Annotation model now accepts a `content_type` parameter to filter and join the Metadata table, ensuring comments are fetched correctly based on report type.
 
-1. Updating the Annotation model's method get_user_comments_by_model_id to accept an additional parameter (content_type) in order to filter and join the Metadata table. This change ensures that the appropriate comments are fetched based on the type of report being generated.
+- A new helper function, `render_comment_fragments`, centralizes the logic for rendering comment fragments. It queries comments with the correct filters, formats comment text by stripping HTML tags, and handles nullable fields like `context` and `created_at`. The output now conditionally includes the context only when present.
 
-2. Introducing a new helper function, render_comment_fragments, in the report render helpers. This function centralizes the logic for rendering comment fragments by querying comments with the correct filters, formatting comment text (e.g., stripping HTML tags), and ensuring proper handling of nullable fields like context and created_at. Additionally, the formatting output is updated to conditionally include the context only when present.
+- Report serialization functions (`serialize_documentation_report` and `serialize_monitoring_report`) now support an `include_comments` option. When enabled, reports append a 'Comments' section in both the template structure and the list of rendered fragments.
 
-3. Adjustments in the report serialization functions (serialize_documentation_report and serialize_monitoring_report) to support an include_comments option. When enabled, the reports now append a 'Comments' section both in the template structure and in the list of fragments rendered.
+- Unit tests have been updated to validate the new functionality. Tests cover scenarios such as:
+  - Comment rendering with and without the `include_comments` flag.
+  - Filtering out irrelevant comments, such as those with a content type not matching the report type or unresolved annotations.
+  - Ensuring the helper function `_create_annotation_helper` supports creating annotations with the enhanced structure.
 
-4. Updates to the unit tests to validate the new functionality. The tests now cover scenarios including:
-   - Comment rendering with and without the include_comments flag.
-   - Verification that irrelevant comments (e.g., those with a content type not matching the report type or unresolved annotations) are correctly filtered out.
-   - Ensuring the helper function _create_annotation_helper supports the creation of annotations with the enhanced structure.
-
-Overall, these changes enhance the robustness and flexibility of the comment handling mechanism in the backend, allowing for improved report customization and filtering.
+These changes enhance the robustness and flexibility of the comment handling mechanism in the backend, allowing for better report customization and filtering.

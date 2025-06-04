@@ -1,14 +1,15 @@
 ---
-title: "increasing worker concurrency"
+title: "Increase worker concurrency (#1442)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1442
 ---
-#### What
-Increasing worker concurrency
 
-# PR Summary
+This update enhances system performance by increasing worker concurrency. This change allows for more tasks to be processed simultaneously, improving overall efficiency and speed.
 
-This pull request increases the worker concurrency for the Celery worker from 4 to 6 in the docker-entrypoint.sh. The change is made to allow the worker to process more tasks concurrently, which can improve performance under load. The rest of the command remains the same, ensuring that the worker is started with the appropriate work directory and Celery application context.
+This pull request increases the Celery worker concurrency from 4 to 6 in the `docker-entrypoint.sh` file. This change enables the worker to handle more tasks simultaneously, potentially enhancing performance under load. The rest of the command remains unchanged, ensuring the worker starts with the correct working directory and Celery application context.

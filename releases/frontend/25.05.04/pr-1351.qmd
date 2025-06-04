@@ -1,27 +1,27 @@
 ---
-title: "[SC-9455] Approval process notes in activity log"
+title: "Add approval process notes to activity log (#1351)"
 categories: [frontend, 25.05.04, hotfix, enhancement, refactor]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/frontend/pull/1351
 ---
-#### External Release Notes
-"Added workflow approval step voter notes to the activity log"
 
-# PR Summary
+Workflow approval step voter notes have been added to the activity log.
 
-This PR introduces several functional UI enhancements and refactors across the application. The key changes include:
+This PR introduces several UI enhancements and refactors to improve functionality and user experience. Key changes include collapsible content in the `EventRowLayout` component for displaying additional details like vote notes, with an `IconButton` to toggle visibility. New components for workflow approvals have been added, such as `ApprovalActionButtons`, `ApprovalHeader`, `ApprovalVoterCard`, `VoteDetailsModal`, and `VoterStatusColumn`, enhancing usability and organization. Redundant code has been cleaned up, increasing modularity and maintainability.
 
-1. In the EventRowLayout component, collapsible content has been implemented to display additional details (such as vote notes) when available. An IconButton toggles a Collapse element, and the display icon switches between a downward and upward chevron accordingly.
+The `EventRowLayout` component now features collapsible content to show extra details, such as vote notes, when available. An `IconButton` toggles a `Collapse` element, with the icon switching between a downward and upward chevron.
 
-2. New components related to workflow approvals have been added:
-   - ApprovalActionButtons: Provides a consistent button group for approving or rejecting votes with appropriate color schemes and iconography.
-   - ApprovalHeader: Displays the approval title and message in a more structured layout.
-   - ApprovalVoterCard: Renders voter information with an optional popover for vote notes, enhancing usability when notes are present.
-   - VoteDetailsModal: Offers a modal for detailed viewing of vote notes in a read-only textarea.
-   - VoterStatusColumn and associated constants: These aid in organizing and displaying voter statuses in columns based on their vote state, using a uniform look for all statuses.
+New workflow approval components include:
 
-3. Some redundant code and inline commented sections have been cleaned up and replaced with reusable components, improving overall maintainability and readability.
+- `ApprovalActionButtons`: A button group for approving or rejecting votes with appropriate colors and icons.
+- `ApprovalHeader`: Displays the approval title and message in a structured layout.
+- `ApprovalVoterCard`: Shows voter information with an optional popover for vote notes.
+- `VoteDetailsModal`: A modal for viewing vote notes in a read-only textarea.
+- `VoterStatusColumn` and constants: Organizes and displays voter statuses in columns with a consistent look.
 
-Overall, the PR increases the modularity of the code and offers a richer, more interactive user interface for event and workflow approval processes.
+Redundant code and inline comments have been replaced with reusable components, enhancing maintainability and readability. Overall, this PR improves code modularity and provides a more interactive UI for event and workflow approvals.

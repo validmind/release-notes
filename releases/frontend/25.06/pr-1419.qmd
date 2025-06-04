@@ -1,0 +1,27 @@
+---
+title: "Reorganize settings page for improved navigation and readability (#1419)"
+categories: [frontend, 25.06, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-04 13:02
+# Content validated by AI - 2025-06-04 13:02
+# Content overwritten from an earlier version - 2025-06-04 13:02
+# PR URL: https://github.com/validmind/frontend/pull/1419
+---
+
+The settings page has been reorganized to better categorize settings, enhancing readability and making it easier for users to understand the purpose of each setting.
+
+This update enhances the settings user interface by reorganizing navigation links into logical sections, improving user experience and maintainability. The sidebar now clearly separates areas like "Your Account," "Workspace," "User Permissions," "Models," and "Documents." Key changes include moving the "Stakeholders" link to a model-specific section, introducing conditional rendering for admin features, and refining component structure for better readability and accessibility.
+
+Key changes include:
+
+- Moving the "Stakeholders" link from general workspace settings to a model-specific section and renaming it "Model Stakeholder Types" where applicable.
+
+- Introducing conditional rendering for admin features like "Workflows" and "Workflow States," which are only displayed when user permissions (e.g., `isAdmin` and `workflowsV3`) are met.
+
+- Adjusting the order and grouping of links (e.g., "Risk Areas & Validation Guidelines" remains tied to permissions) to provide a more intuitive navigation experience based on user roles.
+
+- Enhancing the overall component structure by replacing some `Box` components with `Stack` and using the `Heading` component for titles, thereby improving readability and accessibility.
+
+These changes aim to improve maintainability, user experience, and adaptability of the settings interface based on user roles and permissions.

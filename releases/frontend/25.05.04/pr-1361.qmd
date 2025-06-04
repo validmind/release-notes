@@ -1,37 +1,27 @@
 ---
-title: "Templates should always have explicit content blocks declared"
+title: "Refactor menu rendering in `BlockExplorer` for improved flexibility and reusability (#1361)"
 categories: [frontend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/frontend/pull/1361
 ---
-#### What
-The documentation sections will no longer have default text blocks for a given section. Instead an empty state will be present prompting the user to "Add New Block"
 
-#### External Release Notes
-- Fixed a bug where some sections were not being deleted
+Documentation sections will no longer have default text blocks. Instead, users will see an empty state with a prompt to "Add New Block."
 
-#### Breaking Changes
-<!-- List any breaking changes -->
+- Fixed a bug that prevented some sections from being deleted.
 
-#### Screenshots/Videos (Frontend Only)
-**Before** 
-<img width="1234" alt="Screenshot 2025-05-05 at 10 00 07 AM" src="https://github.com/user-attachments/assets/d5791f82-f757-4f9b-9116-95ced6605d38" />
+This update refactors the menu rendering logic in the `BlockExplorer` component for enhanced flexibility and reusability. Key changes include:
 
-**After**
-<img width="1231" alt="Screenshot 2025-05-05 at 10 00 19 AM" src="https://github.com/user-attachments/assets/d8dfd992-d137-4e07-913c-18a9695afdac" />
+- A new `MenuWrapper` component consolidates menu display logic with `DocumentBlockModal` configuration, reducing duplication across the `BlockExplorer` component.
+  
+- An optional `customRender` property is added to `BlockExplorerProps`. When used, `BlockExplorer` renders with the `customRender` method within the `MenuWrapper`, allowing for customized UI behavior, such as an empty state display with an "Add New Block" button.
 
-# PR Summary
+- `DocumentationPage` now uses the `customRender` feature of `BlockExplorer`, offering a cleaner, context-sensitive empty state that prompts users to start building the section. The `MenuButton` triggers focus via the `setIsFocused` callback.
 
-This PR refactors the menu rendering logic within the BlockExplorer component to improve flexibility and reusability. The core changes include:
+- The `getInitialSectionContents` function now returns an empty array instead of a default content block, ensuring sections are truly empty when needed.
 
-1. Introduction of a new MenuWrapper component that consolidates the menu display logic along with the DocumentBlockModal configuration. This reduces duplication as the menu is used in multiple places within the BlockExplorer component.
-
-2. Addition of a new optional property, customRender, to the BlockExplorerProps. When provided, BlockExplorer renders using the customRender method wrapped within the MenuWrapper, allowing for customized UI behavior (e.g., presenting an empty state display with an Add New Block button).
-
-3. Updates in DocumentationPage to leverage the new customRender feature of BlockExplorer. This change provides a cleaner and more context-sensitive empty state where users are prompted to start building the section, and the MenuButton is used to trigger focus via the setIsFocused callback.
-
-4. Minor behavior changes such as modifying the getInitialSectionContents function to return an empty array instead of a default content block, ensuring that empty sections are truly empty when appropriate.
-
-Overall, these changes aim to improve modularity, reduce duplication, and provide developers with more control over how blocks and menus are rendered within the application.
+These changes improve modularity, reduce duplication, and give developers more control over block and menu rendering within the application.

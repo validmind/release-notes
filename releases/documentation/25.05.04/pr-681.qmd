@@ -1,69 +1,45 @@
 ---
-title: "Updated Developer Fundamentals training"
+title: "Updated developer fundamentals training (#681)"
 categories: [documentation, 25.05.04, hotfix, documentation, highlight]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/documentation/pull/681
 ---
-#### # Developer Fundamentals
-[**REGISTRATION PAGE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8465/update-developer-fundamentals-course/training/developer-fundamentals/developer-fundamentals-register.html) — 🚨 SEE COURSE MODULE PREVIEW DISCLAIMER BELOW!!!! 🚨
 
-- I updated this course to be much more comprehensive yet straightforward. 
-- There are now updated versions of the login instructions, individual module learning outcomes, module summaries, etc.
-- I thoroughly tested & timed these courses to make sure the instructions and the estimates made sense. 
-- PLEASE NOTE THE IFRAME WORKAROUND FOR THE `Copy snippet to clipboard` SLIDE. The normal background iframe ran into a CORS-type error and wouldn't actually let you press the button, so this is the only option that worked. See the other version which admittedly LOOKS better but just didn't allow the user to perform the action:
+The Developer Fundamentals course has been updated for clarity and comprehensiveness, featuring revised login instructions, learning outcomes, and module summaries. Courses have been tested for accuracy in instructions and time estimates. A workaround for the `Copy snippet to clipboard` slide addresses a CORS-type error, using `allow="clipboard-read; clipboard-write"`. The layout now uses a simple two-column format.
 
-  ![cant-copy](https://github.com/user-attachments/assets/d886a3bb-df86-48a3-926d-faaeaf423da4)
+Titles and descriptions in the Learning Paths section have been refined for consistency and readability, with buttons added for course registration or announcements. The Validator Fundamentals section has been streamlined for future updates. The extra "Training" drop-down has been removed to simplify navigation, with potential plans for sidebar or breadcrumb navigation. The `Releases` section is now a standalone item in the drop-down menu.
 
-  This was the only version of the iframing that would let me apply `allow="clipboard-read; clipboard-write"` due to Quarto's weird restrictions.
+The browser compatibility message on registration pages is now clearer and emphasized, a format also applied to the "Legal Ease" section on the policy page.
 
-> [!NOTE]
-> **The newest version of this doesn't use the negative absolute positioning, just a simple two-column layout same as we use in other slides:**
->
-> <img width="1723" alt="Screenshot 2025-04-25 at 3 53 17 PM" src="https://github.com/user-attachments/assets/02227ad5-8f5a-452a-8d82-588a18d8f4bf" />
+This pull request enhances notebook execution and documentation within GitHub Actions and site content. Key updates include improved action names and descriptions in `action.yml` files, registration of the `validmind` kernel in workflows, and expanded notebook execution commands. New training modules and detailed markdown files enhance learning paths for ValidMind users. The notebook directory is reorganized for clarity, with updated content and new visuals to guide users in implementing custom tests and using external providers.
 
-#### # Learning paths
-[**LEARNING PATHS PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8465/update-developer-fundamentals-course/training/program/learning-paths.html)
+- GitHub Actions Enhancements:
 
-- There was inconsistent casing here in the titles, I've edited them for clarity and made them look a little better.
-- Some of the descriptions were a bit wordy and unclear as well, so I gave them a little TLC. 
-- Added a "register now" or "coming soon" button (not a link) depending on the course. e.g.: 
+  - Updated action names and descriptions in `action.yml` files for demo, prod, and staging notebooks to reflect the execution of multiple notebooks.
+  
+  - Added a step to register the `validmind` kernel in the GitHub Actions workflow to ensure the correct environment is used for notebook execution.
+  
+  - Modified the execution command to target a series of notebooks, improving the scope of automated testing.
 
-![Screenshot 2025-04-25 at 3 41 56 PM](https://github.com/user-attachments/assets/1f26debf-73f8-468f-9687-3f53255cf903)
+- Documentation and Training Content:
 
-- I also cleaned up the Validator Fundamentals in preparation for bringing in the validation experience notebooks when they're ready (https://github.com/validmind/validmind-library/pull/348):
+  - Introduced new training modules and updated existing ones to provide a comprehensive learning path for developers, validators, and administrators using ValidMind.
+  
+  - Added detailed markdown files for each training module, outlining learning objectives, course content, and step-by-step instructions for using ValidMind.
+  
+  - Enhanced the site content with new sections and updates to improve navigation and user experience.
 
-![Screenshot 2025-04-25 at 3 42 03 PM](https://github.com/user-attachments/assets/a6127863-d75c-4911-9ba0-be6e4fd3382a)
+- Notebook Content and Structure:
 
-#### # Other stuff
-- I removed the extra "Training" drop-down from the training section as it was too many drop-downs... didn't add much to the experience. We may want to think about re-introducing the sidebar or some sort of breadcrumb for the training pages,  though?
-- I also added the `Releases` to the condensed drop-down as now it is an independent section:
+  - Reorganized the notebook directory structure to separate executed notebooks from tutorials, improving clarity and maintainability.
+  
+  - Updated notebook content to include new sections on implementing custom tests and using external test providers, providing users with more advanced capabilities.
+  
+  - Added new images and GIFs to the documentation to visually guide users through the process of adding content blocks and test results.
 
-![Screenshot 2025-04-24 at 4 36 29 PM](https://github.com/user-attachments/assets/65038b2d-da76-4c7e-8b45-ca0f699d8499)
-
-- The thing I did with the browser compatibility message for the registration pages was pretty clean but still gave enough emphasis (to me) so I repeated it with that awkward "Legal Ease" bottom section on our doc-side policy page:
-
-| Browser compatibility message | Legal Ease section |
-|--|--|
-|<img width="1288" alt="Screenshot 2025-04-25 at 4 52 03 PM" src="https://github.com/user-attachments/assets/aa089576-5e0b-474a-b1c7-55a5349ea249" /> | <img width="1313" alt="Screenshot 2025-04-25 at 4 51 46 PM" src="https://github.com/user-attachments/assets/7f768adc-62fb-4fb1-bdad-615a7dbf5e01" />|
-
-# PR Summary
-This pull request introduces several enhancements to the notebook execution and documentation process within the GitHub Actions and the site content. Key changes include:
-
-1. **GitHub Actions Enhancements**:
-   - Updated the action names and descriptions in `action.yml` files for demo, prod, and staging notebooks to reflect the execution of multiple notebooks instead of a single one.
-   - Added a step to register the `validmind` kernel in the GitHub Actions workflow, ensuring the correct environment is used for notebook execution.
-   - Modified the execution command to target a series of notebooks rather than a single notebook, improving the scope of automated testing.
-
-2. **Documentation and Training Content**:
-   - Introduced new training modules and updated existing ones to provide a comprehensive learning path for developers, validators, and administrators using ValidMind.
-   - Added detailed markdown files for each training module, outlining learning objectives, course content, and step-by-step instructions for using ValidMind.
-   - Enhanced the site content with new sections and updated existing ones to improve navigation and user experience.
-
-3. **Notebook Content and Structure**:
-   - Reorganized the notebook directory structure to separate executed notebooks from tutorials, improving clarity and maintainability.
-   - Updated notebook content to include new sections on implementing custom tests and using external test providers, providing users with more advanced capabilities.
-   - Added new images and GIFs to the documentation to visually guide users through the process of adding content blocks and test results.
-
-These changes aim to streamline the notebook execution process, enhance the training and documentation experience, and provide users with more robust tools for model development and validation.
+These changes streamline the notebook execution process, enhance the training and documentation experience, and provide users with more robust tools for model development and validation.

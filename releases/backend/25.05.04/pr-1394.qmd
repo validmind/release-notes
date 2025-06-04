@@ -1,18 +1,21 @@
 ---
-title: "Replace black with ruff"
+title: "Replace `black` with `ruff` for code formatting and linting (#1394)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1394
 ---
-# PR Summary
 
-This pull request introduces extensive refactoring of import statements and code formatting adjustments across the project. The changes include reordering and grouping of imports in source code, migration scripts, and utility modules; moving some imports to better reflect dependency needs; and switching the code formatting tool in the Makefile from Black to Ruff. These updates help enforce consistent style guidelines, resolve potential circular dependencies, and improve readability. In addition, minor whitespace and line-break adjustments have been applied in various files, including API handlers, service modules, and tests. Functionality remains unchanged, while the maintainability and clarity of the code has been enhanced significantly.
+This update involves a comprehensive refactoring of import statements and code formatting across the project. Import statements in source code, migration scripts, and utility modules have been reordered and grouped to better reflect dependencies. The code formatting tool in the `Makefile` has been switched from Black to Ruff, enhancing style consistency and readability. Minor whitespace and line-break adjustments were made in various files, including API handlers and tests. While functionality remains unchanged, the maintainability and clarity of the code have been significantly improved.
 
 Key functional changes:
-- Standardized and reorganized import ordering in multiple files (e.g., migration scripts, API modules, and utility scripts).
-- Updated the Makefile to run Ruff for both formatting and linting, improving style enforcement.
+
+- Standardized and reorganized import ordering in multiple files, such as migration scripts, API modules, and utility scripts.
+- Updated the `Makefile` to run Ruff for both formatting and linting, improving style enforcement.
 - Cleaned up redundant whitespace and adjusted formatting for inline strings and dictionary keys without altering program logic.
 
 Overall, these improvements aim to streamline the codebase, making future maintenance easier and reducing the risk of dependency issues without affecting business logic.

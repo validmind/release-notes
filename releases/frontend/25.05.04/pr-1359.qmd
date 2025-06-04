@@ -1,28 +1,17 @@
 ---
-title: "Add ability to export comments in validation report"
+title: "Add option to export comments in validation report (#1359)"
 categories: [frontend, 25.05.04, hotfix, enhancement, good first issue, javascript]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/frontend/pull/1359
 ---
-#### What
-<!-- Describe what the change is doing, including behavior before and after the change -->
-We would like the ability for comments to also be exported from validation reports. Same as the existing flags, exporting comments defaults to off.
 
-This is the corresponding frontend change for my backend pr https://github.com/validmind/backend/pull/1429
+We have introduced a feature to export comments from validation reports, in addition to flags. By default, this feature is disabled. Users can enable it by selecting a new checkbox in the UI, which allows comments to be included in the report's appendix. This update includes a backend change to ensure comments are properly exported when the option is selected.
 
-#### External Release Notes
-<!--- REPLACE THIS COMMENT WITH YOUR DESCRIPTION --->
-This adds the option to include comments left in validation reports when exporting the document. Comments are included in the appendix.
+![Screenshot showing the new "include comments left on document" checkbox in the UI](https://github.com/user-attachments/assets/deff2eda-b081-44fc-bb6f-2e3cbf759da9)
 
-#### Breaking Changes
-<!-- List any breaking changes -->
-
-#### Screenshots/Videos (Frontend Only)
-<img width="1353" alt="Screenshot 2025-05-02 at 09 20 52" src="https://github.com/user-attachments/assets/deff2eda-b081-44fc-bb6f-2e3cbf759da9" />
-The "include comments left on document" box is new
-
-# PR Summary
-
-This PR enhances the report download functionality by introducing a new option, `includeComments`. On the API side (in API.ts), the `DownloadReport` function now accepts an optional boolean parameter that, when enabled, requests comments to be included in the report data. Correspondingly, the front-end component (DownloadValidationReportModal) now includes a checkbox for users to toggle this option. The UI is updated to manage this new state, and the API call is modified to pass the `include_comments` parameter, ensuring that the requested report includes comments when specified.
+This update improves the report download feature by adding an `includeComments` option. The `DownloadReport` function now accepts an optional boolean parameter to include comments in the report data. The front-end component features a checkbox for users to toggle this option. The UI is updated to handle this new state, and the API call is adjusted to pass the `include_comments` parameter, ensuring comments are included in the report when specified.

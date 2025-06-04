@@ -1,30 +1,43 @@
 ---
-title: "[SC-8690] Ability to delete a workflow"
+title: "Enable soft delete for workflows with dependency checks and a `DELETE` endpoint (#1400)"
 categories: [backend, 25.05.04, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1400
 ---
-# PR Summary
+
+This update introduces a soft delete feature for workflows and a dependency check endpoint. Key changes include adding `deleted_at` and `deleted_by_id` columns to the `workflows` table, updating the Workflow model to support soft deletion, and excluding soft-deleted workflows from queries. A new method calculates workflow dependencies, and a DELETE endpoint allows soft deletion. Tests ensure workflows are correctly excluded and dependencies are accurately tracked.
 
 This pull request introduces a soft delete mechanism for workflows and a corresponding dependency check endpoint. The main changes include:
 
-- A migration that adds two new columns to the workflows table: one for storing the deletion timestamp (deleted_at) and another for the ID of the user who performed the deletion (deleted_by_id).
+- A migration adds two new columns to the `workflows` table: one for storing the deletion timestamp (`deleted_at`) and another for the ID of the user who performed the deletion (`deleted_by_id`).
 
 - Updates to the Workflow model:
-  - New columns (deleted_at, deleted_by_id) are added to support soft deletion.
-  - The serialize method is updated to include the deleted_at field.
-  - The query for retrieving workflows now excludes soft-deleted workflows by filtering for records where deleted_at is NULL.
-  - A new class method get_workflow_dependencies is provided to calculate the count of dependent inventory models for a given workflow.
-  - A new instance method mark_as_deleted is introduced, which sets the deleted_at timestamp and records the user who deleted the workflow before committing the change.
+  
+  - New columns (`deleted_at`, `deleted_by_id`) are added to support soft deletion.
+  
+  - The `serialize` method is updated to include the `deleted_at` field.
+  
+  - The query for retrieving workflows now excludes soft-deleted workflows by filtering for records where `deleted_at` is `NULL`.
+  
+  - A new class method `get_workflow_dependencies` is provided to calculate the count of dependent inventory models for a given workflow.
+  
+  - A new instance method `mark_as_deleted` is introduced, which sets the `deleted_at` timestamp and records the user who deleted the workflow before committing the change.
 
 - Updates to the UI routes:
-  - A new DELETE endpoint is added to soft delete a workflow. The endpoint uses the mark_as_deleted method and returns the appropriate HTTP status codes based on the outcome.
+  
+  - A new DELETE endpoint is added to soft delete a workflow. The endpoint uses the `mark_as_deleted` method and returns the appropriate HTTP status codes based on the outcome.
+  
   - A new endpoint is implemented to check workflow dependencies by returning the count of inventory models relying on the specified workflow.
 
 - New and updated test cases to ensure correct functionality:
+  
   - Tests now verify that soft-deleted workflows are excluded from active workflow queries.
+  
   - Tests check that dependencies are correctly counted before and after workflow executions are started.
 
 Overall, these changes add a robust mechanism to handle workflow deletion in a soft manner, improving data integrity and allowing for dependency tracking on workflows.

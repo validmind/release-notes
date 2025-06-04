@@ -1,41 +1,25 @@
 ---
-title: "Enable/disable LLM support with OfflineFlags (for Barclays)"
+title: "Enable or disable LLM support with `OfflineFlags` for Barclays (#1431)"
 categories: [backend, 25.05.04, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1431
 ---
-#### What
-This PR introduces offline feature flag support and improves the feature flags codebase by:
-- Adding offline feature flag functionality through environment variables
-- Adding comprehensive docstrings to all feature flag functions
-- Refactoring feature flag access to use a new centralized context-aware function
-- Removing unused feature flags (FLAG_REDIS_ENABLED, FLAG_CASBIN_RELOAD_ENABLED, FLAG_AUTH_CONFIG)
-- Adding type hints to improve code maintainability
 
-Before: Feature flags were only accessible through LaunchDarkly and required an active connection.
-After: Feature flags can be configured through environment variables when LaunchDarkly integration is not available, with improved code documentation and type safety.
+This update introduces offline feature flag support and enhances the feature flags codebase. Key improvements include:
 
-#### Why
-- Enables feature flag functionality in environments where LaunchDarkly integration is not possible (e.g., VM deployments)
-- Improves code maintainability through better documentation and type hints
-- Centralizes feature flag access through a single function to reduce code duplication
-- Removes technical debt by cleaning up unused feature flags
+- Offline feature flag functionality can now be configured through environment variables, enabling use in environments where LaunchDarkly integration is not feasible, such as VM deployments.
 
-#### External Release Notes
-Added support for offline feature flags configuration through environment variables, enabling feature flag functionality in environments without LaunchDarkly integration.
+- Comprehensive docstrings have been added to all feature flag functions, enhancing code documentation.
 
-# PR Summary
+- Feature flag access has been refactored to use a new centralized, context-aware function, reducing code duplication.
 
-This PR significantly enhances the feature flag system by introducing offline flag support and improved context handling for LaunchDarkly evaluations. The main changes include:
+- Unused feature flags (`FLAG_REDIS_ENABLED`, `FLAG_CASBIN_RELOAD_ENABLED`, `FLAG_AUTH_CONFIG`) have been removed, addressing technical debt.
 
-1. The .env.example file now includes a FEATURE_FLAGS JSON string. This configuration is intended for offline environments where the deployment cannot be integrated with LaunchDarkly. This enables the offline evaluation of feature flags by loading a pre-defined JSON of flags.
+- Type hints have been added to improve code maintainability and type safety.
 
-2. The feature_flags.py file has been updated with several new functions. A new function, get_offline_feature_flag, retrieves flag values from the offline configuration, returning a default if the flag is not present. Additionally, get_feature_flag_with_context first checks the offline configuration before attempting a LaunchDarkly evaluation, enhancing reliability in offline mode.
-
-3. Two context functions have been improved. The existing context_from_user function now has an enhanced docstring, and a new function, context_from_user_and_organization, is added to create a multi-context using both user and organization information. This allows for more granular feature flag evaluations based on multiple context sources.
-
-4. The tracking route in the backend now leverages the new get_feature_flag_with_context function instead of directly accessing the ldclient. This decouples the feature flag evaluation from the LaunchDarkly client and allows for more flexible offline support.
-
-5. Comprehensive unit tests have been added in tests/unit/test_feature_flags.py. These tests cover various scenarios, including context creation, offline and online flag evaluation, and handling of scenarios where user or organization data may be missing.
+This update enhances the feature flag system by adding offline flag support and improving context handling for LaunchDarkly evaluations. The `.env.example` file now includes a `FEATURE_FLAGS` JSON string for offline environments, enabling offline evaluation of feature flags. The `feature_flags.py` file introduces new functions: `get_offline_feature_flag` retrieves flag values from offline configurations, and `get_feature_flag_with_context` checks offline configurations before LaunchDarkly evaluations. Context functions have been improved, with `context_from_user` now featuring an enhanced docstring and a new `context_from_user_and_organization` function for multi-context evaluations. The backend tracking route now uses `get_feature_flag_with_context`, decoupling it from the LaunchDarkly client for flexible offline support. Comprehensive unit tests in `tests/unit/test_feature_flags.py` cover various scenarios, including context creation and flag evaluation.

@@ -1,19 +1,31 @@
 ---
-title: "Initial flattening"
+title: "Enhance template handling with improvements to `flatten_sections` utility
+
+This update enhances template handling in the application by introducing several key improvements:
+
+- The installation script now includes a `template_type` parameter in the `upsert` function call, improving template differentiation.
+
+- Validation functions have been added to the backend database models for templates and template versions using `@validates` decorators. These functions ensure proper processing of template data with the new `flatten_sections` utility, which converts nested structures into a flat, JSON-safe format.
+
+- Two new utility functions, `extract_clean_section` and `flatten_sections`, have been implemented. They recursively clean and flatten nested sections by removing unwanted keys like `order`, `index`, and `sections`, facilitating easier storage and processing of template metadata.
+
+- Unit tests have been expanded to cover the new flattening functionality. These tests confirm correct flattening of nested sections, handle missing `sections` keys, and manage deeply nested structures. They also ensure that existing functionalities, such as template serialization, adapt to the updated structure, using `sections` instead of `pages` (#1403)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 23, 2025"
+date: "May 16, 2025"
+# Content edited by AI - 2025-06-04 12:29
+# Content validated by AI - 2025-06-04 12:29
+# Content overwritten from an earlier version - 2025-06-04 12:29
 # PR URL: https://github.com/validmind/backend/pull/1403
 ---
-# PR Summary
 
-This PR introduces several improvements to template handling within the application. The main changes include:
+This update enhances template handling in the application by introducing several key improvements:
 
-1. In the installation script, the call to the upsert function now includes an additional `template_type` parameter to better differentiate templates.
+- The installation script now includes a `template_type` parameter in the `upsert` function call, improving template differentiation.
 
-2. In the backend database models for templates and template versions, validation functions (@validates decorators) have been added to ensure that the template data is properly processed each time it is set or updated. These functions leverage the new `flatten_sections` utility function to convert nested section structures into a flat JSON-safe format.
+- Validation functions have been added to the backend database models for templates and template versions using `@validates` decorators. These functions ensure proper processing of template data with the new `flatten_sections` utility, which converts nested structures into a flat, JSON-safe format.
 
-3. Two new utility functions, `extract_clean_section` and `flatten_sections`, have been implemented. These functions recursively traverse nested sections, removing unwanted keys such as 'order', 'index', and 'sections', and output a cleaned flat structure. This mechanism facilitates easier storage and processing of template metadata.
+- Two new utility functions, `extract_clean_section` and `flatten_sections`, have been implemented. They recursively clean and flatten nested sections by removing unwanted keys like `order`, `index`, and `sections`, facilitating easier storage and processing of template metadata.
 
-4. Unit tests have been extended and added for the new flattening functionality. The tests verify that nested sections are flattened correctly, handle cases where the sections key might be missing, and manage deeply nested structures appropriately. Additionally, the tests ensure that existing functionalities, like template serialization, handle the updated structure (e.g., using 'sections' instead of 'pages') properly.
+- Unit tests have been expanded to cover the new flattening functionality. These tests confirm correct flattening of nested sections, handle missing `sections` keys, and manage deeply nested structures. They also ensure that existing functionalities, such as template serialization, adapt to the updated structure, using `sections` instead of `pages`.
