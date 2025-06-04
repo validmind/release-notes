@@ -9,7 +9,16 @@ label_hierarchy = ["highlight", "enhancement", "breaking-change", "deprecation",
 EXCLUDED_LABELS = ["internal", "auto-merge"]
 
 # Keywords that indicate a PR is an automatic merge
-MERGE_KEYWORDS = ["main branch", "branch merged", "merged into", "merge main", "merge staging"]
+MERGE_KEYWORDS = [
+    "main branch", "branch merged", "merged into", "merge main", "merge staging",
+    "merge branch", "merge pull request", "merge into", "release", "deploy", "sync", "auto-merge",
+    "merge production", "merge develop", "merge hotfix", "merge feature", "merge bugfix",
+    "merge master", "merge to", "merge from", "merge changes", "merge update", "merge upstream",
+    "merge down", "merge up", "merge test", "merge qa", "merge rc", "merge candidate",
+    "sync main", "sync develop", "sync branch", "sync changes", "sync upstream",
+    "deploy to", "deploy prod", "deploy production", "deploy staging", "deploy develop",
+    "release candidate", "release hotfix", "release patch", "release update"
+]
 
 label_to_category = {
     "highlight": "### Release highlights",
@@ -124,6 +133,31 @@ HEADING_LEVEL_PROMPT = (
     "{content}"
 )
 
+# --- Content editing instructions for multi-pass editing ---
+EDIT_PASS_1_INSTRUCTIONS = (
+    "Pass 1 — Group and Flatten:\n"
+    "- Combine related or similar content into cohesive blocks\n"
+    "- Remove all Markdown headings (#, ##, etc.)\n"
+    "- Preserve paragraph breaks and list formatting\n"
+    "Output only the grouped and flattened text."
+)
+
+EDIT_PASS_2_INSTRUCTIONS = (
+    "Pass 2 — Deduplicate:\n"
+    "- Remove duplicate or near-duplicate sentences and ideas\n"
+    "- Retain only the clearest version of each unique point\n"
+    "- Avoid shortening or rephrasing at this stage\n"
+    "Input: grouped text from Pass 1. Output only the deduplicated text."
+)
+
+EDIT_PASS_3_INSTRUCTIONS = (
+    "Pass 3 — Streamline and Summarise:\n"
+    "- Improve clarity and flow\n"
+    "- Ensure a summary paragraph at the top (≤ 500 characters)\n"
+    "- Trim filler words or overly verbose phrasing\n"
+    "Input: deduplicated text from Pass 2. Output only the final edited text."
+)
+
 import subprocess
 import json
 import re
@@ -173,7 +207,7 @@ def classify_section(section_title, section_content, debug=False):
         )
         
         if debug:
-            print("DEBUG: [classify_section] Sending prompt to OpenAI...")
+            print("DEBUG: [classify_section] Sending prompt to OpenAI ...")
             
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -396,10 +430,56 @@ class PR:
             
         return None
 
-    def edit_content(self, content_type, content, editing_instructions, edit=False):
-        """Unified function to edit PR content (summaries, titles, or release notes)."""
+    def edit_content(self, content_type, content, editing_instructions, edit=False, skip_passes=None):
+        """Unified function to edit PR content (summaries, titles, or release notes) with three-pass editing for notes/summary."""
+        if skip_passes is None:
+            skip_passes = set()
+        # Only multi-pass for 'notes' and 'summary'
+        if content_type in ("notes", "summary") and edit:
+            # Pass 1: Group and Flatten
+            if 1 not in skip_passes:
+                grouped = self._edit_pass(
+                    content_type,
+                    content,
+                    EDIT_PASS_1_INSTRUCTIONS,
+                    attr_name="grouped_text",
+                    edit=edit
+                )
+            else:
+                grouped = content
+                self.grouped_text = grouped
+            # Pass 2: Deduplicate
+            if 2 not in skip_passes:
+                deduped = self._edit_pass(
+                    content_type,
+                    grouped,
+                    EDIT_PASS_2_INSTRUCTIONS,
+                    attr_name="deduplicated_text",
+                    edit=edit
+                )
+            else:
+                deduped = grouped
+                self.deduplicated_text = deduped
+            # Pass 3: Streamline and Summarise
+            if 3 not in skip_passes:
+                final = self._edit_pass(
+                    content_type,
+                    deduped,
+                    EDIT_PASS_3_INSTRUCTIONS,
+                    attr_name="edited_text",
+                    edit=edit
+                )
+            else:
+                final = deduped
+                self.edited_text = final
+            # Set summary/notes output
+            if content_type == 'summary':
+                self.pr_interpreted_summary = final
+            elif content_type == 'notes':
+                self.edited_text = final
+            return
+        # Fallback to original logic for other types or if not editing
         if not edit:
-            # If not editing, just use the original content
             if content_type == 'title':
                 self.cleaned_title = content.rstrip('.')
             elif content_type == 'summary':
@@ -408,7 +488,6 @@ class PR:
             elif content_type == 'notes':
                 self.edited_text = content
             return
-
         if self.debug:
             print(f"DEBUG: [edit_content] PR #{self.pr_number} in {self.repo_name} - Editing {content_type}")
             print(f"DEBUG: [edit_content] Original content (first 100 chars): {repr(content[:100]) if content else None}")
@@ -553,6 +632,79 @@ class PR:
                 self.edited_text = content
             elif content_type == 'notes':
                 self.edited_text = content
+
+    def _edit_pass(self, content_type, content, pass_instructions, attr_name, edit=True):
+        """Helper for a single editing pass with retry/validation, storing output in self.attr_name."""
+        if self.debug:
+            print(f"DEBUG: [edit_content] {attr_name} pass for PR #{self.pr_number} in {self.repo_name}")
+        full_instructions = f"{pass_instructions}\n\n{EDIT_CONTENT_INSTRUCTIONS}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
+        max_attempts = 10
+        initial_delay = 1
+        delay = initial_delay
+        max_delay = 30
+        last_validation_result = None
+        failure_patterns = {}
+        content_for_reedit = None
+        for attempt in range(max_attempts):
+            base_temp = 0.2
+            if 'formatting' in failure_patterns:
+                base_temp += 0.1
+            if 'meaning' in failure_patterns:
+                base_temp -= 0.05
+            temperature = min(0.7, base_temp + (attempt * 0.05))
+            if last_validation_result and attempt > 0:
+                if 'formatting' in last_validation_result.lower():
+                    failure_patterns['formatting'] = failure_patterns.get('formatting', 0) + 1
+                if 'meaning' in last_validation_result.lower():
+                    failure_patterns['meaning'] = failure_patterns.get('meaning', 0) + 1
+                guidance = []
+                if failure_patterns.get('formatting', 0) > 1:
+                    guidance.append("Pay special attention to markdown formatting and structure.")
+                if failure_patterns.get('meaning', 0) > 1:
+                    guidance.append("Focus on preserving the exact meaning and technical details.")
+                full_instructions += f"\n\nPrevious attempt failed: {last_validation_result}"
+                if guidance:
+                    full_instructions += f"\nPlease address these specific issues:\n" + "\n".join(f"- {g}" for g in guidance)
+            if attempt > 0 and content_for_reedit and 'edited' in content_for_reedit:
+                content_to_edit = content_for_reedit['edited']
+            else:
+                content_to_edit = content
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes while maintaining the original PR's scope. Follow the instructions exactly."},
+                    {"role": "user", "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content_to_edit}"}
+                ],
+                max_tokens=4096,
+                temperature=temperature,
+                frequency_penalty=0.0,
+                presence_penalty=0.0
+            )
+            current_edit = response.choices[0].message.content.strip()
+            if self.debug:
+                print(f"DEBUG: [edit_content] {attr_name} pass attempt {attempt + 1} content (first 100 chars): {repr(current_edit[:100]) if current_edit else None}")
+            is_valid, validation_result, content_for_reedit = self.validate_edit(content_type, content, current_edit, edit)
+            if self.debug:
+                print(f"DEBUG: [edit_content] {attr_name} pass attempt {attempt + 1} validation result: {is_valid}")
+            if is_valid:
+                setattr(self, attr_name, current_edit)
+                return current_edit
+            last_validation_result = validation_result
+            if attempt < max_attempts - 1:
+                jitter = random.uniform(0, 0.1 * delay)
+                sleep_time = min(max_delay, delay + jitter)
+                print(f"Validation failed, waiting {sleep_time:.1f} seconds before retry...")
+                time.sleep(sleep_time)
+                delay = min(max_delay, delay * 2)
+            else:
+                print(f"WARN: All {max_attempts} content edit attempts failed for {attr_name} pass in PR #{self.pr_number}")
+                if self.debug:
+                    print(f"Validation result: {validation_result}")
+                print(f"Failure patterns: {failure_patterns}")
+                if content_for_reedit:
+                    print(f"Content available for reedit with validation message: {content_for_reedit['validation_message']}")
+                setattr(self, attr_name, content)
+                return content
 
     def validate_edit(self, content_type, original_content, edited_content, edit=False):
         """Uses LLM to validate edits by checking for common issues.
@@ -1537,6 +1689,11 @@ def get_commits_for_tag(repo, tag, debug=False):
                     pr_number = future_to_pr[future]
                     try:
                         external_notes, pr_summary, labels, title, pr_body, image_urls = future.result()
+                        # Skip merge PRs: labels is empty and both external_notes and pr_summary are None
+                        if (not labels and external_notes is None and pr_summary is None):
+                            if debug:
+                                print(f"DEBUG: [get_commits_for_tag] Skipping merge PR #{pr_number} in {repo}")
+                            continue
                         if 'internal' not in labels:
                             commits.append({
                                 'pr_number': pr_number,
@@ -1827,52 +1984,58 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         any_validated = False
         any_edited = False
         def process_pr(commit, repo):
-            if 'internal' not in commit.get('labels', []):
-                pr_obj = PR(repo_name=repo, pr_number=commit['pr_number'], title=commit.get('title'), body=commit.get('pr_body'), debug=debug)
-                validated = False
-                edited = False
-                if edit:
-                    if commit.get('pr_summary'):
-                        pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.", edit=True)
-                        commit['pr_summary'] = pr_obj.pr_interpreted_summary
-                        if pr_obj.validated:
-                            validated = True
-                            edited = True
-                    if commit.get('external_notes'):
-                        pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.", edit=True)
-                        commit['external_notes'] = pr_obj.edited_text
-                        if pr_obj.validated:
-                            validated = True
-                            edited = True
-                    context = ''
-                    if commit.get('pr_summary'):
-                        context += f"\nPR Summary: {commit['pr_summary']}"
-                    if commit.get('external_notes'):
-                        context += f"\nExternal Notes: {commit['external_notes']}"
-                    title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
-                    pr_obj.edit_content('title', commit.get('title', ''), title_prompt, edit=True)
-                    commit['cleaned_title'] = pr_obj.cleaned_title
+            # Skip internal PRs
+            if 'internal' in commit.get('labels', []):
+                return False, False
+            # Skip merge PRs
+            if is_merge_pr(commit.get('title', '')):
+                if debug:
+                    print(f"DEBUG: [process_pr] Skipping merge PR #{commit.get('pr_number')} in {repo} (merge PR detected by title)")
+                return False, False
+            pr_obj = PR(repo_name=repo, pr_number=commit['pr_number'], title=commit.get('title'), body=commit.get('pr_body'), debug=debug)
+            validated = False
+            edited = False
+            if edit:
+                if commit.get('pr_summary'):
+                    pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.", edit=True)
+                    commit['pr_summary'] = pr_obj.pr_interpreted_summary
                     if pr_obj.validated:
                         validated = True
                         edited = True
-                else:
-                    commit['cleaned_title'] = commit.get('title', '')
-                    commit['pr_summary'] = commit.get('pr_summary', '')
-                    commit['external_notes'] = commit.get('external_notes', '')
-                if commit.get('pr_summary') and adjust_heading_levels:
-                    commit['pr_summary'] = adjust_heading_levels_fn(commit['pr_summary'], min_level=4, debug=debug)
-                if commit.get('external_notes') and adjust_heading_levels:
-                    commit['external_notes'] = adjust_heading_levels_fn(commit['external_notes'], min_level=4, debug=debug)
-                if commit.get('pr_body') and adjust_heading_levels:
-                    commit['pr_body'] = adjust_heading_levels_fn(commit['pr_body'], min_level=4, debug=debug)
-                if commit.get('pr_body'):
-                    commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
                 if commit.get('external_notes'):
-                    commit['external_notes'] = update_image_links(commit['external_notes'], version, debug)
-                if commit.get('pr_body'):
-                    commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
-                return validated, edited
-            return False, False
+                    pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.", edit=True)
+                    commit['external_notes'] = pr_obj.edited_text
+                    if pr_obj.validated:
+                        validated = True
+                        edited = True
+                context = ''
+                if commit.get('pr_summary'):
+                    context += f"\nPR Summary: {commit['pr_summary']}"
+                if commit.get('external_notes'):
+                    context += f"\nExternal Notes: {commit['external_notes']}"
+                title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
+                pr_obj.edit_content('title', commit.get('title', ''), title_prompt, edit=True)
+                commit['cleaned_title'] = pr_obj.cleaned_title
+                if pr_obj.validated:
+                    validated = True
+                    edited = True
+            else:
+                commit['cleaned_title'] = commit.get('title', '')
+                commit['pr_summary'] = commit.get('pr_summary', '')
+                commit['external_notes'] = commit.get('external_notes', '')
+            if commit.get('pr_summary') and adjust_heading_levels:
+                commit['pr_summary'] = adjust_heading_levels_fn(commit['pr_summary'], min_level=4, debug=debug)
+            if commit.get('external_notes') and adjust_heading_levels:
+                commit['external_notes'] = adjust_heading_levels_fn(commit['external_notes'], min_level=4, debug=debug)
+            if commit.get('pr_body') and adjust_heading_levels:
+                commit['pr_body'] = adjust_heading_levels_fn(commit['pr_body'], min_level=4, debug=debug)
+            if commit.get('pr_body'):
+                commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
+            if commit.get('external_notes'):
+                commit['external_notes'] = update_image_links(commit['external_notes'], version, debug)
+            if commit.get('pr_body'):
+                commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
+            return validated, edited
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for repo in REPOS:
                 commits = get_commits_for_tag(repo, version, debug)
