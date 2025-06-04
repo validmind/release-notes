@@ -21,12 +21,12 @@ MERGE_KEYWORDS = [
 ]
 
 label_to_category = {
-    "highlight": "### Release highlights",
-    "enhancement": "### Enhancements",
-    "breaking-change": "### Breaking changes",
-    "deprecation": "### Deprecations",
-    "bug": "### Bug fixes",
-    "documentation": "### Documentation"
+    "highlight": "## Release highlights",
+    "enhancement": "## Enhancements",
+    "breaking-change": "## Breaking changes",
+    "deprecation": "## Deprecations",
+    "bug": "## Bug fixes",
+    "documentation": "## Documentation"
 }
 
 categories = { 
@@ -603,7 +603,8 @@ class PR:
                     print(f"Failure patterns: {failure_patterns}")
                     if content_for_reedit:
                         print(f"Content available for reedit with validation message: {content_for_reedit['validation_message']}")
-                    edited_content = content  # Use original content if all attempts fail
+                    # Do NOT revert to the original content; keep the last attempted edit
+                    edited_content = current_edit
                     self.last_validation_result = validation_result
             
             # Set the content based on type
@@ -1016,11 +1017,6 @@ def setup_openai_api(env_location):
     # If we get here, no API key was found
     print("ERROR: OPENAI_API_KEY not found in environment variables or .env file")
     sys.exit(1)
-
-# Initialize OpenAI client
-env_location = get_env_location()
-api_key = setup_openai_api(env_location)
-client = openai.OpenAI(api_key=api_key)
 
 def display_list(array):
     """
@@ -1902,7 +1898,7 @@ def generate_changelog_content(repo, tag, commits, has_release):
     
     if not public_commits:
         # Comment out the heading and tag/release info if no public PRs
-        content = f"<!--- ## {repo_name} --->\n"
+        content = f"<!--- # {repo_name} --->\n"
         if has_release:
             content += f"<!--- Release: [{tag}]({tag_url}) --->\n"
             content += f"<!--- {compare_url} --->\n"
@@ -1913,7 +1909,7 @@ def generate_changelog_content(repo, tag, commits, has_release):
         return content  # <-- EARLY RETURN, nothing else is executed!
     
     # If there are public PRs, proceed as before
-    content = f"## {repo_name}\n"
+    content = f"# {repo_name}\n"
     if has_release:
         content += f"<!--- Release: [{tag}]({tag_url}) --->\n"
         content += f"<!--- {compare_url} --->\n\n"
@@ -3342,12 +3338,11 @@ def main():
         
         # Setup OpenAI if editing is enabled
         if args.edit:
-            api_key = setup_openai_api(env_location)
-            # Initialize OpenAI client with API key
-            openai_client = openai.OpenAI(api_key=api_key)
-            # Make client available globally
-            global client
-            client = openai_client
+            
+           env_location = get_env_location()
+           api_key = setup_openai_api(env_location)
+           global client
+           client = openai.OpenAI(api_key=api_key)
 
         # Get release information from GitHub
         version = args.tag if args.tag else None

@@ -1,13 +1,15 @@
 ---
 title: "25.04.03 Hotfix release notes"
-date: "April 17, 2025"
+date: "April 10, 2025"
 categories: [cmvm, 25.04.03, hotfix]
 sidebar: validmind-installation
 toc-expand: true
-# Content overwritten from an earlier version - 2025-06-04 07:21
+# Content overwritten from an earlier version - 2025-06-04 09:02
 ---
 
-## Backend
+This release includes refined authorization for report generation in the UI reporting route.
+
+# Backend
 <!--- Tag: [cmvm/25.04.03](https://github.com/validmind/backend/releases/tag/cmvm/25.04.03) --->
 <!--- Compare API call: gh api repos/validmind/backend/compare/0f7a5ffc1ad3674d747daaf8eaa1dda0b1349915...0f7a5ffc1ad3674d747daaf8eaa1dda0b1349915 --->
 
@@ -16,39 +18,36 @@ toc-expand: true
 
 <!--- PR #1381: https://github.com/validmind/backend/pull/1381 --->
 <!--- Labels: none --->
-### cherry pick #1380 onto prod (#1381)
+### Refine authorization for report generation in the UI reporting route (#1381)
 
-This update refines the authorization process for the report generation endpoint in the UI reporting route. Key changes include:
+This update refines authorization for the report generation endpoint in the UI reporting route. Key changes include:
 
 - The authorization decorator on the GET endpoint now uses a generic `read` action instead of `download_report`.
   
-- In-method permission checks are added based on the document type in the request. Specific checks are performed for:
-  
-  - `documentation-report` or `monitoring-report`: Requires `download_doc` authorization.
-  
-  - `validation-report`: Requires `download_vr` authorization.
-  
-  - Unsupported document types trigger a `BadRequestError`.
+- In-method permission checks are introduced based on the document type in the request. The endpoint performs:
+  - `download_doc` authorization for `documentation-report` or `monitoring-report`.
+  - `download_vr` authorization for `validation-report`.
+  - Raises a `BadRequestError` if the document type is unsupported.
 
-These changes enhance permission controls, ensuring users have the necessary rights for the specific report type they wish to access.
+These changes ensure users have the correct permissions for the specific report type they access.
 
 
-<!--- ## Frontend --->
+<!--- # Frontend --->
 <!--- Tag: [cmvm/25.04.03](https://github.com/validmind/frontend/releases/tag/cmvm/25.04.03) --->
 <!--- Compare API call: gh api repos/validmind/frontend/compare/bb95c83bd4cb4b8e0ad4bda17e2643fc03e0c7cf...bb95c83bd4cb4b8e0ad4bda17e2643fc03e0c7cf --->
 <!-- No public PRs found for this release -->
 
-<!--- ## Agents --->
+<!--- # Agents --->
 <!--- Tag: [cmvm/25.04.03](https://github.com/validmind/agents/releases/tag/cmvm/25.04.03) --->
 <!--- Compare API call: gh api repos/validmind/agents/compare/cd2ef65cd3794430ba70924ad35a25b2ae8179a7...cd2ef65cd3794430ba70924ad35a25b2ae8179a7 --->
 <!-- No public PRs found for this release -->
 
-<!--- ## Documentation --->
+<!--- # Documentation --->
 <!--- Tag: [cmvm/25.04.03](https://github.com/validmind/documentation/releases/tag/cmvm/25.04.03) --->
 <!--- Compare API call: gh api repos/validmind/documentation/compare/36342c67c902ee80d3b9e78948dae2102148758b...36342c67c902ee80d3b9e78948dae2102148758b --->
 <!-- No public PRs found for this release -->
 
-<!--- ## Validmind-library --->
+<!--- # Validmind-library --->
 <!--- Tag: [cmvm/25.04.03](https://github.com/validmind/validmind-library/releases/tag/cmvm/25.04.03) --->
 <!--- Compare API call: gh api repos/validmind/validmind-library/compare/cmvm/25.04.03...cmvm/25.04.03 --->
 <!-- No public PRs found for this release -->
