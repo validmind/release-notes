@@ -4,29 +4,29 @@ categories: [frontend, 25.05.04, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/frontend/pull/1339
 ---
 
-This update introduces a new feature for 'soft-deleting' workflows. When a workflow is deleted, users can continue any executions currently using the deleted workflow. However, the workflow will be removed from the active workflows listing, and future executions will be prevented from running.
+This update introduces a new feature for 'soft-deleting' workflows. When a workflow is deleted, ongoing executions using the deleted workflow can continue. However, the workflow will be removed from the active workflows list, and future executions will be prevented.
 
-This update enables workflow deletion while checking for dependencies between workflows and associated models.
+This update allows users to delete workflows while checking for dependencies with associated models. 
 
 API Enhancements:
 
-- `GetWorkflowModelDependenciesCount` retrieves the number of models depending on a workflow, warning users of potential impacts before deletion.
-- `DeleteWorkflow` sends a DELETE request to remove a specified workflow.
+- `GetWorkflowModelDependenciesCount`: Retrieves the number of models depending on a workflow, warning users of potential impacts before deletion.
+- `DeleteWorkflow`: Sends a DELETE request to remove a specified workflow.
 
 New UI Components:
 
-- `WorkflowDeleteModal` offers a confirmation dialog for deleting workflows, displaying warnings if models depend on the workflow and handling success and error scenarios with toast notifications.
-- `ExecutionDetails` shows an alert if a workflow has been deleted, ensuring users know that while the workflow is deprecated, current executions continue normally.
-- `WorkflowList` now includes a delete option, triggering the dependency count check and opening the delete modal for safer workflow deletion.
+- `WorkflowDeleteModal`: Provides a confirmation dialog for deleting workflows, displaying warnings if models depend on the workflow and handling success and error scenarios with notifications.
+- `ExecutionDetails`: Shows an alert if a workflow has been deleted, clarifying that current executions continue normally.
+- `WorkflowList`: Includes a delete option that checks dependencies and opens the delete modal for safer workflow deletion.
 
 Model Update:
 
-- A `deleted_at` field has been added to the Workflow model to track when a workflow is deleted, allowing the UI to conditionally render warnings.
+- A `deleted_at` field has been added to the Workflow model to track deletions, enabling the UI to render warnings conditionally.
 
-These changes provide a robust mechanism for workflow deletion, preventing accidental removal when dependencies exist and improving user feedback during the deletion process.
+These changes enhance workflow deletion, preventing accidental removal when dependencies exist and improving user feedback.

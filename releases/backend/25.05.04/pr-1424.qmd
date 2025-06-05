@@ -1,16 +1,18 @@
 ---
-title: "Ensure `ruff` always scans all files to prevent skipped warnings (#1424)"
+title: "Ensure `ruff` scans all files to prevent skipped warnings (#1424)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1424
 ---
 
-This pull request enhances code formatting consistency and cleans up lint exception comments. Key changes include updating the `Makefile` to run `ruff` with the `--no-cache` option for more reliable code analysis, simplifying `# noqa: B950` markers to `# noqa` in migration scripts, reordering import statements for consistency, and adjusting a test in the object storage service to use the simplified `# noqa` format. These changes improve code clarity without altering functionality.
+This update enhances code formatting consistency and cleans up lint exception comments. Key changes include updating the `Makefile` to run `ruff` with the `--no-cache` option for more reliable code analysis, simplifying `# noqa: B950` markers to `# noqa` in migration scripts, reordering import statements for consistency, and adjusting a test in the object storage service to use the simplified `# noqa` format. These changes improve code clarity without altering functionality.
+
+The changes include:
 
 - Updating the `Makefile` to run `ruff` commands with the `--no-cache` option. This ensures that the latest code analysis is used without cached results, potentially catching new issues more reliably.
 

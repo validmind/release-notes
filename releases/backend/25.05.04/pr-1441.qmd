@@ -1,19 +1,19 @@
 ---
-title: "Add logging to workflow Celery tasks (#1441)"
+title: "Add logging to `workflows` Celery task and increase worker concurrency (#1441)"
 categories: [backend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1441
 ---
 
-This update introduces logging capabilities and increases the maximum number of worker threads.
+This update introduces logging functionality and increases the maximum number of worker threads.
 
-This update includes two key changes:
+This pull request introduces two key changes:
 
-- The worker concurrency in the Celery configuration has been increased from 4 to 6. This change, located in the `celery_config.py` file, is intended to improve performance by enabling more tasks to be processed simultaneously, especially during high workloads.
+- The Celery configuration now has an increased worker concurrency from 4 to 6, as updated in the `celery_config.py` file. This enhancement allows more tasks to be processed simultaneously, improving performance during high workloads.
 
-- A new logging statement has been added to the workflow tasks module (`workflows.py`). This log captures the process of identifying available workflows when a field changes, detailing the field key and the associated organization. This addition is meant to aid in debugging and tracking the execution flow during workflow queries.
+- A new logging statement has been added to the `workflows.py` module. It logs the process of finding available workflows based on a field change, including the field key and associated organization. This aids in debugging and tracking execution flow when querying workflows.

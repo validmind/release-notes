@@ -1,15 +1,15 @@
 ---
-title: "Improve Auth0 error handling for organization onboarding (#1336)"
+title: "Improve Auth0 error handling flow (#1336)"
 categories: [frontend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/frontend/pull/1336
 ---
 
-This update enhances error handling by displaying detailed error messages from the backend instead of just error codes. If a specific message is unavailable, the default message will still appear. Additionally, a bug fix improves error handling during the organization onboarding process.
+Users will now see detailed error messages from the backend instead of just error codes. If a specific message is unavailable, the default message will be displayed. Additionally, error handling in the organization onboarding flow has been improved.
 
-This update improves error handling in the `BootstrapForm` component by prioritizing detailed API response error messages (`error.response?.data?.message`) over generic ones (`error.message`). This change enhances clarity in error feedback during organization creation failures. The selected error message is stored in a local variable (`errorMessage`) and consistently used in both inline error displays and toast notifications, ensuring more effective troubleshooting and user guidance.
+This update improves error handling in the `BootstrapForm` component by prioritizing detailed error messages from the API response (`error.response?.data?.message`) over generic ones (`error.message`). The selected error message is stored in a local variable (`errorMessage`) and used consistently in both inline error displays and toast notifications. This ensures more effective troubleshooting and user guidance by utilizing descriptive backend error messages when available.

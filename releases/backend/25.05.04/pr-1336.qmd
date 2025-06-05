@@ -4,10 +4,10 @@ categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1336
 ---
 
-This update to the Keycloak service configuration includes two key changes. First, volume mounts for configuration files like `realm-export.json`, themes, and `entrypoint.sh` have been removed from the `docker-compose` file. These files are now integrated directly into the Docker image via the `Dockerfile`, simplifying deployment. Second, the environment variable `KC_DB_DATABASE` has been altered to `KC_DB_DtATABASE`. Verify this change to ensure it aligns with downstream configurations. These adjustments streamline deployment by embedding necessary files within the image, though caution is advised regarding the environment variable modification to prevent potential issues.
+This update to the Keycloak service configuration includes two key changes. First, volume mounts for configuration files like `realm-export.json`, themes, and `entrypoint.sh` have been removed from the `docker-compose` file. These files are now directly copied into the Docker image via the `Dockerfile`, simplifying deployment. Second, the environment variable `KC_DB_DATABASE` has been changed to `KC_DB_DtATABASE`. Verify this change to ensure it aligns with downstream components. Overall, the update embeds configuration files within the image, reducing dependency on host-based volume mounts.

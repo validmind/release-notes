@@ -1,21 +1,21 @@
 ---
-title: "Prevent cross-tenant template overwrite by adding `X-Organization-Id` check (#1475)"
+title: "Prevent cross-tenant template overwrite by checking `X-Organization-Id` (#1475)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1475
 ---
 
-This update introduces no user-facing changes and does not impact the frontend. Therefore, there are no screenshots or videos to display.
+This update does not introduce any user-facing changes. There are no modifications to existing behavior, and no visual elements have been altered, so screenshots or videos are not applicable.
 
-This update introduces two key changes for improved code readability and data security:
+This update introduces two key changes for improved code readability and data security. 
 
-- In `src/backend/api.py`, the `SQLALCHEMY_MAX_OVERFLOW` setting has been reformatted for consistency with other multiline assignments, without altering its functionality.
+- The `SQLALCHEMY_MAX_OVERFLOW` setting in `src/backend/api.py` has been reformatted for better readability, aligning with other multiline assignments without altering functionality.
 
-- The template retrieval logic in `src/backend/routes/ui_templates.py` now filters by the user's organization ID, ensuring users access only their organization's templates, enhancing data integrity and security.
+- The template retrieval logic in `src/backend/routes/ui_templates.py` now filters by the user's organization, enhancing data integrity and security by ensuring users access only their organization's templates.
 
-Additionally, minor import reordering in `src/backend/routes/ui_assets_proxy.py` improves code organization.
+Additionally, minor import reordering and cleanup in `src/backend/routes/ui_assets_proxy.py` enhance code organization.

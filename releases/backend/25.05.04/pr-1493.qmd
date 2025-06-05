@@ -1,15 +1,17 @@
 ---
-title: "Remove `-m` flag from entrypoint without module (#1493)"
+title: "Remove `-m` flag from entrypoint script without module (#1493)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1493
 ---
 
-This update does not introduce any breaking changes. There are no screenshots or videos available to demonstrate changes before and after this update.
+<!-- List any breaking changes -->
+
+<!-- Add screenshots or videos showing before/after -->
 
 This PR updates the startup command for the API service in the Docker entrypoint script. Previously, the command used the Python module flag `-m` with a file path, which might not have worked as expected. The updated command removes the `-m` flag and directly executes the script file using `ddtrace-run`. This change ensures the API service starts correctly, utilizing `ddtrace` for instrumentation as intended.

@@ -1,22 +1,25 @@
 ---
-title: "Enhance security for inventory model documents by fixing IDOR vulnerability (#1464)"
+title: "Enhance security for inventory model documents by addressing IDOR vulnerability (#1464)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1464
 ---
 
-This update enhances security for the UI assets proxy endpoint by implementing authentication and organization-level access control. Key changes include:
+This update enhances security for the UI assets proxy endpoint by implementing authentication and organization-level access control. Users must now authenticate to access assets, and they can only access assets from their own organization. If the `Authorization` header is missing, authentication tokens can be retrieved from cookies. Validation logic ensures that requested assets belong to the user's organization. These changes address a security vulnerability and improve the application's overall security posture.
 
-- Authentication is now required for the previously unprotected endpoint.
-- Organization-level access control ensures users can only access assets from their own organization.
-- If the `Authorization` header is absent, authentication tokens can be retrieved from cookies.
-- Validation logic checks if the requested asset belongs to the user's organization.
+This update enhances the backend's authentication and authorization logic by introducing new functions and checks. A new function, `get_token_auth_cookie`, retrieves an access token from an authorization cookie if it's not in the headers. The `get_token_auth_header_or_cookie` function combines header and cookie methods for token retrieval, replacing the previous `get_token_auth_header` method. An authentication decorator is added to the UI Assets Proxy endpoint, ensuring only authenticated users access the API. Additionally, an authorization check ensures that asset keys with organization identifiers match the current user's organization, raising an error if there's a mismatch.
 
-These changes address a security vulnerability, ensuring only authorized access to assets. Special attention is needed for the authentication flow with token fallback from cookies and the organization-level access control implementation.
+- A new function, `get_token_auth_cookie`, is added to obtain an access token from an authorization cookie if it is not present in the headers.
 
-This update enhances the backend's authentication and authorization logic by introducing new methods for token retrieval and enforcing stricter access controls. A new function, `get_token_auth_cookie`, retrieves an access token from an authorization cookie if it's not in the headers. The `get_token_auth_header_or_cookie` function combines header and cookie methods for flexible token extraction, replacing the old `get_token_auth_header` method. Additionally, an authentication decorator is added to the UI Assets Proxy endpoint, ensuring only authenticated users can access the API. The endpoint now checks that the asset key's organization identifier matches the current user's organization, raising an unauthorized error if there's a mismatch. These changes support multiple token sources and ensure assets are accessed within the correct organizational context.
+- The function `get_token_auth_header_or_cookie` combines both header and cookie methods to retrieve the token, ensuring flexibility in token extraction. This function replaces the previous `get_token_auth_header` method in the authentication decorators, allowing a fallback from header to cookie.
+
+- An authentication decorator (`@requires_auth()`) is added to the asset serving endpoint within the UI Assets Proxy to ensure that the API is accessed by authenticated users.
+
+- The endpoint now includes an authorization check. If the asset key contains an organization identifier, it must match the current user's organization. If there is a mismatch, an appropriate unauthorized error is raised.
+
+These changes enhance the authentication mechanism by supporting multiple token sources and ensure that assets are only accessible within the correct organizational context.

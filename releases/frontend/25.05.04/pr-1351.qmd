@@ -1,27 +1,29 @@
 ---
-title: "Add approval process notes to activity log (#1351)"
-categories: [frontend, 25.05.04, hotfix, enhancement, refactor]
+title: "Approval process notes added to activity log (#1351)"
+categories: [frontend, 25.05.04, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/frontend/pull/1351
 ---
 
 Workflow approval step voter notes have been added to the activity log.
 
-This PR introduces several UI enhancements and refactors to improve functionality and user experience. Key changes include collapsible content in the `EventRowLayout` component for displaying additional details like vote notes, with an `IconButton` to toggle visibility. New components for workflow approvals have been added, such as `ApprovalActionButtons`, `ApprovalHeader`, `ApprovalVoterCard`, `VoteDetailsModal`, and `VoterStatusColumn`, enhancing usability and organization. Redundant code has been cleaned up, increasing modularity and maintainability.
+This update introduces UI enhancements and code refactoring to improve user interaction and maintainability. The `EventRowLayout` component now includes collapsible content for additional details like vote notes, toggled by an `IconButton`. New components for workflow approvals include `ApprovalActionButtons`, `ApprovalHeader`, `ApprovalVoterCard`, `VoteDetailsModal`, and `VoterStatusColumn`, each enhancing usability and consistency. Redundant code has been streamlined, increasing modularity and interactivity in event and workflow approval processes.
 
-The `EventRowLayout` component now features collapsible content to show extra details, such as vote notes, when available. An `IconButton` toggles a `Collapse` element, with the icon switching between a downward and upward chevron.
+In the `EventRowLayout` component, collapsible content has been implemented to display additional details, such as vote notes, when available. An `IconButton` toggles a `Collapse` element, with the display icon switching between a downward and upward chevron accordingly.
 
-New workflow approval components include:
+New components related to workflow approvals have been added:
 
-- `ApprovalActionButtons`: A button group for approving or rejecting votes with appropriate colors and icons.
-- `ApprovalHeader`: Displays the approval title and message in a structured layout.
-- `ApprovalVoterCard`: Shows voter information with an optional popover for vote notes.
-- `VoteDetailsModal`: A modal for viewing vote notes in a read-only textarea.
-- `VoterStatusColumn` and constants: Organizes and displays voter statuses in columns with a consistent look.
+- `ApprovalActionButtons`: Provides a consistent button group for approving or rejecting votes with appropriate color schemes and iconography.
+- `ApprovalHeader`: Displays the approval title and message in a more structured layout.
+- `ApprovalVoterCard`: Renders voter information with an optional popover for vote notes, enhancing usability when notes are present.
+- `VoteDetailsModal`: Offers a modal for detailed viewing of vote notes in a read-only textarea.
+- `VoterStatusColumn` and associated constants: These aid in organizing and displaying voter statuses in columns based on their vote state, using a uniform look for all statuses.
 
-Redundant code and inline comments have been replaced with reusable components, enhancing maintainability and readability. Overall, this PR improves code modularity and provides a more interactive UI for event and workflow approvals.
+Some redundant code and inline commented sections have been cleaned up and replaced with reusable components, improving overall maintainability and readability.
+
+Overall, these changes increase the modularity of the code and offer a richer, more interactive user interface for event and workflow approval processes.

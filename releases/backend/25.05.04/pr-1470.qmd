@@ -1,25 +1,25 @@
 ---
 title: "Check model permissions on `/api/v1/workflows/targets/{cuid}/executions` (#1470)"
-categories: [backend, 25.05.04, hotfix, bug, security]
+categories: [backend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1470
 ---
 
-This update enhances the API route `/api/v1/workflows/targets/{cuid}/executions` by refining how executions are filtered. Previously, while `Workflow.get_workflow` correctly filtered workflows by the user's organization, `Execution.get_by_target` did not. Now, `Execution.get_by_target` includes a user parameter to ensure that executions by target (model) are also filtered to only include those from the user's organization.
+This update refines the API route `/api/v1/workflows/targets/{cuid}/executions`. Previously, `Workflow.get_workflow` included the user to select workflows within the user's organization, while `Execution.get_by_target` selected executions by target (model) from all organizations. Now, `Execution.get_by_target` also includes the user, ensuring executions by target are selected only from the user's organization.
 
 This update refactors workflow retrieval methods to focus on the associated organization rather than the user object. Key changes include:
 
-- In `src/backend/db/workflow.py`, the `get_workflow` method now requires an organization and a `cuid`. It raises a `ValueError` with a descriptive message if the organization is not provided.
+- In `src/backend/db/workflow.py`, the `get_workflow` method now requires an organization and a CUID. It raises a `ValueError` with a descriptive message if the organization is not provided.
 
-- The `get_by_target` method now accepts an organization parameter, filtering queries using the organization associated with the workflow. This ensures workflow executions are correctly scoped by organization.
+- The `get_by_target` method now accepts an organization parameter, filtering queries by the organization linked to the workflow, ensuring executions are correctly scoped.
 
-- In the REST API endpoints within `src/backend/routes/ui_workflows.py`, calls to `Workflow.get_workflow` now use `g.current_user_org` instead of `g.current_user`, aligning data retrieval with the new workflow model requirements.
+- REST API endpoints in `src/backend/routes/ui_workflows.py` now pass `g.current_user_org` to `Workflow.get_workflow`, aligning with the new model requirements.
 
-- Unit tests in `tests/unit/test_workflows.py` have been updated to use the organization parameter when fetching workflows and testing execution queries, ensuring consistency in workflow retrieval across the project.
+- Unit tests in `tests/unit/test_workflows.py` have been updated to use the organization parameter, ensuring consistent workflow retrieval.
 
-These changes centralize access at the organization level, improving consistency and preventing potential mismatches that could occur by using user information directly.
+These changes centralize access at the organization level, improving consistency and preventing mismatches from using user information directly.

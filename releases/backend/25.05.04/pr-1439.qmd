@@ -1,33 +1,33 @@
 ---
-title: "Support exporting comments in documentation and monitoring reports; fix database query (#1439)"
+title: "Support exporting comments for documentation and monitoring reports; fix database query (#1439)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1439
 ---
 
 This update introduces two key changes:
 
-- You can now export comments in both documentation and monitoring reports.
+- You can now export comments in documentation and monitoring reports.
 - A database query issue related to exporting comments has been fixed.
 
-These improvements respond to customer requests for better access to comments.
+These enhancements allow users to view comments more effectively.
 
-This update improves the management and display of user comments linked to inventory models in various reports. Key enhancements include:
+This update improves the management and rendering of user comments linked to inventory models in various reports. Key enhancements include:
 
-- The `get_user_comments_by_model_id` method in the Annotation model now accepts a `content_type` parameter to filter and join the Metadata table, ensuring comments are fetched correctly based on report type.
+- The `get_user_comments_by_model_id` method in the Annotation model now accepts a `content_type` parameter, enabling filtering and joining with the Metadata table to fetch the correct comments based on report type.
 
-- A new helper function, `render_comment_fragments`, centralizes the logic for rendering comment fragments. It queries comments with the correct filters, formats comment text by stripping HTML tags, and handles nullable fields like `context` and `created_at`. The output now conditionally includes the context only when present.
+- A new helper function, `render_comment_fragments`, centralizes the logic for rendering comment fragments. It queries comments with the correct filters, formats comment text (e.g., stripping HTML tags), and handles nullable fields like `context` and `created_at`. The output now includes the context only when present.
 
 - Report serialization functions (`serialize_documentation_report` and `serialize_monitoring_report`) now support an `include_comments` option. When enabled, reports append a 'Comments' section in both the template structure and the list of rendered fragments.
 
 - Unit tests have been updated to validate the new functionality. Tests cover scenarios such as:
   - Comment rendering with and without the `include_comments` flag.
-  - Filtering out irrelevant comments, such as those with a content type not matching the report type or unresolved annotations.
+  - Filtering out irrelevant comments (e.g., those with a content type not matching the report type or unresolved annotations).
   - Ensuring the helper function `_create_annotation_helper` supports creating annotations with the enhanced structure.
 
 These changes enhance the robustness and flexibility of the comment handling mechanism in the backend, allowing for better report customization and filtering.

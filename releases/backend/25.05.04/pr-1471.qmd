@@ -1,15 +1,15 @@
 ---
 title: "Check workflow permissions for states (#1471)"
-categories: [backend, 25.05.04, hotfix, bug, security]
+categories: [backend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1471
 ---
 
-This release does not include any user-facing changes or updates. All necessary steps for the PR process have been completed, including writing release notes and updating documentation if needed. There are no special review areas or additional notes provided.
+<!-- No content to evaluate. -->
 
-This update improves the UI workflow states endpoints by ensuring organization-specific data access. Workflows are now retrieved through the current user's organization using `g.current_user_org.workflows`, rather than querying the global `Workflow` model. This change affects GET, POST, PATCH, and DELETE endpoints, limiting access to workflows associated with the user's organization and reducing data leakage risks. Additionally, `ResourceNotFoundError` exceptions are now explicitly rethrown for precise error signaling, while other exceptions are returned as `InternalServerError`. These enhancements boost security and clarify error handling in workflow state management.
+This update enhances security by ensuring that UI workflow states endpoints access data specific to the user's organization. Instead of querying the global workflow model, endpoints now use `g.current_user_org.workflows`, applicable to GET, POST, PATCH, and DELETE operations. This change minimizes data leakage risks between organizations. Additionally, `ResourceNotFoundError` exceptions are now explicitly rethrown for precise error signaling, while other exceptions are returned as `InternalServerError`. These improvements ensure secure data access and clearer error handling.

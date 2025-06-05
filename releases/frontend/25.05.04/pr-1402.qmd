@@ -1,22 +1,22 @@
 ---
-title: "Enhance security by sanitizing HTML with `DOMPurify` before using `dangerouslySetInnerHTML` (#1402)"
+title: "Enhance security by sanitizing HTML with `DOMPurify` before rendering (#1402)"
 categories: [frontend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/frontend/pull/1402
 ---
 
-This update integrates the DOMPurify library to sanitize HTML content before using `dangerouslySetInnerHTML` in React components, effectively preventing Cross-Site Scripting (XSS) attacks. DOMPurify version 3.2.5 is implemented, with the `sanitizeHtml` utility function configured to allow the "target" attribute on links while sanitizing all other potentially harmful HTML content.
+The DOMPurify library has been integrated to sanitize HTML content before using `dangerouslySetInnerHTML` in React components, enhancing security by preventing XSS attacks. This update ensures all HTML is sanitized through a centralized utility function before rendering. DOMPurify version 3.2.5 is implemented, with the `sanitizeHtml` utility function configured to permit the "target" attribute on links while sanitizing other potentially harmful HTML content.
 
 This update enhances security by integrating DOMPurify to sanitize HTML content before rendering with React's `dangerouslySetInnerHTML`. Key changes include:
 
-- Adding DOMPurify to `package.json` and `package-lock.json` for HTML sanitization.
-- Introducing a `sanitizeHtml` utility function in the `utils` module, wrapping `DOMPurify.sanitize` for use across components.
-- Updating components like `CommandPalette`, `DocumentChecker`, `FindingsList`, `GenerateWithAIModal`, `JSONLogicHumanizer`, `CustomText`, and `TemplateEditor` to sanitize HTML content, preventing XSS attacks.
-- Implementing minor code formatting improvements and small refactors for consistency.
+- Added DOMPurify to `package.json` and `package-lock.json` for HTML sanitization.
+- Introduced a `sanitizeHtml` utility function that wraps `DOMPurify.sanitize`.
+- Updated components like `CommandPalette`, `DocumentChecker`, `FindingsList`, and others to sanitize HTML content, preventing XSS attacks.
+- Made minor code formatting improvements for consistency.
 
-These changes enhance security by ensuring dynamic HTML content is sanitized before DOM injection, contributing to safer rendering of content from external sources or user inputs.
+These changes ensure safer rendering of dynamic HTML content.

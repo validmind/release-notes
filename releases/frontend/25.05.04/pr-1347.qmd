@@ -4,25 +4,25 @@ categories: [frontend, 25.05.04, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/frontend/pull/1347
 ---
 
-A new trigger type, "On Model Field Change," is now available when creating workflows. This feature lets you monitor changes in a specific inventory model field before initiating workflow execution.
+A new trigger type, "On Model Field Change," is now available when creating workflows. This feature lets you monitor specific inventory model fields for changes before initiating workflow execution.
 
-This update enhances the workflow management component and its API service, improving flexibility and user interface dynamics for workflow creation and editing.
+This update enhances the workflow management component and its API service, improving flexibility and user interface dynamics. Key changes include API adjustments for URL formatting and the addition of an optional `triggerFieldKey` parameter in the `PostWorkflow` API call. The Workflow Modal now supports a new `MODEL_FIELD_CHANGE` trigger type, allowing users to select specific fields to trigger workflows. Enumerations for `TriggerType`, `EntityName`, and `EntityEventType` have been updated to support these enhancements.
 
 - **API Changes:**
   - The `GET` endpoint now correctly formats the URL string by removing an unnecessary line break.
-  - A new optional parameter, `triggerFieldKey`, is available in the `PostWorkflow` API call to capture a custom trigger field key.
+  - Added an optional `triggerFieldKey` parameter to the `PostWorkflow` API call for capturing custom trigger field keys.
 
 - **Workflow Modal Enhancements:**
-  - The modal imports additional context and utility methods, using `UsersContext` and `getSchemaPropertyByKey` to build a list of fields from the organization's inventory model schema.
-  - A new trigger type, `MODEL_FIELD_CHANGE`, allows users to select a specific field to trigger the workflow.
-  - The modal supports dynamic behavior based on the trigger type, capturing and passing the `field_name` to the API when `MODEL_FIELD_CHANGE` is selected.
-  - Error states reset upon modal open/close, and entity names and event types adjust based on the trigger type.
+  - Imports additional context and utility methods, using `UsersContext` and `getSchemaPropertyByKey` to build a list of available fields.
+  - Introduces a `MODEL_FIELD_CHANGE` trigger type, displaying a dropdown for field selection.
+  - Supports dynamic behavior based on the trigger type, capturing and passing `field_name` to the API.
+  - Resets error states on modal open/close and adjusts entity names and event types based on the trigger.
 
 - **Model Updates:**
-  - Enumerations for `TriggerType`, `EntityName`, and `EntityEventType` now include the `MODEL_FIELD_CHANGE` trigger, supporting both field-based modifications and traditional events.
+  - Extended enumerations for `TriggerType`, `EntityName`, and `EntityEventType` to support the `MODEL_FIELD_CHANGE` trigger.

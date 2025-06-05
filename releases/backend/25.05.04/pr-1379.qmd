@@ -1,13 +1,13 @@
 ---
-title: "Bump `golang.org/x/net` from `0.34.0` to `0.38.0` in `/casbin-server` (#1379)"
-categories: [backend, 25.05.04, hotfix, dependencies, go]
+title: "Update `golang.org/x/net` from 0.34.0 to 0.38.0 in `casbin-server` (#1379)"
+categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1379
 ---
 
-This update refreshes the `go.mod` and `go.sum` files to align with newer releases of the Go toolchain and several indirect dependencies. The toolchain is upgraded from `go1.23.1` to `go1.24.1`, and versions for modules such as `golang.org/x/crypto`, `golang.org/x/net`, `golang.org/x/sys`, and `golang.org/x/text` are also updated. These changes ensure the project benefits from the latest features, improvements, and compatibility enhancements in the Go ecosystem without altering any functional business logic.
+This update upgrades the Go toolchain from `go1.23.1` to `go1.24.1` and updates several indirect dependencies by modifying the `go.mod` and `go.sum` files. Modules such as `golang.org/x/crypto`, `golang.org/x/net`, `golang.org/x/sys`, and `golang.org/x/text` are also updated. These changes ensure the project remains current with the latest features, improvements, and compatibility enhancements in the Go ecosystem. The update does not alter any functional business logic.

@@ -1,19 +1,19 @@
 ---
-title: "Remove privilege escalation issue (#1458)"
-categories: [backend, 25.05.04, hotfix, bug, security]
+title: "Fix privilege escalation issue (#1458)"
+categories: [backend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1458
 ---
 
-We have fixed a vulnerability that allowed normal users to escalate their permissions and become admins. This change eliminates the privilege escalation issue.
+We have fixed a vulnerability that allowed normal users to escalate their permissions to admin level. This change eliminates the privilege escalation issue.
 
-This update enhances user role management endpoints by refining the authorization mechanism and improving variable naming for clarity.
+This update improves user role management by refining the authorization mechanism and enhancing variable naming for clarity.
 
-The POST endpoint's authorization now specifies `resource="Role"` and `action="create"`, replacing the generic `refresh="api-async"` parameter for more precise control. Similarly, the DELETE endpoint uses `resource="Role"` and `action="delete"` to better reflect permission requirements.
+In the POST endpoint, authorization now specifies `resource="Role"` and `action="create"` for precise control, replacing the generic `refresh="api-async"` parameter. Similarly, the DELETE endpoint uses `resource="Role"` with `action="delete"` to better align with permission requirements.
 
-The variable `user` has been renamed to `to_update_user` for clarity, ensuring consistency in organization membership checks and role assignments. The event publishing call now correctly references this updated variable, ensuring accurate event generation.
+The variable `user` has been renamed to `to_update_user` to accurately represent the user being updated. This change ensures consistency in checking organization membership and creating role assignments. Additionally, the event publishing call now correctly references the updated user variable, ensuring events are generated with the correct user information.

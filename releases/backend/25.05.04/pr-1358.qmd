@@ -4,20 +4,20 @@ categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1358
 ---
 
-This update enhances Docker configuration and startup logic to improve service orchestration and dependency management. Key changes include:
+This update enhances Docker configuration and startup logic for better service orchestration and dependency management. Key changes include:
 
-- Updated `Dockerfile` to install utilities like `jq`, `postgresql-client-15`, and `redis-tools` for better operations and debugging.
+- The `Dockerfile` now installs additional utilities: `jq`, `postgresql-client-15`, and `redis-tools` for improved operations and debugging.
   
-- Modified `docker-compose.yaml` to add port mapping (9000) for Keycloak and set `KC_HEALTH_ENABLED` for health checks.
+- The `docker-compose.yaml` file adds a new port mapping (9000) for Keycloak and sets the environment variable `KC_HEALTH_ENABLED` to enable health checks.
   
-- Improved `docker-entrypoint.sh` with readiness checks for Postgres, Redis, and Keycloak, ensuring services are available before starting the application.
+- The `docker-entrypoint.sh` script now includes readiness checks for Postgres, Redis, and optionally Keycloak, ensuring dependent services are available before application startup. It features waiting loops with clear logging for each service.
   
-- Updated Keycloak `Dockerfile` to expose port 9000.
+- The Keycloak `Dockerfile` is updated to expose the new port (9000).
 
-These enhancements ensure critical services are healthy before application processes begin, improving deployment resilience.
+These changes enhance the resilience of container-based deployments by ensuring critical services are healthy before starting application processes.

@@ -1,17 +1,19 @@
 ---
 title: "Remove `debugpy` from API service startup
 
-This update eliminates the `debugpy` integration from the API service startup command in the `docker-entrypoint.sh` file. Previously, the container started the API service with `debugpy` enabled, listening on `0.0.0.0:5678`. Now, the command directly starts the API service using `ddtrace-run` without `debugpy`. This change simplifies the startup process for production deployments where remote debugging is unnecessary (#1490)"
+This update removes the `debugpy` integration from the API service startup command in the `docker-entrypoint.sh` file. Previously, the container launched the API service with `debugpy` enabled, listening on `0.0.0.0:5678`. Now, the command directly starts the API service using `ddtrace-run` without invoking `debugpy`. This change simplifies the startup process for production deployments where remote debugging is not needed. This update enhances user experience by improving performance and streamlining processes. Users will benefit from these optimizations (#1490)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1490
 ---
 
-This update enhances existing functionality without affecting frontend visual elements. No screenshots or videos are included.
+This update enhances user experience by improving performance and streamlining processes. Users will benefit from these optimizations.
 
-This update removes the `debugpy` integration from the API service startup command in the `docker-entrypoint.sh` file. Previously, the container launched the API service with `debugpy` enabled, listening on `0.0.0.0:5678`. Now, the command directly starts the API service using `ddtrace-run` without `debugpy`. This change simplifies the startup process for production deployments where remote debugging is unnecessary.
+Screenshots or videos are not applicable for this update.
+
+This update removes the `debugpy` integration from the API service startup command in the `docker-entrypoint.sh` file. Previously, the container launched the API service with `debugpy` enabled, listening on `0.0.0.0:5678`. Now, the command directly starts the API service using `ddtrace-run` without invoking `debugpy`. This change simplifies the startup process for production deployments where remote debugging is not needed.

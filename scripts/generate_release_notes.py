@@ -1981,7 +1981,7 @@ def check_github_release(repo, version):
         print(f"  WARN: Error checking release {version} in {repo}: {e}")
         return False
 
-def create_release_file(release, overwrite=False, debug=False, edit=False, single=False, adjust_heading_levels=False):
+def create_release_file(release, overwrite=False, debug=False, edit=False, single=False, adjust_heading_levels=False, internal=False):
     """Create release note files for a specific version: one per PR, and a new release-notes.qmd, or legacy single file if single=True."""
     import glob
     version = release['version']
@@ -2267,11 +2267,17 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             print(f"DEBUG: [create_release_file] Writing new file {pr_file}")
         # Prepare YAML header
         labels = commit.get('labels') or []
-        categories = [repo, normalized_version, yaml_release_type] + labels
+        valid_labels = labels if internal else [label for label in labels if label in label_hierarchy]
+        categories = [repo, normalized_version, yaml_release_type] + valid_labels
         pr_title = commit.get('cleaned_title') or commit.get('title') or f"PR #{pr_number}"
         yaml_header = [
             '---',
             f'title: "{pr_title} (#{pr_number})"',
+            # Categories are computed from:
+            # - repo: The repository name (e.g. "backend")
+            # - normalized_version: The version number (e.g. "25.05.04") 
+            # - yaml_release_type: The release type (e.g. "hotfix")
+            # - labels: PR labels (e.g. ["enhancement", "breaking-change"])
             f'categories: [{", ".join(categories)}]',
             f'sidebar: release-notes',
             f'toc-expand: true',
@@ -2479,7 +2485,7 @@ def parse_release_tables(qmd_file_path, version=None, debug=False):
     
     return releases, seen_versions
 
-def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False, single=False, adjust_heading_levels=False):
+def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False, single=False, adjust_heading_levels=False, internal=False):
     """Process all releases and create release note files.
     
     Args:
@@ -2546,7 +2552,7 @@ def process_releases(releases, overwrite, seen_versions, debug=False, version=No
             
         print("Creating release file ...")
         # Create the release file once per version
-        create_release_file(version_releases[0], overwrite, debug, edit, single, adjust_heading_levels=adjust_heading_levels)
+        create_release_file(version_releases[0], overwrite, debug, edit, single, adjust_heading_levels, internal)
         print(f"✓ Completed processing version {version_key}")
         
         # If a specific tag was requested by the user, we're done after processing it
@@ -3413,6 +3419,8 @@ def main():
                       help='Edit content using OpenAI')
     parser.add_argument('--adjust-heading-levels', action='store_true',
                       help='Adjust heading levels in PR text (calls adjust_heading_levels)')
+    parser.add_argument('--internal', action='store_true',
+                      help='Include all PR labels, not just category labels')
     args = parser.parse_args()
 
     try:
@@ -3443,7 +3451,7 @@ def main():
         # Process releases (check tags and create files)
         # Create a new empty set for seen_versions
         seen_versions = set()
-        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=False, adjust_heading_levels=args.adjust_heading_levels)
+        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=False, adjust_heading_levels=args.adjust_heading_levels, internal=args.internal)
             
         sys.exit(0)
         

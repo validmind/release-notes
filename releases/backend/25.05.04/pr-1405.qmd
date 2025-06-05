@@ -4,13 +4,13 @@ categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1405
 ---
 
-This update enhances the workflow trigger mechanism and inventory model field update handling. Key improvements include increased Celery worker concurrency, a new `trigger_field_key` in workflows for specific field change triggers, and updates to the `InventoryModel` update method to return both updated and old values. The Workflow model now supports additional trigger types, and validation methods have been improved. API endpoints have been updated to handle `trigger_field_key`, and the `WorkflowManager` now includes type hints and better documentation.
+This update enhances the workflow trigger mechanism and inventory model field update handling. Key improvements include increasing Celery worker concurrency from 5 to 6, adding a `trigger_field_key` column to workflows for specific field change triggers, and updating the `InventoryModel` to return updated field information. The Workflow model now supports additional trigger types and includes new helper properties. API endpoints have been updated to process `trigger_field_key`, and error handling is refined with descriptive messages.
 
 - Increased Celery worker concurrency from 5 to 6 in the `Makefile`, potentially improving parallel task processing.
 

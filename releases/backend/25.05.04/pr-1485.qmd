@@ -1,17 +1,17 @@
 ---
-title: "Revert unauthorized access fix for inventory model assets (#1485)"
+title: "Revert changes to inventory model asset access control (#1485)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1485
 ---
 
-This update enhances user experience by addressing previous inefficiencies to improve performance and usability. There are no breaking changes in this update. No screenshots or videos are included.
+This update does not introduce any user-facing changes. There are no screenshots or videos provided for this update.
 
-This update simplifies the authentication process by eliminating the fallback logic that extracted tokens from cookies. The functions `get_token_auth_cookie` and `get_token_auth_header_or_cookie` have been removed. Authentication now strictly uses the token provided in the header via `get_token_auth_header`.
+This update simplifies the authentication process by removing the fallback logic for token extraction from cookies. The functions `get_token_auth_cookie` and `get_token_auth_header_or_cookie` have been eliminated. Authentication now exclusively uses the token provided in the header via `get_token_auth_header`.
 
-In the UI assets proxy endpoint, the `requires_auth` decorator and organization access check logic have been removed. The endpoint now directly retrieves a pre-signed URL from object storage without validating the user's organization, potentially affecting previous authorization checks for asset access.
+In the UI assets proxy endpoint, the `requires_auth` decorator and organization access checks have been removed. The endpoint now directly retrieves a pre-signed URL from object storage without validating the user's organization, potentially impacting previous authorization checks for asset access.

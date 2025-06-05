@@ -4,10 +4,10 @@ categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/backend/pull/1426
 ---
 
-This pull request updates the deployment workflow configurations for AWS secondary, production, and staging environments. The workflows now copy the new template file (`values-new.yaml`) into the manifests directory instead of the old template file (`values.yaml`). The `sed` commands for template substitutions remain unchanged. This update ensures that deployments use the latest configuration template to meet newer deployment requirements.
+This pull request updates the deployment workflow configurations for AWS secondary, production, and staging environments. The workflows now copy the new template file (`values-new.yaml`) into the manifests directory instead of the old template file (`values.yaml`). The `sed` commands for template substitutions remain unchanged. This change ensures deployments use the updated configuration template for newer deployment requirements.

@@ -1,22 +1,22 @@
 ---
-title: "Updated Validator Fundamentals courses (#713)"
+title: "Updated Validator Fundamentals courses for clarity and comprehensiveness (#713)"
 categories: [documentation, 25.05.04, hotfix, documentation, highlight]
 sidebar: release-notes
 toc-expand: true
 date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 12:29
-# Content validated by AI - 2025-06-04 12:29
-# Content overwritten from an earlier version - 2025-06-04 12:29
+# Content edited by AI - 2025-06-04 18:01
+# Content validated by AI - 2025-06-04 18:01
+# Content overwritten from an earlier version - 2025-06-04 18:01
 # PR URL: https://github.com/validmind/documentation/pull/713
 ---
 
-The **Validator Fundamentals** course has been enhanced for clarity and comprehensiveness, aligning it with the Developer Fundamentals course. Updates include revised login instructions, detailed module learning outcomes, module summaries, and additional slides on previously omitted topics. The course has been thoroughly tested to ensure accurate instructions and time estimates.
+The **Validator Fundamentals** course has been updated for clarity and comprehensiveness, aligning it with the Developer Fundamentals course. Updates include revised login instructions, enhanced learning outcomes, module summaries, and additional content on previously omitted topics. The course has been tested for accuracy in instructions and time estimates.
 
-The revamped course consists of four modules, each with specific learning outcomes:
+The course is divided into four modules with specific learning outcomes:
 
 - **Module 1**: Using ValidMind for Model Validation
 - **Module 2**: Running Data Quality Tests
 - **Module 3**: Developing Challenger Models
 - **Module 4**: Finalizing Validation Reports
 
-This training series introduces the basics of using ValidMind for dataset and model validation. It covers running and logging tests with the ValidMind Library and completing your model's validation report on the ValidMind Platform. You'll learn to automate testing, populate evidence in your validation report, track finding resolution, and more. Register to take the course now!
+This training series covers the basics of using ValidMind for dataset and model validation. It includes running and logging tests with the ValidMind Library and finalizing validation reports on the ValidMind Platform. You will learn to automate testing, populate evidence in validation reports, and track finding resolution. Register now to take the course!
