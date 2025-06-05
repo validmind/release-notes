@@ -57,13 +57,15 @@ EXCLUDED_SECTIONS = [
 # --- Editing prompt and static editing info ---
 EDIT_TITLE_PROMPT = (
     "Edit the following PR title for release notes:\n"
-    "- Remove any ticket numbers, branch names, prefixes or double quotes (e.g., '9870:', 'hotfix:', 'nibz/cherry pick/1420', etc.).\n"
-    "- Remove any 'Title:' prefix if present.\n"
-    "- Enclose technical terms (words with underscores or file extensions like .py, .lock, etc.) in backticks.\n"
-    "- Use sentence-style capitalization (capitalize only the first word and proper nouns).\n"
-    "- Make the title clear and concise for end users.\n"
-    "- Limit the title to 80 characters or less.\n"
-    "- Use the PR body for context if needed.\n\n"
+    "- Keep the title to a single line, under 120 characters\n"
+    "- Remove any ticket numbers, branch names, prefixes or double quotes (e.g., '9870:', 'hotfix:', 'nibz/cherry pick/1420', etc.)\n"
+    "- Remove any 'Title:' prefix if present\n"
+    "- Enclose technical terms (words with underscores or file extensions like .py, .lock, etc.) in backticks\n"
+    "- Use sentence-style capitalization (capitalize only the first word and proper nouns)\n"
+    "- Make the title clear and concise for end users\n"
+    "- DO NOT include any content from the PR body or summary in the title\n"
+    "- DO NOT add any explanatory text or context\n"
+    "- The title should be a single, concise statement\n\n"
     "{title}\n"
     "{body}"
 )
@@ -436,14 +438,14 @@ class PR:
         """Unified function to edit PR content (summaries, titles, or release notes) with three-pass editing for notes/summary."""
         if skip_passes is None:
             skip_passes = set()
-        # Only multi-pass for 'notes' and 'summary'
-        if content_type in ("notes", "summary") and edit:
+        # Use multi-pass for 'notes', 'summary', and 'title'
+        if content_type in ("notes", "summary", "title") and edit:
             # Pass 1: Group and Flatten
             if 1 not in skip_passes:
                 grouped = self._edit_pass(
                     content_type,
                     content,
-                    EDIT_PASS_1_INSTRUCTIONS,
+                    EDIT_PASS_1_INSTRUCTIONS if content_type != "title" else "Extract the main change or feature from the title, removing any context or explanation.",
                     attr_name="grouped_text",
                     edit=edit
                 )
@@ -455,7 +457,7 @@ class PR:
                 deduped = self._edit_pass(
                     content_type,
                     grouped,
-                    EDIT_PASS_2_INSTRUCTIONS,
+                    EDIT_PASS_2_INSTRUCTIONS if content_type != "title" else "Ensure the title is a single, concise statement without any additional context.",
                     attr_name="deduplicated_text",
                     edit=edit
                 )
@@ -467,15 +469,17 @@ class PR:
                 final = self._edit_pass(
                     content_type,
                     deduped,
-                    EDIT_PASS_3_INSTRUCTIONS,
+                    EDIT_PASS_3_INSTRUCTIONS if content_type != "title" else "Format the title according to release notes standards, ensuring it's properly quoted and formatted.",
                     attr_name="edited_text",
                     edit=edit
                 )
             else:
                 final = deduped
                 self.edited_text = final
-            # Set summary/notes output
-            if content_type == 'summary':
+            # Set output based on content type
+            if content_type == 'title':
+                self.cleaned_title = final
+            elif content_type == 'summary':
                 self.pr_interpreted_summary = final
             elif content_type == 'notes':
                 self.edited_text = final

@@ -4,12 +4,10 @@ date: "May 30, 2025"
 categories: [cmvm, 25.06, release]
 sidebar: release-notes
 toc-expand: true
-# Content edited by AI - 2025-06-04 13:02
-# Content validated by AI - 2025-06-04 13:02
-# Content overwritten from an earlier version - 2025-06-04 13:02
+# Content overwritten from an earlier version - 2025-06-05 09:48
 ---
 
-This release includes a new custom fields permissions API, a reorganized settings page for improved navigation and readability, and a refactor of custom field permissions handling.
+This release includes a new custom fields permissions API, a refactored approach to handling custom field permissions, and a reorganized settings page for enhanced navigation and usability.
 
 <!-- WARNING: Summary may not mention an enhancement PR -->
 
@@ -22,43 +20,36 @@ This release includes a new custom fields permissions API, a reorganized setting
 
 <!--- PR #1531: https://github.com/validmind/backend/pull/1531 --->
 <!--- Labels: enhancement --->
-### Add new custom fields permissions API (#1531)
+### Add new custom fields permissions API. (#1531)
 
 New routes have been added to retrieve permissions for custom fields.
 
-This update improves workflow, user management, and API functionality while addressing several bugs. Key changes include:
+This update introduces several enhancements and bug fixes, focusing on workflow improvements, user management, and API refactoring. Key changes include using the service alias `db` for the CASBIN database URI in GitHub Actions, improved admin user management with Flask app context, and enhanced RBAC and SQL initialization with better error handling. The custom fields API has been refactored for better testing and permissions management. Additionally, logging and error handling have been improved, and integration tests have been updated for better security and validation.
 
-- The CASBIN database URI in GitHub Actions now uses `db` as the service alias.
-- Admin user management scripts utilize the Flask app context for better database access.
-- RBAC utilities use context managers for safer file handling, with enhanced error logging and rollback on failure.
-- The Custom Fields API has been refactored to consolidate endpoints and add a method for retrieving roles with permissions.
-- Enhanced logging and error handling have been implemented across modules.
-- Integration tests have been updated for XSS sanitization and file validations.
+- **Workflow Update**: The CASBIN database URI in GitHub Actions now uses the service alias `db` instead of `host.docker.internal`.
 
-The CASBIN database URI in GitHub Actions now uses `db` instead of `host.docker.internal`.
+- **Admin User Management Improvements**: The admin user management script now explicitly uses the Flask app context (`with app.app_context()`) for proper database and application resource access. User upsertion logic based on authentication configuration has been clarified.
 
-Admin user management scripts now explicitly use the Flask app context (`with app.app_context()`) for proper database and resource access. User upsertion logic has been clarified.
+- **RBAC and SQL Initialization Enhancements**: RBAC utilities now use context managers (`with open(...)`) for better resource safety and error handling. The initialization function checks for required SQL files, logs processes, and handles exceptions by rolling back on errors.
 
-RBAC utilities now use context managers (`with open(...)`) for improved resource safety and error handling. The role-based access control initialization function verifies required SQL files, logs processes, and handles exceptions with rollbacks.
+- **Custom Fields API Refactoring**: Old custom fields endpoints have been replaced by a new namespace in `ui_custom_fields.py`, consolidating testing and permissions retrieval. A new method, `get_roles_for_custom_field`, retrieves roles with read/write permissions for a given custom field key, excluding admin roles.
 
-Custom fields endpoints have been refactored, consolidating code into a new namespace (`ui_custom_fields.py`) and adding a method (`get_roles_for_custom_field`) to retrieve roles with read/write permissions for a given custom field key.
+- **Additional Logging and Error Handling**: Enhanced logging across modules, such as in RBAC initialization and schema update functions, aids troubleshooting and monitoring.
 
-Enhanced logging has been added across modules to aid troubleshooting and monitoring.
-
-Integration tests for text editor file uploads and custom field endpoints ensure XSS sanitization, file size validations, and proper serialization of role data, covering unauthorized access and non-existent custom fields.
+- **Test Improvements**: Integration tests for text editor file uploads and custom field endpoints have been updated to ensure XSS sanitization, file size validations, and proper serialization of role data, covering unauthorized access and non-existent custom fields.
 
 <!-- ### Changes with no label -->
-
-
-<!--- PR #1533: https://github.com/validmind/backend/pull/1533 --->
-<!--- Labels: none --->
-<!--- ### [SC-10335] Repo Sync repo-sync/21399 (2025-05-29) (#1533) --->
-<!-- No release notes or summary provided. -->
 
 
 <!--- PR #1536: https://github.com/validmind/backend/pull/1536 --->
 <!--- Labels: none --->
 <!--- ### Merge Staging into Prod (prod-1.30.16) (#1536) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1533: https://github.com/validmind/backend/pull/1533 --->
+<!--- Labels: none --->
+<!--- ### [SC-10335] Repo Sync repo-sync/21399 (2025-05-29) (#1533) --->
 <!-- No release notes or summary provided. -->
 
 
@@ -75,54 +66,50 @@ Integration tests for text editor file uploads and custom field endpoints ensure
 ## Enhancements
 
 
-<!--- PR #1419: https://github.com/validmind/frontend/pull/1419 --->
-<!--- Labels: enhancement --->
-### Reorganize settings page for improved navigation and readability (#1419)
-
-The settings page has been reorganized to better categorize settings, enhancing readability and making it easier for users to understand the purpose of each setting.
-
-This update enhances the settings user interface by reorganizing navigation links into logical sections, improving user experience and maintainability. The sidebar now clearly separates areas like "Your Account," "Workspace," "User Permissions," "Models," and "Documents." Key changes include moving the "Stakeholders" link to a model-specific section, introducing conditional rendering for admin features, and refining component structure for better readability and accessibility.
-
-Key changes include:
-
-- Moving the "Stakeholders" link from general workspace settings to a model-specific section and renaming it "Model Stakeholder Types" where applicable.
-
-- Introducing conditional rendering for admin features like "Workflows" and "Workflow States," which are only displayed when user permissions (e.g., `isAdmin` and `workflowsV3`) are met.
-
-- Adjusting the order and grouping of links (e.g., "Risk Areas & Validation Guidelines" remains tied to permissions) to provide a more intuitive navigation experience based on user roles.
-
-- Enhancing the overall component structure by replacing some `Box` components with `Stack` and using the `Heading` component for titles, thereby improving readability and accessibility.
-
-These changes aim to improve maintainability, user experience, and adaptability of the settings interface based on user roles and permissions.
-
-
 <!--- PR #1423: https://github.com/validmind/frontend/pull/1423 --->
 <!--- Labels: enhancement --->
-### Refactor custom field permissions handling (#1423)
+### Refactored the handling of custom field permissions. (#1423)
 
-This update introduces the `TCustomFieldPermissions` interface for managing read and write permissions on custom fields. The new `GetFieldPermissions` API call retrieves permissions based on field keys and is now used by the `useCustomFieldPermissions` hook, streamlining its logic. Imports in `API.ts` and `CustomFieldModal/index.tsx` have been updated to align with the new model structure, resulting in the field permissions dropdown loading instantly.
+This update introduces the `TCustomFieldPermissions` interface to manage read/write permissions for custom fields, enhancing the efficiency of the field permissions dropdown. The `GetFieldPermissions` API call has been implemented to retrieve permissions using a field key, and the `useCustomFieldPermissions` hook now utilizes this API, simplifying its logic. Imports in `API.ts` and `CustomFieldModal/index.tsx` have been adjusted to align with the new model structure.
 
-- Added the `TCustomFieldPermissions` interface to manage read and write permissions for custom fields.
+- Added the `TCustomFieldPermissions` interface for managing custom field permissions.
+  
+- Implemented the `GetFieldPermissions` API call to fetch permissions using a field key.
+  
+- Updated the `useCustomFieldPermissions` hook to use the new API, simplifying its logic.
+  
+- Adjusted imports in `API.ts` and `CustomFieldModal/index.tsx` to match the new model structure.
 
-- Implemented the `GetFieldPermissions` API call to fetch permissions based on the field key.
-
-- Updated the `useCustomFieldPermissions` hook to use the new API for fetching permissions, simplifying the logic.
-
-- Adjusted imports in `API.ts` and `CustomFieldModal/index.tsx` to reflect the new model structure.
+This ensures the field permissions dropdown loads instantly. 🫡
 
 <!-- List any breaking changes -->
 
 <!-- Add screenshots or videos showing before/after -->
 
-This update enhances custom field permissions handling by improving three key areas. A new asynchronous function, `GetFieldPermissions`, has been added to `API.ts` to retrieve permissions for custom fields, returning separate lists for write and read roles. The `CustomFieldModal` component now correctly imports `CodeTestResponse`, aligning with the updated custom fields model. The `useCustomFieldPermissions` hook utilizes the new `GetFieldPermissions` function, simplifying logic by using API-provided write permissions. Additionally, a new type, `TCustomFieldPermissions`, has been introduced to ensure type consistency. These changes centralize permission logic in the API, improving clarity and reducing repetitive code in UI components.
+This update improves custom field permission handling by enhancing three key areas:
 
-- In `API.ts`, `GetFieldPermissions` retrieves custom field permissions, returning separate lists for write and read roles. Existing API functions have been refactored for cleaner formatting.
+- A new asynchronous function, `GetFieldPermissions`, has been added to `API.ts`. It retrieves permissions for a custom field, returning an object with separate lists for write and read roles. Existing API functions have been refactored for better formatting.
 
 - The `CustomFieldModal` component now correctly imports `CodeTestResponse` from the appropriate module, aligning with the new custom fields model.
 
-- The `useCustomFieldPermissions` hook now uses the `GetFieldPermissions` API function, replacing manual iteration over organization roles with direct use of API-provided write permissions.
+- The `useCustomFieldPermissions` hook now utilizes the `GetFieldPermissions` function, replacing manual role iteration with direct use of 'write' permissions from the API.
 
-- A new type, `TCustomFieldPermissions`, has been introduced in the `custom_fields` model to consolidate field permissions structure and ensure type consistency.
+- A new type, `TCustomFieldPermissions`, has been introduced in the `custom_fields` model to consolidate field permission structures and ensure type consistency.
+
+These changes enhance the clarity and efficiency of permission handling for custom fields by centralizing logic in the API and reducing repetitive code in UI components.
+
+
+<!--- PR #1419: https://github.com/validmind/frontend/pull/1419 --->
+<!--- Labels: enhancement --->
+### Reorganized the settings page for improved navigation and usability. (#1419)
+
+The settings page has been reorganized to better categorize settings, enhancing readability and making it easier for users to understand the purpose of each setting.
+
+This update refactors the settings user interface by reorganizing and grouping navigation links into logical sections. The sidebar now clearly distinguishes between areas like "Your Account", "Workspace", "User Permissions", "Models", and "Documents". Key changes include moving the "Stakeholders" link to a model-specific section, introducing conditional rendering for admin features, adjusting link order, and enhancing component structure for better readability and accessibility.
+
+The "Stakeholders" link is now under a model-specific section and renamed "Model Stakeholder Types" where applicable. Admin features like "Workflows" and "Workflow States" are conditionally displayed based on user permissions, such as `isAdmin` and `workflowsV3`. The order and grouping of links are adjusted to provide a more intuitive navigation experience based on user roles. The component structure is improved by replacing some `Box` components with `Stack` and using the `Heading` component for titles, enhancing readability and accessibility.
+
+These changes aim to improve the maintainability, user experience, and adaptability of the settings interface based on user roles and permissions.
 
 <!-- ### Changes with no label -->
 

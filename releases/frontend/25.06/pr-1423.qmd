@@ -1,35 +1,37 @@
 ---
-title: "Refactor custom field permissions handling (#1423)"
+title: "Refactored the handling of custom field permissions. (#1423)"
 categories: [frontend, 25.06, release, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "May 30, 2025"
-# Content edited by AI - 2025-06-04 13:02
-# Content validated by AI - 2025-06-04 13:02
-# Content overwritten from an earlier version - 2025-06-04 13:02
+# Content overwritten from an earlier version - 2025-06-05 09:48
 # PR URL: https://github.com/validmind/frontend/pull/1423
 ---
 
-This update introduces the `TCustomFieldPermissions` interface for managing read and write permissions on custom fields. The new `GetFieldPermissions` API call retrieves permissions based on field keys and is now used by the `useCustomFieldPermissions` hook, streamlining its logic. Imports in `API.ts` and `CustomFieldModal/index.tsx` have been updated to align with the new model structure, resulting in the field permissions dropdown loading instantly.
+This update introduces the `TCustomFieldPermissions` interface to manage read/write permissions for custom fields, enhancing the efficiency of the field permissions dropdown. The `GetFieldPermissions` API call has been implemented to retrieve permissions using a field key, and the `useCustomFieldPermissions` hook now utilizes this API, simplifying its logic. Imports in `API.ts` and `CustomFieldModal/index.tsx` have been adjusted to align with the new model structure.
 
-- Added the `TCustomFieldPermissions` interface to manage read and write permissions for custom fields.
+- Added the `TCustomFieldPermissions` interface for managing custom field permissions.
+  
+- Implemented the `GetFieldPermissions` API call to fetch permissions using a field key.
+  
+- Updated the `useCustomFieldPermissions` hook to use the new API, simplifying its logic.
+  
+- Adjusted imports in `API.ts` and `CustomFieldModal/index.tsx` to match the new model structure.
 
-- Implemented the `GetFieldPermissions` API call to fetch permissions based on the field key.
-
-- Updated the `useCustomFieldPermissions` hook to use the new API for fetching permissions, simplifying the logic.
-
-- Adjusted imports in `API.ts` and `CustomFieldModal/index.tsx` to reflect the new model structure.
+This ensures the field permissions dropdown loads instantly. 🫡
 
 <!-- List any breaking changes -->
 
 <!-- Add screenshots or videos showing before/after -->
 
-This update enhances custom field permissions handling by improving three key areas. A new asynchronous function, `GetFieldPermissions`, has been added to `API.ts` to retrieve permissions for custom fields, returning separate lists for write and read roles. The `CustomFieldModal` component now correctly imports `CodeTestResponse`, aligning with the updated custom fields model. The `useCustomFieldPermissions` hook utilizes the new `GetFieldPermissions` function, simplifying logic by using API-provided write permissions. Additionally, a new type, `TCustomFieldPermissions`, has been introduced to ensure type consistency. These changes centralize permission logic in the API, improving clarity and reducing repetitive code in UI components.
+This update improves custom field permission handling by enhancing three key areas:
 
-- In `API.ts`, `GetFieldPermissions` retrieves custom field permissions, returning separate lists for write and read roles. Existing API functions have been refactored for cleaner formatting.
+- A new asynchronous function, `GetFieldPermissions`, has been added to `API.ts`. It retrieves permissions for a custom field, returning an object with separate lists for write and read roles. Existing API functions have been refactored for better formatting.
 
 - The `CustomFieldModal` component now correctly imports `CodeTestResponse` from the appropriate module, aligning with the new custom fields model.
 
-- The `useCustomFieldPermissions` hook now uses the `GetFieldPermissions` API function, replacing manual iteration over organization roles with direct use of API-provided write permissions.
+- The `useCustomFieldPermissions` hook now utilizes the `GetFieldPermissions` function, replacing manual role iteration with direct use of 'write' permissions from the API.
 
-- A new type, `TCustomFieldPermissions`, has been introduced in the `custom_fields` model to consolidate field permissions structure and ensure type consistency.
+- A new type, `TCustomFieldPermissions`, has been introduced in the `custom_fields` model to consolidate field permission structures and ensure type consistency.
+
+These changes enhance the clarity and efficiency of permission handling for custom fields by centralizing logic in the API and reducing repetitive code in UI components.
