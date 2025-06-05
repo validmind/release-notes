@@ -1,21 +1,21 @@
 ---
-title: "Prevent cross-tenant template overwrite by checking `X-Organization-Id` (#1475)"
+title: "Prevent cross-tenant template overwrite by adding `X-Organization-Id` check (#1475)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1475
 ---
 
-This update does not introduce any user-facing changes. There are no modifications to existing behavior, and no visual elements have been altered, so screenshots or videos are not applicable.
+This update does not introduce any user-facing changes and does not affect the frontend. There are no screenshots or videos to display.
 
-This update introduces two key changes for improved code readability and data security. 
+This update introduces two key changes:
 
-- The `SQLALCHEMY_MAX_OVERFLOW` setting in `src/backend/api.py` has been reformatted for better readability, aligning with other multiline assignments without altering functionality.
+- The `SQLALCHEMY_MAX_OVERFLOW` setting in `src/backend/api.py` has been reformatted for better readability. The functionality remains the same, but the code style now matches other multiline assignments.
 
-- The template retrieval logic in `src/backend/routes/ui_templates.py` now filters by the user's organization, enhancing data integrity and security by ensuring users access only their organization's templates.
+- The template retrieval logic in `src/backend/routes/ui_templates.py` has been improved. Templates are now queried by both a unique identifier and the user's organization (`g.current_user_org.id`), ensuring users access only their organization's templates, enhancing data integrity and security.
 
-Additionally, minor import reordering and cleanup in `src/backend/routes/ui_assets_proxy.py` enhance code organization.
+Additionally, minor import reordering and cleanup in `src/backend/routes/ui_assets_proxy.py` have been performed for improved code organization and clarity.

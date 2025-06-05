@@ -3,13 +3,13 @@ title: "Check workflow permissions for states (#1471)"
 categories: [backend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1471
 ---
 
-<!-- No content to evaluate. -->
+None
 
-This update enhances security by ensuring that UI workflow states endpoints access data specific to the user's organization. Instead of querying the global workflow model, endpoints now use `g.current_user_org.workflows`, applicable to GET, POST, PATCH, and DELETE operations. This change minimizes data leakage risks between organizations. Additionally, `ResourceNotFoundError` exceptions are now explicitly rethrown for precise error signaling, while other exceptions are returned as `InternalServerError`. These improvements ensure secure data access and clearer error handling.
+This update enhances security by ensuring UI workflow states endpoints access only organization-specific data. Workflows are now retrieved through `g.current_user_org.workflows`, limiting access to the current user's organization. This change applies to GET, POST, PATCH, and DELETE endpoints, reducing data leakage risks. Additionally, `ResourceNotFoundError` exceptions are explicitly rethrown for precise error signaling, while other exceptions result in an `InternalServerError`. These improvements ensure secure data access and clearer error handling.

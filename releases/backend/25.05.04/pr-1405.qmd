@@ -1,31 +1,31 @@
 ---
-title: "Trigger workflow when a model attribute changes (#1405)"
+title: "Trigger workflow on model attribute changes (#1405)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1405
 ---
 
-This update enhances the workflow trigger mechanism and inventory model field update handling. Key improvements include increasing Celery worker concurrency from 5 to 6, adding a `trigger_field_key` column to workflows for specific field change triggers, and updating the `InventoryModel` to return updated field information. The Workflow model now supports additional trigger types and includes new helper properties. API endpoints have been updated to process `trigger_field_key`, and error handling is refined with descriptive messages.
+This update enhances the workflow trigger mechanism and inventory model field update handling. Key improvements include increased Celery worker concurrency from 5 to 6, a new optional `trigger_field_key` column in the workflows table, and updates to the `InventoryModel` update method to return both updated field information and old values. The Workflow model now supports additional trigger types and events, with new helper properties for status checking. Workflow validation methods and API endpoints have been updated for better error handling and processing.
 
 - Increased Celery worker concurrency from 5 to 6 in the `Makefile`, potentially improving parallel task processing.
 
-- Added a new migration to introduce the optional column `trigger_field_key` in the workflows table. This field supports triggering workflows based on specific field changes in inventory models.
+- Added a new migration to introduce the optional column `trigger_field_key` in the workflows table, supporting workflow triggers based on specific field changes in inventory models.
 
-- Updated the `InventoryModel` update method to return both the updated field information and the old value, allowing further processing by triggering background tasks.
+- Updated the `InventoryModel` update method to return both updated field information and the old value, allowing further processing by triggering background tasks.
 
 - Expanded the Workflow model:
-  - Now supports an additional trigger type and extended its allowed entities and events with a new `InventoryModel.field` type and an `updated` event type.
-  - New helper properties (`is_deleted` and `is_enabled`) were added for easier status checking.
+  - Supports an additional trigger type and extended its allowed entities and events with a new `InventoryModel.field` type and an `updated` event type.
+  - Added new helper properties (`is_deleted` and `is_enabled`) for easier status checking.
   - The workflow serialization method now includes the new `trigger_field_key`.
 
-- Enhanced the workflow validation methods to validate the `trigger_field_key` along with type, entity name, and event type. Validation errors now use a custom `BadRequestError` with more descriptive error messages.
+- Enhanced workflow validation methods to validate the `trigger_field_key` along with type, entity name, and event type. Validation errors now use a custom `BadRequestError` with more descriptive error messages.
 
-- Updated the API endpoints in the UI routes for workflows and inventory models to pass and process the `trigger_field_key`. When a model field changes, a new Celery task (`on_model_field_change`) is triggered to process workflow executions.
+- Updated API endpoints in the UI routes for workflows and inventory models to pass and process the `trigger_field_key`. When a model field changes, a new Celery task (`on_model_field_change`) is triggered to process workflow executions.
 
 - The `WorkflowManager`'s `start_execution` method now includes type hints and improved documentation. Minor adjustments in test files ensure that date comparisons use timezone-aware datetime objects.
 

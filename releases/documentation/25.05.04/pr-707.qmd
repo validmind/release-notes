@@ -1,19 +1,28 @@
 ---
-title: "Updated content block features in documentation (#707)"
+title: "Update content block features and template paths (#707)"
 categories: [documentation, 25.05.04, hotfix, documentation]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# CHECK: Title validation failed - FAIL: Adds unsupported information
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/documentation/pull/707
 ---
 
-The documentation has been reorganized to enhance clarity and usability. Templates and reusable text blocks, applicable to model documentation, validation reports, and ongoing monitoring, are now in a new sub-section. Broken links have been fixed, and aliases applied to old URLs. A new page details the block library feature, and updates reflect changes in the block library and UI, including content block types and the "Generate Text with AI" section. Test results and metrics over time pages now include updated UX information. The ValidMind Platform documentation has expanded to support the updated content block interface and text block library.
+Guides for templates and reusable text blocks, applicable to model documentation, validation reports, and ongoing monitoring, have been moved to a new sub-section. Broken links have been fixed, and aliases applied to old URLs. A hotfix in the `installation` repository addresses detected broken links. A new page details the block library feature, offering a guide on managing text blocks. Updates include changes to content block types, the new chat interface, and test-driven block menu experiences. Documentation on templates has been reorganized and expanded.
 
-Templates and reusable text blocks are now organized under a new sub-section, applicable to model documentation, validation reports, and ongoing monitoring. Broken links have been fixed, and aliases applied to old URLs. A new page details the block library feature, and updates reflect changes in the block library and UI, including content block types and the "Generate Text with AI" section. Test results and metrics over time pages now include updated UX information. The ValidMind Platform documentation has expanded to support the updated content block interface and text block library.
+Templates and reusable text blocks now have a dedicated sub-section, covering model documentation, validation reports, and ongoing monitoring. Broken links have been fixed, and aliases applied to old URLs. A hotfix was applied to the `installation` repository to address broken links detected by our online check.
 
-This pull request refactors documentation template paths by relocating them from the `model-documentation` directory to a new `templates` directory. This change impacts various files, including configuration files, guides, and release notes.
+A new page covers the block library feature, providing a comprehensive guide on managing text blocks.
 
-Additionally, enhancements to the content block management system are introduced. These include managing a library of reusable text blocks, configuring test result displays, and improving the user interface for adding and removing content blocks.
+The page on working with content blocks has been updated to reflect changes in the block library and the new user interface. This includes updated explanations of content block types and changes in the "Add content blocks" and "Remove content blocks" sections. The "Generate Text with AI" section now reflects the new chat interface.
+
+The page on working with test results now includes updates to reflect the new test-driven block menu user experience. A section has been added on configuring the display of test results once inserted.
+
+The page on working with metrics over time has been updated to reflect the new metric over time block menu user experience.
+
+Documentation on templates within the ValidMind Platform has been reorganized and expanded. Guides on managing templates for model documentation, validation reports, and ongoing monitoring reports are now available under the **Guides** in the **templates** section, along with a new guide on managing your text block library.
+
+This update refactors documentation template paths by relocating them from the `model-documentation` directory to a new `templates` directory, impacting configuration files, guides, and release notes. It also enhances the content block management system, enabling better organization and reuse of text blocks. New features include managing a library of reusable text blocks, configuring test result displays, and improving the user interface for adding and removing content blocks.

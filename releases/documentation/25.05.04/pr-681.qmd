@@ -3,21 +3,66 @@ title: "Updated developer fundamentals training (#681)"
 categories: [documentation, 25.05.04, hotfix, documentation, highlight]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/documentation/pull/681
 ---
 
-The Developer Fundamentals course has been updated for clarity and comprehensiveness, featuring revised login instructions, module outcomes, and summaries. Courses have been tested to ensure accurate instructions and timing. A workaround for the `Copy snippet to clipboard` slide addresses a CORS error by allowing `clipboard-read` and `clipboard-write` permissions.
+The Developer Fundamentals course has been updated for clarity and comprehensiveness, featuring revised login instructions, learning outcomes, and module summaries. Courses have been tested for accurate instructions and time estimates. A workaround for clipboard access was implemented due to CORS issues. The Learning Paths section now has consistent titles, refined descriptions, and status buttons. Navigation was simplified by removing an extra drop-down, and a browser compatibility message was standardized across relevant pages.
 
-Titles in the Learning Paths section have been standardized, and descriptions refined. Buttons for course registration or upcoming courses have been added. The Validator Fundamentals section has been streamlined for future updates. The extra "Training" drop-down has been removed to reduce clutter, and a `Releases` section has been added to the drop-down menu. Browser compatibility messages for registration pages and the "Legal Ease" section have been styled for clarity.
+[**REGISTRATION PAGE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8465/update-developer-fundamentals-course/training/developer-fundamentals/developer-fundamentals-register.html) — 🚨 SEE COURSE MODULE PREVIEW DISCLAIMER BELOW!!!! 🚨
 
-This update enhances notebook execution and documentation within GitHub Actions and site content. Key improvements include updated action names and descriptions in `action.yml` files for demo, prod, and staging notebooks, ensuring correct environments with the `validmind` kernel. Documentation now features new training modules and updated content for ValidMind users, while the notebook directory is reorganized for clarity. These changes streamline processes and offer advanced capabilities for users.
+- The Developer Fundamentals course has been updated to be more comprehensive and straightforward. This includes revised login instructions, learning outcomes for each module, and module summaries.
 
-- **GitHub Actions Enhancements**: Updated `action.yml` files to reflect the execution of multiple notebooks. Registered the `validmind` kernel in the workflow to ensure the correct environment for notebook execution. Modified the execution command to target a series of notebooks, expanding automated testing.
+- Courses have been thoroughly tested and timed to ensure instructions and time estimates are accurate.
 
-- **Documentation and Training Content**: Introduced new training modules and updated existing ones for a comprehensive learning path for ValidMind users. Added detailed markdown files for each module, outlining objectives, content, and instructions. Enhanced site content with new sections and improved navigation.
+- A workaround for the `Copy snippet to clipboard` slide was implemented due to a CORS-type error with the normal background iframe. The current version allows clipboard access using `allow="clipboard-read; clipboard-write"` due to Quarto's restrictions.
 
-- **Notebook Content and Structure**: Reorganized the notebook directory to separate executed notebooks from tutorials, improving clarity. Updated content to include sections on custom tests and external test providers. Added images and GIFs to guide users through adding content blocks and test results.
+> [!NOTE]
+> The latest version uses a simple two-column layout instead of negative absolute positioning, consistent with other slides.
+
+[**LEARNING PATHS PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8465/update-developer-fundamentals-course/training/program/learning-paths.html)
+
+- Titles in the Learning Paths section have been edited for consistent casing and improved clarity.
+
+- Descriptions were refined for clarity and conciseness.
+
+- Added "register now" or "coming soon" buttons, depending on the course status.
+
+- Cleaned up the Validator Fundamentals section in preparation for future validation experience notebooks.
+
+- Removed the extra "Training" drop-down from the training section to simplify navigation. Consideration for reintroducing a sidebar or breadcrumb navigation for training pages is suggested.
+
+- Added `Releases` to the condensed drop-down as it is now an independent section.
+
+- The browser compatibility message for registration pages was effectively styled and repeated in the "Legal Ease" section on the policy page for consistency.
+
+This update enhances notebook execution and documentation in GitHub Actions and site content. Key improvements include updated action names and descriptions in `action.yml` files, registration of the `validmind` kernel, and expanded automated testing. New training modules and markdown files offer a comprehensive learning path for ValidMind users. The notebook directory is reorganized for clarity, and content now includes advanced testing capabilities and visual guides.
+
+- **GitHub Actions Enhancements**:
+
+  - Updated action names and descriptions in `action.yml` files for demo, prod, and staging notebooks to reflect the execution of multiple notebooks.
+  
+  - Added a step to register the `validmind` kernel in the GitHub Actions workflow, ensuring the correct environment is used for notebook execution.
+  
+  - Modified the execution command to target a series of notebooks, improving the scope of automated testing.
+
+- **Documentation and Training Content**:
+
+  - Introduced new training modules and updated existing ones to provide a comprehensive learning path for developers, validators, and administrators using ValidMind.
+  
+  - Added detailed markdown files for each training module, outlining learning objectives, course content, and step-by-step instructions for using ValidMind.
+  
+  - Enhanced the site content with new sections and updated existing ones to improve navigation and user experience.
+
+- **Notebook Content and Structure**:
+
+  - Reorganized the notebook directory structure to separate executed notebooks from tutorials, improving clarity and maintainability.
+  
+  - Updated notebook content to include new sections on implementing custom tests and using external test providers, providing users with more advanced capabilities.
+  
+  - Added new images and GIFs to the documentation to visually guide users through the process of adding content blocks and test results.
+
+These changes aim to streamline the notebook execution process, enhance the training and documentation experience, and provide users with more robust tools for model development and validation.

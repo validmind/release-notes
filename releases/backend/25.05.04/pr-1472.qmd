@@ -3,13 +3,13 @@ title: "Ensure `SQLAlchemy` pool variables are integers (#1472)"
 categories: [backend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1472
 ---
 
-Kubernetes pod specifications require environment variables to be wrapped in quotes, which Python interprets as strings. This caused issues with SQLAlchemy, which expects integer values. This update ensures that when environment variables are set by the Kubernetes pod specification, they are correctly cast to integers, addressing the previous reliance on default values.
+Kubernetes pod specifications require environment variables to be wrapped in quotes, which Python interprets as strings. This caused issues with SQLAlchemy, which expects integers. This update ensures that when environment variables are set by the Kubernetes pod specification, they are correctly cast to integers. Previously, default values were used.
 
-This pull request improves the Flask application's configuration by ensuring that the `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW` environment variables are explicitly converted to integers. Previously, these values were used as strings, potentially causing type mismatches. This update enforces correct data types, reducing runtime errors related to database connection pooling configurations.
+This pull request improves the Flask application's configuration by ensuring that the SQLAlchemy-related environment variables, `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW`, are explicitly converted to integers. Previously, these values were used directly from environment variables as strings, potentially causing type mismatches. This change enforces the correct data type, reducing potential runtime errors related to database connection pooling configurations.

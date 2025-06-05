@@ -3,11 +3,11 @@ title: "Update deployment configurations to new values format (#1417)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1417
 ---
 
-This pull request updates deployment workflow configurations in three YAML files: `deploy_aws_secondary.yaml`, `deploy_prod.yaml`, and `deploy_staging.yaml`. The primary change is the switch to using the new template file `values-new.yaml` from the `templates/validmind` directory, replacing the old `values.yaml`. This update ensures deployments use the latest configuration settings. The `sed` commands still replace placeholder strings with environment-specific values like site, environment, vault ID, repository, and API SHA, maintaining consistency across deployments.
+This pull request updates deployment workflow configurations in three YAML files: `deploy_aws_secondary.yaml`, `deploy_prod.yaml`, and `deploy_staging.yaml`. The main change is the use of the new template file `values-new.yaml` from the `templates/validmind` directory instead of the old `values.yaml`. This ensures deployments use updated configuration settings. The `sed` commands still replace placeholder strings with environment-specific values like site, environment, vault ID, repository, and API SHA for consistent deployments.

@@ -3,19 +3,21 @@ title: "Prevent admins from modifying `staff` roles (#1482)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1482
 ---
 
 Admins can no longer modify staff roles using the `PATCH /api/v1/roles/<protected_role_id>/permissions` endpoint. This change addresses a potential security vulnerability.
 
-This update refactors the role management endpoints in the backend for improved consistency and security. Key changes include renaming the variable `orgRole` to `org_role` in the GET and PATCH endpoints for better readability. Additionally, the PATCH endpoint now includes a check to prevent modifications to roles marked as `staff`, aligning with existing restrictions on `admin` roles. These adjustments enhance code maintainability and enforce stricter role-based access controls.
+This update refactors role management endpoints in the backend for improved consistency and protection. Key changes include renaming the `orgRole` variable to `org_role` for better readability and introducing a check in the PATCH endpoint to prevent modifications to `staff` roles, similar to the existing protection for `admin` roles. These adjustments enhance code maintainability and enforce role-based restrictions.
 
-- Consistent Naming: The variable `orgRole` is now `org_role` to follow snake_case conventions.
+The primary changes include:
 
-- Enhanced Role Protection: The PATCH endpoint now prevents changes to `staff` roles, similar to `admin` roles.
+- Consistent Naming: The variable previously named `orgRole` has been renamed to `org_role` throughout the GET and PATCH endpoints to follow snake_case conventions and improve code readability.
 
-- Minor Refactoring: Includes systematic renaming and logic adjustments for consistency and better permission handling.
+- Enhanced Role Protection: In the PATCH endpoint, an additional check has been introduced to prevent modifications to roles marked as `staff`, similar to the existing constraint for `admin` roles. This ensures that both admin and staff roles remain immutable via this endpoint.
+
+- Minor Refactoring: The changes include systematic renaming and minor logic adjustments to maintain consistency across related queries and handling of permissions. Overall, these changes should improve maintainability and enforce proper role-based restrictions within the application.

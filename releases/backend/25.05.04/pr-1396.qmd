@@ -3,21 +3,39 @@ title: "Improve Auth0 error handling and debugging flow (#1396)"
 categories: [backend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1396
 ---
 
-This update enhances the onboarding process for new organizations by providing clear error messages when a weak password is selected during setup, addressing previous backend errors without explanation. Additionally, developers working with the API container can now attach Cursor to the local API container, set debug breakpoints, and benefit from automatic code reloading during editing, eliminating the need for restarts and improving development efficiency.
+This update enhances error handling during the initial onboarding process. Previously, selecting a weak password resulted in a 500 error without explanation. Now, users receive a clear error message from Auth0, improving the onboarding experience.
 
-This PR introduces several functional improvements:
+Bugfix: Improved error handling in the organization onboarding flow.
 
-- **Debugging Enhancements**: A new remote debugging configuration has been added to the VS Code launch file (`.vscode/launch.json`) for attaching a debugger via `debugpy` to the API service running in Docker. The README provides instructions for interactive debugging. The Docker Compose configuration now exposes port 5678 and mounts relevant backend volumes, enhancing the debugging experience. The `docker-entrypoint.sh` script launches the Python application with `debugpy` using the `-m debugpy --listen 0.0.0.0:5678` flag.
+This PR introduces several functional improvements, focusing on debugging, authentication error handling, code enhancements, and unit testing. A new remote debugging configuration for VS Code allows attaching a debugger to the API service in Docker. Authentication error handling now checks for password strength errors, raising specific error codes. Code enhancements include improved JSON serialization and logging updates. Additionally, comprehensive unit tests for `Auth0AuthProvider` have been added.
 
-- **Auth Error Handling Improvements**: Error handling in the authentication provider code (`src/backend/auth/auth_provider.py`) has been improved to check for password strength errors. When a `PasswordStrengthError` is detected in the API response, an error is raised with a new `INVALID_FIELD` code and detailed error information. Otherwise, a generic unauthorized error is raised. The route handling in `src/backend/routes/admin/organizations.py` has been updated to catch and re-raise `AuthError`.
+- **Debugging Enhancements:**
+  
+  - A remote debugging configuration is added to the VS Code launch file (`.vscode/launch.json`) for attaching a debugger (`debugpy`) to the API service in Docker. The README includes instructions for interactive debugging.
+  
+  - Docker Compose now exposes port 5678 and mounts relevant backend volumes, improving the debugging experience in a containerized environment.
+  
+  - The `docker-entrypoint.sh` script launches the Python application with `debugpy` (`-m debugpy --listen 0.0.0.0:5678`), enabling remote debugging.
 
-- **Code and Utility Enhancements**: The JSON encoder (`src/backend/utils/__init__.py`) now handles objects with a `to_dict` method, improving custom object serialization. Logging in the generic error handler (`src/backend/errors/handlers.py`) has been updated from exception level to error level to prevent excessive stack traces for expected issues.
+- **Auth Error Handling Improvements:**
+  
+  - Enhanced error handling in `src/backend/auth/auth_provider.py` checks for password strength errors. A `PasswordStrengthError` in the API response raises an error with an `INVALID_FIELD` code and detailed information. Other errors default to a generic unauthorized error.
+  
+  - Route handling in `src/backend/routes/admin/organizations.py` is updated to catch and re-raise `AuthError`, ensuring proper error handling by the calling context.
 
-- **Extended Unit Tests**: A comprehensive set of unit tests for `Auth0AuthProvider` has been added in `tests/unit/test_auth0_provider.py`. These tests cover scenarios like handling weak passwords, successful user creation, and other error cases. Mocks simulate API interactions to validate correct error signaling and token management.
+- **Code and Utility Enhancements:**
+  
+  - The JSON encoder (`src/backend/utils/__init__.py`) now handles objects with a `to_dict` method, improving custom object serialization.
+  
+  - Logging in the generic error handler (`src/backend/errors/handlers.py`) is updated from exception level to error level to reduce excessive stack traces for expected issues.
+
+- **Extended Unit Tests:**
+  
+  - A comprehensive set of unit tests for `Auth0AuthProvider` is added in `tests/unit/test_auth0_provider.py`. These tests cover scenarios like handling weak passwords, successful user creation, and other error cases, using mocks to simulate API interactions and validate error signaling and token management.

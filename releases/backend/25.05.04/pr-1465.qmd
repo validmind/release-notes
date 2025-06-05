@@ -3,21 +3,21 @@ title: "Validate owners list against selected group (#1465)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1465
 ---
 
-A critical vulnerability has been fixed, preventing unauthorized users from being added to the owners list and accessing personally identifiable information (PII) without verifying their organization membership. This update ensures that users can only access data from their own organization and group, effectively safeguarding PII.
+A critical vulnerability has been fixed to prevent unauthorized users from being added to the owners list and accessing personally identifiable information (PII) without verifying their organizational membership. This update safeguards PII and ensures users can only access data within their own organization and group.
 
-This update enhances user membership and ownership handling in the application. Key changes include the removal of an unused `flask_migrate` import from the backend API module, improving dependency management. The `RolePermission` import in the authentication module has been repositioned for clarity. A new `is_member` method in the `Group` class centralizes membership checks. Additionally, the UI inventory models route now verifies user existence and group membership before assigning ownership, preventing unauthorized additions.
+This update enhances user membership and ownership handling in the application with several improvements:
 
-- In the backend API module, the unused import of `flask_migrate` has been removed, cleaning up the project's dependencies.
+- Removed the unused `flask_migrate` import from the backend API module, streamlining project dependencies.
 
-- In the authentication module, the `RolePermission` import has been repositioned. While its functional impact is minimal, this change contributes to clearer dependency management.
+- Repositioned the `RolePermission` import in the authentication module for clearer dependency management.
 
-- A new method, `is_member`, has been added to the `Group` class. This method iterates over group members to check whether a given user is already a member. This helper function centralizes group membership checks and clarifies the intent of the membership logic.
+- Added a new `is_member` method to the `Group` class, which checks if a user is already a group member, centralizing membership logic.
 
-- In the UI inventory models route, the logic for adding an owner to the inventory model has been enhanced. The route now checks if the user exists and is a member of the group before adding them as an owner or developer. This prevents non-existent or unauthorized users from being mistakenly added, ensuring more robust handling of ownership assignments.
+- Improved the UI inventory models route by ensuring users exist and are group members before assigning them as owners or developers, preventing unauthorized assignments.

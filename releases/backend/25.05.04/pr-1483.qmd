@@ -1,15 +1,15 @@
 ---
-title: "Add `pg_stat_statements` migration script (#1483)"
+title: "Add `pg_stat_statements` migration (#1483)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1483
 ---
 
-This update introduces an extension for profiling, enhancing performance analysis capabilities.
+An extension for profiling has been added.
 
-This update introduces a migration script to manage the `pg_stat_statements` extension in a PostgreSQL database. The script checks for the extension's existence and creates it if absent. The upgrade function connects to the database, verifies the extension's presence, and conditionally creates it if needed. It also retrieves and displays the current version of the extension. The downgrade function is a placeholder without rollback logic. These changes ensure `pg_stat_statements` is available without duplication.
+This update adds a migration script to manage the `pg_stat_statements` extension in a PostgreSQL database. The script checks for the extension's existence and creates it if absent. The upgrade function connects to the database, verifies the extension's installation, and conditionally creates it if needed. It also retrieves and displays the current version for information. The downgrade function is a placeholder with no rollback logic. These changes ensure the monitoring features of `pg_stat_statements` are available without duplication.

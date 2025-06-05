@@ -3,21 +3,11 @@ title: "Add startup checks for datastores and Keycloak (#1358)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1358
 ---
 
-This update enhances Docker configuration and startup logic for better service orchestration and dependency management. Key changes include:
-
-- The `Dockerfile` now installs additional utilities: `jq`, `postgresql-client-15`, and `redis-tools` for improved operations and debugging.
-  
-- The `docker-compose.yaml` file adds a new port mapping (9000) for Keycloak and sets the environment variable `KC_HEALTH_ENABLED` to enable health checks.
-  
-- The `docker-entrypoint.sh` script now includes readiness checks for Postgres, Redis, and optionally Keycloak, ensuring dependent services are available before application startup. It features waiting loops with clear logging for each service.
-  
-- The Keycloak `Dockerfile` is updated to expose the new port (9000).
-
-These changes enhance the resilience of container-based deployments by ensuring critical services are healthy before starting application processes.
+This update enhances Docker configuration and startup logic to improve service orchestration and dependency management. The `Dockerfile` now installs utilities like `jq`, `postgresql-client-15`, and `redis-tools` for better operations and debugging. The `docker-compose.yaml` file includes a new port mapping (9000) for Keycloak and sets the `KC_HEALTH_ENABLED` environment variable for health checks. The `docker-entrypoint.sh` script now performs readiness checks for Postgres, Redis, and Keycloak, ensuring services are available before starting the application. The Keycloak `Dockerfile` has been updated to expose the new port (9000). These changes enhance the resilience of container-based deployments by ensuring critical services are healthy before application processes begin.

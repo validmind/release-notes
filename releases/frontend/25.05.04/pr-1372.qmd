@@ -1,29 +1,32 @@
 ---
-title: "Allow roles and stakeholder types to be deleted (#1372)"
+title: "Allow deletion of roles and stakeholder types (#1372)"
 categories: [frontend, 25.05.04, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/frontend/pull/1372
 ---
 
-This update introduces delete buttons and confirmation dialogs to the list and detail pages for roles and stakeholder types, enhancing user control. Group deletion now uses a reusable component, improving styling consistency. An `API.ts` call for deleting roles has been added. The stakeholder type settings menu item is now included as per ValidMind documentation. The roles detail page is adapted for stakeholder types with minor differences, and the API roles delete endpoint is reused for stakeholder type deletion requests.
+This update introduces delete buttons and confirmation dialogs to both the roles list and detail pages, as well as the stakeholder types list and detail pages. Group deletion now uses a reusable component with improved styling for consistency. An `API.ts` call has been implemented for deleting roles, which is also used for stakeholder type deletions. Additionally, a stakeholder type settings menu item has been added according to the documentation.
 
-This update enhances role deletion and confirmation dialogs within the application for a more consistent user experience. Key improvements include a new `DeleteRole` API method for role deletion, a standardized `DeleteConfirmationAlert` component for consistent confirmation dialogs, and updated styling for `DangerMenuItem` to highlight destructive actions. The RoleDetails page now supports role and stakeholder type deletion with detailed impact messages. Roles and Stakeholders pages allow role deletion via a contextual menu, using react-query mutations for immediate data updates. Minor UI copy changes in `AddRoleModal` clarify the distinction between adding roles and stakeholder types.
+- Added delete buttons and confirmation dialogs to the roles and stakeholder types lists and detail pages.
 
-- A new `DeleteRole` API method supports role deletion via an Axios DELETE endpoint.
+- Updated group deletion to use a reusable component with improved styling.
 
-- The `DeleteConfirmationAlert` component standardizes deletion confirmation across Group, RoleDetails, Roles, and Stakeholders pages, providing consistent user experience and custom messages.
+- Implemented an `API.ts` call for deleting roles, reused for stakeholder type deletions.
 
-- `DangerMenuItem` styling is refined to better indicate destructive actions with adjusted color and background properties.
+- Added the stakeholder type settings menu item as per the documentation.
 
-- The RoleDetails page supports role and stakeholder type deletion with integrated confirmation dialogs and detailed impact messages.
+This update enhances role deletion and confirmation dialogs in the application. Key improvements include:
 
-- Roles and Stakeholders pages enable role deletion through a contextual menu, using react-query mutations to ensure immediate data updates.
+- A new `DeleteRole` API method for role deletion via an Axios DELETE endpoint.
+- A standardized `DeleteConfirmationAlert` component for consistent deletion confirmations across multiple pages, including Group, RoleDetails, Roles, and Stakeholders.
+- Updated `DangerMenuItem` styling to better indicate destructive actions.
+- RoleDetails now supports role and stakeholder type deletion with detailed impact messages.
+- Roles and Stakeholders pages allow role deletion via a contextual menu, using react-query mutations to ensure immediate data updates.
+- Minor UI copy adjustments in `AddRoleModal` to distinguish between adding roles and stakeholder types.
 
-- UI copy adjustments in `AddRoleModal` clarify the difference between adding a new role and a stakeholder type.
-
-These changes ensure users are well-informed and deliberate when performing potentially destructive actions, enhancing the consistency of deletion flows throughout the application.
+These changes improve deletion flow consistency, ensuring users are informed and deliberate when performing destructive actions.

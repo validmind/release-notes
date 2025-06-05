@@ -1,27 +1,28 @@
 ---
-title: "Refactor menu rendering in `BlockExplorer` for flexibility and reusability (#1361)"
+title: "Refactor menu rendering in `BlockExplorer` for improved flexibility (#1361)"
 categories: [frontend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# CHECK: Title validation failed - FAIL: Changes the core meaning of the original content.
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/frontend/pull/1361
 ---
 
-The documentation sections will no longer include default text blocks. Instead, an empty state will prompt users to "Add New Block."
+The documentation sections will no longer include default text blocks. Instead, users will see an empty state with a prompt to "Add New Block."
 
-Fixed a bug where some sections were not being deleted.
+- Fixed a bug that prevented some sections from being deleted.
 
-This update refactors the menu rendering logic in the `BlockExplorer` component to enhance flexibility and reusability. Key changes include:
+This update refactors the menu rendering logic in the `BlockExplorer` component to enhance flexibility and reusability. Key changes include the introduction of a `MenuWrapper` component, which consolidates menu display logic with `DocumentBlockModal` configuration, reducing duplication. A new optional property, `customRender`, is added to `BlockExplorerProps`, allowing for customized UI behavior. Updates in `DocumentationPage` utilize this feature for a cleaner empty state. Minor behavior changes ensure truly empty sections when appropriate.
 
-- Introduction of a `MenuWrapper` component that consolidates menu display logic with `DocumentBlockModal` configuration, reducing duplication within the `BlockExplorer` component.
+The update introduces a `MenuWrapper` component that consolidates menu display logic with `DocumentBlockModal` configuration, reducing duplication since the menu is used in multiple places within the `BlockExplorer` component.
 
-- Addition of an optional `customRender` property to `BlockExplorerProps`. When provided, `BlockExplorer` uses this method within the `MenuWrapper` for customized UI behavior, such as an empty state display with an "Add New Block" button.
+A new optional property, `customRender`, is added to `BlockExplorerProps`. When provided, `BlockExplorer` uses the `customRender` method wrapped within the `MenuWrapper`, allowing for customized UI behavior, such as displaying an empty state with an "Add New Block" button.
 
-- Updates in `DocumentationPage` to utilize the new `customRender` feature of `BlockExplorer`, offering a cleaner and more context-sensitive empty state. Users are prompted to start building the section, and the `MenuButton` triggers focus via the `setIsFocused` callback.
+Updates in `DocumentationPage` utilize the new `customRender` feature of `BlockExplorer`. This change offers a cleaner and more context-sensitive empty state, prompting users to start building the section, with the `MenuButton` used to trigger focus via the `setIsFocused` callback.
 
-- Minor behavior changes, such as modifying the `getInitialSectionContents` function to return an empty array instead of a default content block, ensuring empty sections remain empty when appropriate.
+Minor behavior changes include modifying the `getInitialSectionContents` function to return an empty array instead of a default content block, ensuring that empty sections remain truly empty when appropriate.
 
-These changes aim to improve modularity, reduce duplication, and give developers more control over block and menu rendering within the application.
+These changes aim to improve modularity, reduce duplication, and give developers more control over how blocks and menus are rendered within the application.

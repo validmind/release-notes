@@ -3,23 +3,19 @@ title: "Ensure `ruff` scans all files to prevent skipped warnings (#1424)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1424
 ---
 
-This update enhances code formatting consistency and cleans up lint exception comments. Key changes include updating the `Makefile` to run `ruff` with the `--no-cache` option for more reliable code analysis, simplifying `# noqa: B950` markers to `# noqa` in migration scripts, reordering import statements for consistency, and adjusting a test in the object storage service to use the simplified `# noqa` format. These changes improve code clarity without altering functionality.
+This update enhances code formatting consistency and cleans up lint exception comments. Key changes include updating the `Makefile` to run `ruff` commands with the `--no-cache` option for more reliable code analysis, simplifying `# noqa: B950` markers to `# noqa` in migration scripts, reordering import statements for consistency, and adjusting a test in the object storage service to use the simplified `# noqa` format. These changes focus on improving code clarity without altering functionality.
 
-The changes include:
+- Updated the `Makefile` to run `ruff` commands with the `--no-cache` option, ensuring the latest code analysis is used.
 
-- Updating the `Makefile` to run `ruff` commands with the `--no-cache` option. This ensures that the latest code analysis is used without cached results, potentially catching new issues more reliably.
+- Simplified `# noqa: B950` markers to `# noqa` in migration scripts, maintaining lint suppression while reducing verbosity.
 
-- Modifying various migration scripts by removing the verbose `# noqa: B950` markers and replacing them with a shorter `# noqa`. This simplifies the code without affecting the intended lint suppression.
+- Reordered import statements in some modules for consistency and to address minor dependency issues.
 
-- Reordering some import statements in a couple of modules to improve consistency and possibly resolve minor dependency ordering issues.
-
-- Adjusting a test in the object storage service to use the same simplified `# noqa` format for the KMS key configuration string.
-
-Overall, the functionality remains unchanged, with the primary impact being on code formatting and clarity.
+- Adjusted a test in the object storage service to use the simplified `# noqa` format for the KMS key configuration string.

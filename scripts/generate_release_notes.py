@@ -595,6 +595,7 @@ class PR:
                     time.sleep(sleep_time)
                     delay = min(max_delay, delay * 2)  # Exponential backoff with cap
                 else:
+                    self.validation_warning = f"# CHECK: {content_type.capitalize()} validation failed - {validation_result}\n"
                     print(f"WARN: All {max_attempts} content edit attempts failed for {content_type} in PR #{self.pr_number}")
                     if self.debug:
                         print(f"Validation result: {validation_result}")
@@ -2020,12 +2021,16 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             if commit.get('pr_summary'):
                 pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.", edit=True)
                 commit['pr_summary'] = pr_obj.pr_interpreted_summary
+                if hasattr(pr_obj, 'validation_warning'):
+                    commit['validation_warning'] = pr_obj.validation_warning
                 if pr_obj.validated:
                     validated = True
                     edited = True
             if commit.get('external_notes'):
                 pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.", edit=True)
                 commit['external_notes'] = pr_obj.edited_text
+                if hasattr(pr_obj, 'validation_warning'):
+                    commit['validation_warning'] = pr_obj.validation_warning
                 if pr_obj.validated:
                     validated = True
                     edited = True
@@ -2037,6 +2042,8 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
             pr_obj.edit_content('title', commit.get('title', ''), title_prompt, edit=True)
             commit['cleaned_title'] = pr_obj.cleaned_title
+            if hasattr(pr_obj, 'validation_warning'):
+                commit['validation_warning'] = pr_obj.validation_warning
             if pr_obj.validated:
                 validated = True
                 edited = True
@@ -2283,7 +2290,10 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             f'toc-expand: true',
             f'date: "{date}"' if date else '',
         ]
-        # Add informational comments as in the combined file
+        # Add validation warnings if any
+        if commit.get('validation_warning'):
+            yaml_header.append(commit['validation_warning'].rstrip())
+        # Add informational comments
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         if any_edited:
             yaml_header.append(f'# Content edited by AI - {current_time}')

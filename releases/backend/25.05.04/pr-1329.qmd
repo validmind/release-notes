@@ -3,11 +3,11 @@ title: "Update `werkzeug` from version 2.3.8 to 3.0.6 (#1329)"
 categories: [backend, 25.05.04, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1329
 ---
 
-The `werkzeug` dependency version in the `pyproject.toml` file has been updated from `^2.3.0` to `^3.0.6`. This change may bring bug fixes, performance enhancements, and new features. Users should verify that this update does not affect any application components relying on `werkzeug`, especially in areas like routing, request handling, or middleware integration.
+This update changes the `werkzeug` dependency version in the `pyproject.toml` file from `^2.3.0` to `^3.0.6`. The newer version may include bug fixes, performance enhancements, and new features. It is crucial to ensure that this update does not affect any application components that depend on `werkzeug`, especially those related to routing, request handling, or middleware integration.

@@ -3,25 +3,27 @@ title: "Add ability to export comments in monitoring and documentation reports (
 categories: [frontend, 25.05.04, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/frontend/pull/1371
 ---
 
-We have introduced an option to include comments in monitoring and documentation reports when exporting documents. By default, exporting comments is disabled, similar to existing export settings. This feature allows users to view comments that were made. Only resolved comments are included and appear at the end of the document.
+We have added the ability to export comments from monitoring and documentation reports. By default, exporting comments is turned off, similar to existing export flags. This feature extends a previous update where a new field was added for validation reports.
 
-This update introduces UI enhancements and additional configuration options in export modals for Model Documentation, Validation Report, and Monitoring Report. 
+Customers now have the option to include comments left in monitoring and documentation reports when exporting. Comments are appended at the end of the document, and only resolved comments are included.
+
+This update enhances the UI and configuration options in export modals for Model Documentation, Validation Report, and Monitoring Report, improving the export experience. Key changes include a new "Include comments" checkbox for export files, UI improvements with consistent layout components like `HStack`, and integrated `MoreInfoPopOver` for contextual help. Accessibility improvements include spacing and `aria-label` adjustments for buttons. These changes simplify the export process by focusing on a single checkbox for comments inclusion.
 
 Key changes include:
 
-- A new "Include comments" checkbox in each modal allows users to decide if comments should be included in the exported file. This option is managed with a new state variable and included in the API call.
+- A new "Include comments" checkbox in each modal allows users to decide whether comments should be included in the exported file. This option is managed with a new state variable and is passed to the API call accordingly.
 
-- UI improvements involve replacing certain layout components with more consistent alternatives, like using `HStack` for grouping text and popover components, enhancing alignment and spacing.
+- UI improvements have been made by replacing certain layout components with more consistent alternatives, such as using `HStack` for grouping text and popover components. This enhances alignment and spacing for a more coherent user experience.
 
-- The `MoreInfoPopOver` component is now integrated directly within the header or section text, providing contextual help for document exporting.
+- The `MoreInfoPopOver` component is now integrated directly within the header or section text to provide users with contextual help regarding document exporting.
 
-- Minor adjustments to spacing and `aria-label` attributes have been made to buttons, particularly the download buttons, to improve accessibility.
+- Minor adjustments to spacing and `aria-label` attributes have been added to buttons, specifically the download buttons, to improve accessibility.
 
-Overall, these changes streamline the configuration experience for generating export documents by removing redundant file format selections and focusing on a single checkbox option for including comments.
+Overall, these changes streamline the configuration experience for generating export documents by omitting redundant file format selection in favor of a single, focused checkbox option for comments inclusion.

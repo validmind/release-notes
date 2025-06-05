@@ -3,17 +3,13 @@ title: "Prevent unauthorized modification of workflow status (#1462)"
 categories: [backend, 25.05.04, hotfix, bug]
 sidebar: release-notes
 toc-expand: true
-date: "May 16, 2025"
-# Content edited by AI - 2025-06-04 18:01
-# Content validated by AI - 2025-06-04 18:01
-# Content overwritten from an earlier version - 2025-06-04 18:01
+date: "May 23, 2025"
+# Content edited by AI - 2025-06-05 09:34
+# Content validated by AI - 2025-06-05 09:34
+# Content overwritten from an earlier version - 2025-06-05 09:34
 # PR URL: https://github.com/validmind/backend/pull/1462
 ---
 
-This update improves the validation process for the `PUT /api/v1/statuses-workflows/{id}/status` endpoint. It ensures that users cannot change the workflow status of organizations they do not belong to, thereby addressing a potential security concern.
+This update improves the validation process for the `PUT /api/v1/statuses-workflows/{id}/status` endpoint, ensuring users cannot change the workflow status of organizations they do not belong to. This enhancement addresses a security issue by preventing unauthorized users from modifying the workflow status of organizations they are not members of.
 
-This update introduces the `get_status_for_org` static method, which simplifies status retrieval by joining `StatusesWorkflowStatus` and `StatusesWorkflow` tables using organization and workflow identifiers. This method replaces redundant queries in the edit endpoint, enhancing efficiency and clarity. Minor refactoring improves code formatting and readability. Unit tests ensure the method correctly handles matching, non-matching, and invalid status identifiers.
-
-The new `get_status_for_org` method streamlines status retrieval by joining relevant tables based on organization and workflow identifiers. It replaces redundant queries in the edit endpoint, offering a more efficient data access pattern.
-
-Minor refactoring has improved block documentation and validation report functions for better code readability. Unit tests verify the method's performance in both positive and negative scenarios, ensuring it handles mismatched or invalid identifiers appropriately.
+This update introduces the `get_status_for_org` static method, streamlining the retrieval of statuses by joining the `StatusesWorkflowStatus` and `StatusesWorkflow` tables using organization and workflow identifiers. This method replaces redundant queries in the edit endpoint, improving data access efficiency. Minor refactoring has enhanced code formatting and readability in block documentation and validation report functions. Unit tests verify the method's accuracy in handling both matching and non-matching identifiers.
