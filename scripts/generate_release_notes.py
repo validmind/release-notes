@@ -511,7 +511,7 @@ class PR:
             max_attempts = 10
             initial_delay = 1
             delay = initial_delay
-            max_delay = 3
+            max_delay = 2
             last_validation_result = None
             failure_patterns = {}  # Track patterns in failures
             content_for_reedit = None
@@ -673,7 +673,7 @@ class PR:
         max_attempts = 10
         initial_delay = 1
         delay = initial_delay
-        max_delay = 3
+        max_delay = 2
         last_validation_result = None
         failure_patterns = {}
         content_for_reedit = None
@@ -811,7 +811,7 @@ class PR:
 
         max_retries = 5
         retry_delay = 1
-        max_delay = 3
+        max_delay = 2
         last_error = None
 
         for attempt in range(max_retries):
