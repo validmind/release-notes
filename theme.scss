@@ -1,0 +1,103 @@
+/*-- scss:defaults --*/
+// Base ValidMind colors
+$body-color: #222425;
+$link-color: $body-color;
+
+// Navbar
+$navbar-bg: #fff;
+$navbar-fg: #2e3133;
+$navbar-hl: #de257e;
+
+.navbar-title {
+  color: #de257e; 
+  font-weight: bold;
+}
+
+// For title-block-banner
+// #title-block-header {
+//   background-image: url('assets/images/digitalspace-colours.svg'); /* or .png, .svg */
+//   background-size: cover;    /* scales image to cover entire area */
+//   background-position: center; /* centers the image */
+//   background-repeat: no-repeat; /* prevents tiling */
+//   color: white; /* optional: ensures text is readable */
+// }
+
+.quarto-title-banner,
+.quarto-title {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+// Sidebar
+$sidebar-fg: $body-color;
+$sidebar-hl: #de257e;
+
+// Table of contents
+$toc-active-border: #de257e;
+
+// Listing page fix for code blocks
+.listing-title code {
+  font-family: inherit;
+  font-size: inherit;
+  background: none;
+  padding: 0;
+  white-space: normal;
+  line-height: inherit;
+}
+
+// Paginaton at the bottom of the page
+.page-item.active .page-link {
+  background-color: #de257e !important;
+  border-color: #de257e !important;
+  color: white !important;
+}
+
+.page-item.active .page-link:hover {
+  background-color: #f78ab2 !important; /* 50% lighter */
+  border-color: #f78ab2 !important;
+  color: #333 !important; /* contrast text */
+}
+
+// Mermaid diagrams
+$mermaid-node-bg-color: #FAFBFB;
+$mermaid-node-fg-color: #083E44;
+$mermaid-edge-color: #083E44;
+$mermaid-fg-color: #36454F;
+$mermaid-fg-color--lighter: #083E44;
+$mermaid-fg-color--lightest: #FAFBFB;
+$mermaid-label-bg-color: #FAFBFB;
+$mermaid-label-fg-color: #36454F;
+
+:root {
+  --mermaid-node-radius: 5px;
+}
+
+.node rect {
+  rx: var(--mermaid-node-radius) !important;
+  ry: var(--mermaid-node-radius) !important;
+}
+
+.node .basic.label-container {
+  rx: var(--mermaid-node-radius) !important;
+  ry: var(--mermaid-node-radius) !important;
+}
+
+.cluster rect {
+  rx: var(--mermaid-node-radius) !important;
+  ry: var(--mermaid-node-radius) !important;
+}
+
+#mermaid-1 rect, 
+#mermaid-2 rect, 
+#mermaid-3 rect, 
+#mermaid-4 rect, 
+#mermaid-5 rect, 
+#mermaid-6 rect, 
+#mermaid-7 rect, 
+#mermaid-8 rect, 
+#mermaid-9 rect, 
+#mermaid-10 rect {
+  rx: var(--mermaid-node-radius) !important;
+  ry: var(--mermaid-node-radius) !important;
+}

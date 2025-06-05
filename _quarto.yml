@@ -3,8 +3,10 @@ project:
   output-dir: _site
 
 website:
-  title: "ValidMind Release Notes"
+  favicon: assets/images/validmind.png
+  title: "Release Notes"
   navbar:
+    logo: assets/images/validmind-slides-logo.png
     left:
       - text: CMVM
         href: cmvm.qmd
@@ -20,12 +22,13 @@ website:
         href: documentation.qmd
 
 
+
 format:
   html:
-    theme: flatly
+    theme: [cosmo, theme.scss]
     toc: true
-    # mainfont: Inter
-    # css: styles.css
+    mainfont: Inter
+    css: styles.css
 
 resources:
   - releases/**/* 

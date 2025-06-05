@@ -1,7 +1,8 @@
 ---
-title: "Release Notes"
+title: "All Release Notes"
 listing:
   contents: releases
+  fields: [date, title, categories, description]
   sort: "date desc"
   max-description-length: 300
   type: default

@@ -1,5 +1,8 @@
 /* Be ValidMind */
-
-.quarto-header {
-    color: fuchsia;
-}
+@font-face {
+    font-family: 'Inter';
+    src: url('assets/fonts/Inter/static/Inter-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+  
