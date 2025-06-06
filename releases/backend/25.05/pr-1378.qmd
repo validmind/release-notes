@@ -4,10 +4,11 @@ categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-05 17:37
-# Content validated by AI - 2025-06-05 17:37
-# Content overwritten from an earlier version - 2025-06-05 17:37
+# CHECK: Title validation failed - The edited content improves the original by adding backticks around "readme," which is a common convention to denote code or file names, enhancing clarity. Additionally, capitalizing "Docker" aligns with the proper noun usage for the software's name. Overall, the edits improve readability and accuracy.
+# Content overwritten from an earlier version - 2025-06-06 08:50
 # PR URL: https://github.com/validmind/backend/pull/1378
 ---
 
-This PR updates the `README.md` file to include instructions for configuring Docker Desktop. It guides users on setting the swap memory to 2GB via the Docker Desktop settings under the Resources tab. This change helps optimize Docker's performance by ensuring appropriate swap settings are in place before starting the project.
+# PR Summary
+
+This PR updates the README.md file by adding a new section that provides instructions for configuring Docker Desktop. The added content guides users through setting the swap memory to 2GB via the Docker Desktop settings under the Resources tab. This change aims to help users optimize Docker's performance by ensuring appropriate swap settings are in place before starting the project.

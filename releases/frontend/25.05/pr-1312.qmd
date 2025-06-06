@@ -1,23 +1,30 @@
 ---
-title: "Add date localization support (#1312)"
+title: "Add date localization support across the application (#1312)"
 categories: [frontend, 25.05, release, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-05 17:37
-# Content validated by AI - 2025-06-05 17:37
-# Content overwritten from an earlier version - 2025-06-05 17:37
+# CHECK: Title validation failed - The edited content effectively condenses the original content while maintaining its core message. The original reference "[SC-9370]" seems to be an internal identifier, which is omitted in the edited version, focusing solely on the action required. This makes the edited content more direct and actionable, which is suitable for a task or feature description. However, if the identifier is important for tracking or context, it should be retained. Overall, the edit is clear and concise.
+# Content overwritten from an earlier version - 2025-06-06 08:51
 # PR URL: https://github.com/validmind/frontend/pull/1312
 ---
 
-Enhance date formatting functionality by adding locale support. Updated date display functions to accept `locale` as a parameter, ensuring consistent formatting across various components. Adjusted the user interface to reflect user-specific locale settings in date displays throughout the application.
+#### External Release Notes
+Enhance date formatting functionality by adding locale support. Updated date display functions to accept locale as a parameter, ensuring consistent formatting across various components. Adjusted user interface to reflect user-specific locale settings in date displays throughout the application.
 
-This update enhances date formatting and display across the application by introducing a new reusable component, `FormattedDate`, and a custom hook, `useFormattedDateAndTime`. These replace older utilities for improved localization. Key changes include:
+<img width="1096" alt="Screenshot 2025-04-01 at 11 50 45 AM" src="https://github.com/user-attachments/assets/4e36ffcb-b3ea-4541-aaf6-c44d7145cb81" />
+<img width="1055" alt="Screenshot 2025-04-01 at 11 49 47 AM" src="https://github.com/user-attachments/assets/2b4d2ac2-90e7-4a1a-a03d-2a2c236eb657" />
+<img width="922" alt="Screenshot 2025-04-01 at 11 50 09 AM" src="https://github.com/user-attachments/assets/6341f3c7-7b3e-4beb-97e2-93dd0094be5a" />
+<img width="1234" alt="Screenshot 2025-04-01 at 11 49 29 AM" src="https://github.com/user-attachments/assets/ce43bd66-fc7e-4587-95c3-17ca9c0f6cb1" />
 
-- UI localization settings are saved to `localStorage` when updated by users.
-- New admin components (`OrganizationRow`, `RoleRow`, `UserRow`) simplify table row implementations.
-- Date formatting in admin pages, user views, and modals now uses `FormattedDate`.
-- The custom date picker dynamically loads locales and uses `FormattedDate`.
-- Template, workflow execution, and profile pages now support localized date displays and user-selected locales.
+# PR Summary
 
-These improvements ensure consistent and localized date handling throughout the application.
+This PR introduces significant improvements in how dates are formatted and displayed across various parts of the application. The changes include the creation and adoption of a new reusable component, FormattedDate, and a custom hook, useFormattedDateAndTime. These are used to replace direct calls to old formatting utilities (like displayFormattedDateAndTime) throughout the codebase. Functional updates include:
+
+- In the main app, current UI localization settings are uploaded to localStorage on user change.
+- New reusable admin components (OrganizationRow, RoleRow, and UserRow) are added for displaying organization, role, and user information respectively. These components simplify the table row implementations within admin pages.
+- The date formatting across admin pages, user views, activity feed, and various modals (such as block metrics, test driven modals, and document blocks) now use the FormattedDate component to support localization.
+- Update of the custom date picker in the custom fields to load locale dynamically and use FormattedDate for value display.
+- Improvements in the template, workflow execution, and profile pages to support localized date displays and user-selected locale options.
+
+These changes provide better code modularity and consistency in date handling, ensuring that date and time values reflect the user’s locale preferences throughout the application.

@@ -1,12 +1,11 @@
 ---
-title: "Documentation: Manage model stakeholder types (#686)"
+title: "Manage `model stakeholder types` in documentation (#686)"
 categories: [documentation, 25.05, release, documentation]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-05 17:38
-# Content validated by AI - 2025-06-05 17:38
-# Content overwritten from an earlier version - 2025-06-05 17:38
+# CHECK: Title validation failed - The edited content is more concise and directly instructs the reader on the action to be taken, which is to manage "model stakeholder types" within the documentation. By placing "model stakeholder types" in backticks, it emphasizes the specific term or concept being referred to, which can be helpful for clarity, especially in technical or instructional contexts. However, the original title might be more suitable if it is part of a larger documentation structure where "Documentation:" is a consistent prefix for section titles. Overall,
+# Content overwritten from an earlier version - 2025-06-06 08:51
 # PR URL: https://github.com/validmind/documentation/pull/686
 ---
 
@@ -39,12 +38,16 @@ Updated this to refer to model stakeholder types instead of the outdated role pe
 
 <img width="763" alt="Screenshot 2025-04-03 at 2 47 43 PM" src="https://github.com/user-attachments/assets/b3a71c8d-0c66-49d9-8fda-40769d6e0e8d" />
 
-This update enhances documentation for role and stakeholder type management on the platform. Key changes include a new guide, `manage-model-stakeholder-types.qmd`, detailing how to manage model stakeholder types, permissions, and applications. The `manage-roles.qmd` file now offers clearer instructions on role management, including role creation, permissions, and user associations. References to stakeholder types have been added to existing documents, and minor structural updates improve clarity and consistency.
+# PR Summary
 
-- A new guide, `manage-model-stakeholder-types.qmd`, provides detailed instructions on managing model stakeholder types, including adding or editing stakeholder types, managing permissions, and applying stakeholder types to models.
+This pull request introduces several enhancements to the documentation related to role and stakeholder type management within the platform. The key changes include:
 
-- The `manage-roles.qmd` file has been updated to provide clearer instructions on managing roles, including adding new roles, managing role permissions, and managing users associated with roles. The documentation now includes more detailed steps and clarifications on the uniqueness of role names and stakeholder type names.
+1. **Addition of New Documentation for Model Stakeholder Types**: A new guide, `manage-model-stakeholder-types.qmd`, has been added. This document provides detailed instructions on managing model stakeholder types, including adding or editing stakeholder types, managing permissions, and applying stakeholder types to models.
 
-- References to model stakeholder types have been integrated into existing documentation, such as `edit-model-inventory-fields.qmd` and `manage-model-inventory-fields.qmd`. These updates ensure that stakeholder types are considered in the context of managing model inventory fields and permissions.
+2. **Enhancements to Role Management Documentation**: The `manage-roles.qmd` file has been updated to provide clearer instructions on managing roles, including adding new roles, managing role permissions, and managing users associated with roles. The documentation now includes more detailed steps and clarifications on the uniqueness of role names and stakeholder type names.
 
-- Minor structural changes, such as adjusting grid columns in `managing-users.qmd`, and content updates improve clarity and consistency across the documentation.
+3. **Integration of Stakeholder Types in Existing Documentation**: References to model stakeholder types have been integrated into existing documentation, such as `edit-model-inventory-fields.qmd` and `manage-model-inventory-fields.qmd`. These updates ensure that stakeholder types are considered in the context of managing model inventory fields and permissions.
+
+4. **Structural and Content Updates**: Minor structural changes, such as adjusting grid columns in `managing-users.qmd`, and content updates to improve clarity and consistency across the documentation.
+
+These changes aim to improve the usability and clarity of the documentation related to user roles and stakeholder types, providing users with comprehensive guidance on managing access and permissions within the platform.

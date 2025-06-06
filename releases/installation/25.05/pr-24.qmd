@@ -1,0 +1,18 @@
+---
+title: "Release notes for `25.05` (#24)"
+categories: [installation, 25.05, release, documentation]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# CHECK: Title validation failed - The edited content is identical to the original content. There are no changes or improvements made. If the goal was to make edits, consider checking for any necessary updates, formatting improvements, or additional information that could enhance the release notes.
+# Content overwritten from an earlier version - 2025-06-06 08:51
+# PR URL: https://github.com/validmind/installation/pull/24
+---
+
+This PR cherry picks 93be9adfee9122135d699e6fcf6448e5b3966d00 from my release notes script branch to unblock the release today. 
+
+Edits:
+
+- Rename `25.05-rc1.qmd` > `25.05.qmd` 
+- Comment out changes that are clearly for internal use
+- Consistency text tweaks (examples: use sentence-style headings, omit Shortcut story prefixes) 

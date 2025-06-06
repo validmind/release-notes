@@ -1,30 +1,25 @@
 ---
-title: "Date localization support (#1337)"
+title: "Add date localization support to `user settings` (#1337)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - FAIL: Title is not properly capitalized.
-# Content edited by AI - 2025-06-05 17:37
-# Content validated by AI - 2025-06-05 17:37
-# Content overwritten from an earlier version - 2025-06-05 17:37
+# CHECK: Title validation failed - The edited content is a concise and clear improvement over the original. It specifies the action to be taken ("Add date localization support") and the context or location where this action should be applied ("user settings"). This makes the content more actionable and understandable, especially in a technical or project management context. The original content, "[SC-9370] Date Localization Support," is likely a reference to a task or ticket number, which is useful for tracking but does not provide enough information on its own. The
+# Content overwritten from an earlier version - 2025-06-06 08:50
 # PR URL: https://github.com/validmind/backend/pull/1337
 ---
 
-This update enhances user settings by adding a new locale configuration field. 
+# PR Summary
 
-- **Database Migration:**
-  
-  - A new Alembic migration sets the default value of the `ui_settings` column in the `users` table to `{"locale": "en"}` for future entries.
-  
-  - Existing records are updated to include the locale setting if missing, ensuring all users have a default locale.
-  
-  - A downgrade option is available to revert the default to an empty JSON object if necessary.
+This pull request introduces enhancements to the user settings by adding a new locale configuration field. Key changes include:
 
-- **Application Code Update:**
-  
-  - The `ui_settings` column in the User model now defaults to `{"locale": "en"}`.
-  
-  - The JSON schema for `ui_settings` is updated to include a `locale` property of type string, ensuring proper format.
+1. Database Migration:
+   - A new Alembic migration is added to update the default value of the `ui_settings` column in the `users` table, setting it to `{"locale": "en"}` for future inserts.
+   - The migration updates existing records to include the locale setting if it is missing, ensuring that all users have a default locale value.
+   - A downgrade path is provided to revert the default back to an empty JSON object if needed.
 
-These changes ensure consistent locale configuration handling and improve user settings management.
+2. Application Code Update:
+   - The `ui_settings` column in the User model is modified to use `{"locale": "en"}` as its default value.
+   - The JSON schema used for validating `ui_settings` is updated to include a new property `locale` of type string, ensuring that the field conforms to the expected format.
+
+These changes ensure a consistent handling of locale configurations throughout the system and improve the robustness of user settings management.

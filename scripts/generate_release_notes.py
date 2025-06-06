@@ -106,7 +106,8 @@ EDIT_TITLE_PROMPT = (
 )
 
 # --- Content editing instructions ---
-EDIT_CONTENT_INSTRUCTIONS = (
+EDIT_CONTENT_SYSTEM = "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes while maintaining the original PR's scope. Follow the instructions exactly."
+EDIT_CONTENT_PROMPT = (
     "When editing content:\n"
     "- Remove all Markdown headings (e.g., '#### What', '# PR Summary').\n"
     "- Keep the original meaning and technical accuracy.\n"
@@ -118,69 +119,6 @@ EDIT_CONTENT_INSTRUCTIONS = (
     "- Don't refer to the 'PR body' or 'PR summary'.\n"
     "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
     "- Don't add a conclusion or summary."
-)
-
-# --- Content validation instructions ---
-VALIDATION_INSTRUCTIONS = (
-    "You are a judge evaluating the quality of edited content.\n"
-    "For {content_type}, check if the edit:\n"
-    "5. For titles: Is properly capitalized and does not end with a period.\n"
-    "6. For titles: Contains a single line of text that is enclosed in double quotes.\n"
-    "1. Maintains the core meaning and facts of the original.\n"
-    "2. Uses proper formatting and structure.\n"
-    "3. Is clear and professional.\n"
-    "4. Does not add substantial new information not present or implied in the original.\n"
-    "7. For summaries/notes: Has proper paragraph structure.\n"
-    "8. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.).\n"
-    "9. Does not add any new sections, images, or headings that are not present in the original content.\n"
-    "9. Does not include any text like 'PR body' or 'PR summary'.\n"
-    "10. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content.\n"
-    "\n"
-    "Minor clarifications, rewording, or formatting improvements are allowed as long as the meaning is preserved.\n"
-    "If the edit only clarifies, rewords, or improves formatting, respond with 'PASS'.\n"
-    "If the edit adds substantial new information not present or implied in the original, respond with 'FAIL: Adds unsupported information'.\n"
-    "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
-)
-
-# --- Section classification prompt ---
-SECTION_CLASSIFICATION_PROMPT = (
-    "Classify if this section should be included in public release notes.\n"
-    "Section title: {title}\n"
-    "Section content: {content}\n\n"
-    "Rules:\n"
-    "1. Include sections that describe user-facing changes, features, or improvements.\n"
-    "2. Include sections about dependencies, breaking changes, or upgrade notes.\n"
-    "3. Include sections with screenshots or media.\n"
-    "4. Exclude internal notes, checklists, deployment steps, or review points.\n"
-    "5. Exclude sections about testing, QA, or development processes.\n"
-    "6. Exclude sections marked as internal or for team use only.\n\n"
-    "Respond with only 'INCLUDE' or 'EXCLUDE'."
-)
-
-# --- Merge PR classification prompt ---
-MERGE_PR_CLASSIFICATION_PROMPT = (
-    "Analyze this PR title and determine if it represents an automatic merge PR.\n"
-    "A merge PR typically:\n"
-    "- Merges branches or changes between environments\n"
-    "- Syncs code between branches\n"
-    "- Deploys code to different environments\n"
-    "- Updates release candidates or hotfixes\n"
-    "- Contains keywords like 'merge', 'sync', 'deploy', 'release'\n\n"
-    "PR Title: {title}\n\n"
-    "Respond with only 'MERGE' if this is an automatic merge PR, or 'NOT_MERGE' if it contains actual changes."
-)
-
-# --- Heading level adjustment prompt ---
-HEADING_LEVEL_PROMPT = (
-    "Fix heading levels in the markdown content while maintaining proper hierarchy:\n"
-    "1. The first heading (PR title) should be level 3 (###).\n"
-    "2. Section headings (like 'External Release Notes', 'Breaking Changes', etc.) should be level 4 (####).\n"
-    "3. All other headings should be at least level 5 (#####).\n"
-    "4. Preserve the relative hierarchy between headings.\n"
-    "5. Only change the number of # symbols at the start of headings.\n"
-    "6. Keep everything else exactly the same.\n\n"
-    "Content:\n"
-    "{content}"
 )
 
 # --- Content editing instructions for multi-pass editing ---
@@ -208,6 +146,76 @@ EDIT_PASS_3_INSTRUCTIONS = (
     "- Trim filler words or overly verbose phrasing\n"
     "Input: deduplicated text from Pass 2. Output only the final edited text."
 )
+
+# --- Content validation instructions ---
+VALIDATION_SYSTEM = "You are a judge evaluating the quality of edited content."
+VALIDATION_PROMPT = (
+    "You are a judge evaluating the quality of edited content.\n"
+    "For {content_type}, check if the edit:\n"
+    "5. For titles: Is properly capitalized and does not end with a period.\n"
+    "6. For titles: Contains a single line of text that is enclosed in double quotes.\n"
+    "1. Maintains the core meaning and facts of the original.\n"
+    "2. Uses proper formatting and structure.\n"
+    "3. Is clear and professional.\n"
+    "4. Does not add substantial new information not present or implied in the original.\n"
+    "7. For summaries/notes: Has proper paragraph structure.\n"
+    "8. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.).\n"
+    "9. Does not add any new sections, images, or headings that are not present in the original content.\n"
+    "9. Does not include any text like 'PR body' or 'PR summary'.\n"
+    "10. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content.\n"
+    "\n"
+    "Minor clarifications, rewording, or formatting improvements are allowed as long as the meaning is preserved.\n"
+    "If the edit only clarifies, rewords, or improves formatting, respond with 'PASS'.\n"
+    "If the edit adds substantial new information not present or implied in the original, respond with 'FAIL: Adds unsupported information'.\n"
+    "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
+)
+
+# --- Section classification prompt ---
+SECTION_CLASSIFICATION_SYSTEM = "You are a release notes classifier. Your job is to determine if a section should be included in public release notes."
+SECTION_CLASSIFICATION_PROMPT = (
+    "Classify if this section should be included in public release notes.\n"
+    "Section title: {title}\n"
+    "Section content: {content}\n\n"
+    "Rules:\n"
+    "1. Include sections that describe user-facing changes, features, or improvements.\n"
+    "2. Include sections about dependencies, breaking changes, or upgrade notes.\n"
+    "3. Include sections with screenshots or media.\n"
+    "4. Exclude internal notes, checklists, deployment steps, or review points.\n"
+    "5. Exclude sections about testing, QA, or development processes.\n"
+    "6. Exclude sections marked as internal or for team use only.\n\n"
+    "Respond with only 'INCLUDE' or 'EXCLUDE'."
+)
+
+# --- Merge PR classification prompt ---
+MERGE_PR_CLASSIFICATION_SYSTEM = "You are a PR classifier. Your job is to determine if a PR represents an automatic merge or contains actual changes."
+MERGE_PR_CLASSIFICATION_PROMPT = (
+    "Analyze this PR title and determine if it represents an automatic merge PR.\n"
+    "A merge PR typically:\n"
+    "- Merges branches or changes between environments\n"
+    "- Syncs code between branches\n"
+    "- Deploys code to different environments\n"
+    "- Updates release candidates or hotfixes\n"
+    "- Contains keywords like 'merge', 'sync', 'deploy', 'release'\n\n"
+    "PR Title: {title}\n\n"
+    "Respond with only 'MERGE' if this is an automatic merge PR, or 'NOT_MERGE' if it contains actual changes."
+)
+
+# --- Heading level adjustment prompt ---
+HEADING_LEVEL_SYSTEM = "You are a markdown heading level adjuster. Your job is to adjust heading levels while maintaining proper hierarchy."
+HEADING_LEVEL_PROMPT = (
+    "Fix heading levels in the markdown content while maintaining proper hierarchy:\n"
+    "1. The first heading (PR title) should be level 3 (###).\n"
+    "2. Section headings (like 'External Release Notes', 'Breaking Changes', etc.) should be level 4 (####).\n"
+    "3. All other headings should be at least level 5 (#####).\n"
+    "4. Preserve the relative hierarchy between headings.\n"
+    "5. Only change the number of # symbols at the start of headings.\n"
+    "6. Keep everything else exactly the same.\n\n"
+    "Content:\n"
+    "{content}"
+)
+
+# --- Technical writing system prompt ---
+MODEL_PROOFREADING_SYSTEM = "You are a professional technical writer."
 
 import subprocess
 import json
@@ -263,7 +271,7 @@ def classify_section(section_title, section_content, debug=False):
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a release notes classifier. Your job is to determine if a section should be included in public release notes."
+                    "content": SECTION_CLASSIFICATION_SYSTEM
                 },
                 {
                     "role": "user",
@@ -545,7 +553,7 @@ class PR:
         
         try:            
             # Combine the specific editing instructions with the general content instructions
-            full_instructions = f"{editing_instructions}\n\n{EDIT_CONTENT_INSTRUCTIONS}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
+            full_instructions = f"{editing_instructions}\n\n{EDIT_CONTENT_PROMPT}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
             
             # Initialize variables for retry loop
             max_attempts = DEFAULT_MAX_RETRIES
@@ -601,7 +609,7 @@ class PR:
                     messages=[
                         {
                             "role": "system",
-                            "content": "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes while maintaining the original PR's scope. Follow the instructions exactly."
+                            "content": EDIT_CONTENT_SYSTEM
                         },
                         {
                             "role": "user",
@@ -709,7 +717,7 @@ class PR:
         """Helper for a single editing pass with retry/validation, storing output in self.attr_name."""
         if self.debug:
             print(f"DEBUG: [edit_content] {attr_name} pass for PR #{self.pr_number} in {self.repo_name}")
-        full_instructions = f"{pass_instructions}\n\n{EDIT_CONTENT_INSTRUCTIONS}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
+        full_instructions = f"{pass_instructions}\n\n{EDIT_CONTENT_PROMPT}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
         max_attempts = DEFAULT_MAX_RETRIES
         initial_delay = DEFAULT_INITIAL_DELAY
         delay = initial_delay
@@ -744,7 +752,7 @@ class PR:
             response = client.chat.completions.create(
                 model=MODEL_EDITING,
                 messages=[
-                    {"role": "system", "content": "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes while maintaining the original PR's scope. Follow the instructions exactly."},
+                    {"role": "system", "content": EDIT_CONTENT_SYSTEM},
                     {"role": "user", "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content_to_edit}"}
                 ],
                 max_tokens=MAX_TOKENS_EDITING,
@@ -843,7 +851,7 @@ class PR:
         }
 
         # Build detailed validation prompt
-        validation_prompt = VALIDATION_INSTRUCTIONS.format(content_type=content_type)
+        validation_prompt = VALIDATION_PROMPT.format(content_type=content_type)
         if content_type in validation_criteria:
             validation_prompt += "\n\nSpecific criteria to check:\n"
             for criterion in validation_criteria[content_type]:
@@ -861,7 +869,7 @@ class PR:
                     messages=[
                         {
                             "role": "system",
-                            "content": validation_prompt
+                            "content": VALIDATION_SYSTEM
                         },
                         {
                             "role": "user",
@@ -1278,7 +1286,7 @@ def adjust_heading_levels(content, min_level=4, debug=False):
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a markdown heading level adjuster. Your job is to adjust heading levels while maintaining proper hierarchy. Follow these rules:\n1. The first heading should be level 3 (###)\n2. Section headings should be level 4 (####)\n3. Subsection headings should be level 5 (#####)\n4. Preserve the relative hierarchy between headings\n5. Only change the number of # symbols at the start of headings\n6. Keep everything else exactly the same"
+                    "content": HEADING_LEVEL_SYSTEM
                 },
                 {
                     "role": "user",
@@ -1372,7 +1380,7 @@ def is_merge_pr(title, debug=False):
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a PR classifier. Your job is to determine if a PR represents an automatic merge or contains actual changes."
+                    "content": MERGE_PR_CLASSIFICATION_SYSTEM
                 },
                 {
                     "role": "user",
@@ -2242,7 +2250,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                 response = client.chat.completions.create(
                     model=MODEL_PROOFREADING,
                     messages=[
-                        {"role": "system", "content": "You are a professional technical writer."},
+                        {"role": "system", "content": MODEL_PROOFREADING_SYSTEM},
                         {"role": "user", "content": prompt}
                     ],
                     max_tokens=MAX_TOKENS_PROOFREADING,

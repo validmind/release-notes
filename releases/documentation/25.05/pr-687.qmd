@@ -1,27 +1,31 @@
 ---
-title: "User guide updates for `attestation` (#687)"
+title: "Update user guide for the `attestation` process (#687)"
 categories: [documentation, 25.05, release, documentation, highlight]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-05 17:38
-# Content validated by AI - 2025-06-05 17:38
-# Content overwritten from an earlier version - 2025-06-05 17:38
+# CHECK: Title validation failed - Both versions of the content convey the same basic idea, but the edited version is more specific and clear. Here's a breakdown of the differences:
+
+1. **Clarity and Specificity**: 
+   - Original: "User guide updates for attestation" is somewhat vague. It suggests that there are updates related to attestation but doesn't specify what those updates entail.
+   - Edited: "Update user guide for the `attestation` process" is clearer and more direct. It specifies that the user
+# Content overwritten from an earlier version - 2025-06-06 08:51
 # PR URL: https://github.com/validmind/documentation/pull/687
 ---
 
+#### External Release Notes
 Model attestation is now available.
 
-This feature enables model owners and validators to formally review and certify key details about a model at a specific point in time. It supports internal governance and compliance with external requirements. The attestation process includes clear status updates and role-specific tasks to track progress.
+Attestation allows model owners and validators to formally review and certify key details about a model at a specific point in time. This helps support internal governance and compliance with external requirements. Progress for the attestation process is tracked through clear status updates and role-specific tasks. 
 
 [Working with attestations](/guide/attestation/working-with-attestations.qmd)
 
-This update introduces a new feature for managing attestations within the platform, enhancing compliance and governance capabilities. Key changes include new documentation and updates to support the attestation process, such as guides and glossary entries. The guides now include detailed steps for model owners and validators. Additionally, the glossary has a new entry for `Attestation`, and Mermaid diagram styling has been updated. Guides have been reorganized to include a dedicated attestation section.
+# PR Summary
+This pull request introduces a new feature for managing attestations within the platform. The changes include the addition of new documentation files and updates to existing ones to support the attestation process. Key functional changes include:
 
-- **Attestation Documentation**: New guides and glossary entries explain the attestation process, including setup, questionnaire completion, and review. Detailed steps are provided for model owners and validators.
+- **Attestation Documentation**: New guides and glossary entries have been added to explain the attestation process, including setting up attestations, completing questionnaires, and reviewing them. This includes detailed steps for model owners and validators to follow during the attestation process.
+- **Glossary Update**: A new glossary entry for 'Attestation' has been added to provide definitions and context for terms related to the attestation process.
+- **Mermaid Diagram Styling**: Updates to the theme styling for Mermaid diagrams, including changes to node and edge colors, and the addition of rounded corners for nodes.
+- **Guide Organization**: The guides have been reorganized to include a new section specifically for attestation, making it easier for users to find relevant information.
 
-- **Glossary Update**: A new glossary entry for `Attestation` offers definitions and context for related terms.
-
-- **Mermaid Diagram Styling**: Updates include changes to node and edge colors and the addition of rounded corners for nodes.
-
-- **Guide Organization**: Guides have been reorganized to include a new section specifically for attestation, improving information accessibility.
+These changes aim to enhance the platform's compliance and governance capabilities by providing a structured process for model attestation.

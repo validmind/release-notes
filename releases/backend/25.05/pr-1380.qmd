@@ -1,21 +1,22 @@
 ---
-title: "Fix regression issue preventing document downloads in the UI reporting endpoint (#1380)"
+title: "Fix document download issue by updating `authorization` logic (#1380)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-05 17:37
-# Content validated by AI - 2025-06-05 17:37
-# Content overwritten from an earlier version - 2025-06-05 17:37
+# CHECK: Title validation failed - The edited content effectively addresses the issue presented in the original content by providing a clear and actionable solution. It specifies that the problem with downloading documents can be resolved by updating the `authorization` logic, which is likely the root cause of the regression. The edited version is concise and directly communicates the necessary action to fix the issue. Overall, the edit improves clarity and provides a specific direction for resolving the problem.
+# Content overwritten from an earlier version - 2025-06-06 08:50
 # PR URL: https://github.com/validmind/backend/pull/1380
 ---
 
-This update refines the UI reporting endpoint for report generation, focusing on authorization logic for various report types. Key changes include:
+# PR Summary
 
-- The top-level authorization now uses the generic action `read` instead of `download_report`.
-  
-- Fine-grained authorization is applied based on document type: "documentation-report" and "monitoring-report" require `download_doc` permission, while "validation-report" requires `download_vr` permission.
+This PR updates the UI reporting endpoint related to report generation. The key functional change is in the authorization logic for generating different types of reports. Previously, the endpoint applied a generic authorization check for downloading reports. With these changes:
 
-- A `BadRequestError` is raised for invalid document types, ensuring only valid reports are processed.
+- The top-level authorization decorator is now set to the generic action "read" rather than "download_report".
 
-- Exception handling is improved to specifically manage `BadRequestError` separately from other exceptions.
+- Fine-grained authorization is enforced inside the method based on the specific document type. For document types "documentation-report" and "monitoring-report", the endpoint explicitly checks for the "download_doc" permission. For document type "validation-report", it checks for the "download_vr" permission.
+
+- If the document type provided does not match any of the expected values, the system raises a BadRequestError, ensuring only valid report types are processed.
+
+- The exception handling is updated to catch and pass-through the BadRequestError separately, while still handling other exceptions appropriately.
