@@ -1,0 +1,13 @@
+---
+title: "Sort model inventory by last updated (#1376)"
+categories: [backend, 25.05, release]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# Content edited by AI - 2025-06-05 17:37
+# Content validated by AI - 2025-06-05 17:37
+# Content overwritten from an earlier version - 2025-06-05 17:37
+# PR URL: https://github.com/validmind/backend/pull/1376
+---
+
+This update enhances the inventory model API by adding two new fields: `updated_at` and `documentation_updated_at`. These fields help track when models and their documentation are updated. The GET endpoint now supports sorting by `documentation_updated_at`, using a correlated subquery to find the latest documentation update time for events with `target_type` set to "ModelDocument". This allows clients to order models more accurately based on documentation updates.

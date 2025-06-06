@@ -1,0 +1,21 @@
+---
+title: "Fix regression issue preventing document downloads in the UI reporting endpoint (#1380)"
+categories: [backend, 25.05, release]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# Content edited by AI - 2025-06-05 17:37
+# Content validated by AI - 2025-06-05 17:37
+# Content overwritten from an earlier version - 2025-06-05 17:37
+# PR URL: https://github.com/validmind/backend/pull/1380
+---
+
+This update refines the UI reporting endpoint for report generation, focusing on authorization logic for various report types. Key changes include:
+
+- The top-level authorization now uses the generic action `read` instead of `download_report`.
+  
+- Fine-grained authorization is applied based on document type: "documentation-report" and "monitoring-report" require `download_doc` permission, while "validation-report" requires `download_vr` permission.
+
+- A `BadRequestError` is raised for invalid document types, ensuring only valid reports are processed.
+
+- Exception handling is improved to specifically manage `BadRequestError` separately from other exceptions.

@@ -1,6 +1,6 @@
 # Static configuration
 RELEASES_DIR = "releases"
-REPOS = ["backend", "frontend", "agents", "documentation", "validmind-library"]
+REPOS = ["backend", "frontend", "agents", "installation", "documentation", "validmind-library"]
 
 # Label hierarchy for organizing release notes
 label_hierarchy = ["highlight", "enhancement", "breaking-change", "deprecation", "bug", "documentation"]
@@ -54,17 +54,56 @@ EXCLUDED_SECTIONS = [
     "Checklist",
 ]
 
+# --- LLM settings ---
+# Model settings
+MODEL_SECTION_CLASSIFICATION = "gpt-4o-mini"  # For quick section classification
+MODEL_PROOFREADING = "gpt-4o"                 # For proofreading tasks
+MODEL_EDITING = "gpt-4o"                      # For main content editing tasks
+MODEL_VALIDATION = "gpt-4o"                   # For critical validation tasks
+MODEL_SUMMARY = "gpt-4o-mini"                 # For summary generation
+
+# Temperature settings
+BASE_TEMPERATURE = 0.0
+MAX_TEMPERATURE = 0.7
+TEMPERATURE_INCREMENT = 0.05
+TEMPERATURE_FORMAT_ADJUST = 0.1
+TEMPERATURE_MEANING_ADJUST = -0.05
+
+# Model parameters
+FREQUENCY_PENALTY = 0.0
+PRESENCE_PENALTY = 0.0
+
+# Token limits
+MAX_TOKENS_CLASSIFICATION = 10
+MAX_TOKENS_VALIDATION = 100
+MAX_TOKENS_EDITING = 4096
+MAX_TOKENS_PROOFREADING = 200
+
+# Retry and delay settings
+DEFAULT_MAX_RETRIES = 3
+DEFAULT_INITIAL_DELAY = 0.5
+DEFAULT_MAX_DELAY = 2
+MIN_SLEEP_TIME = 0.5
+JITTER_RANGE = (0, 0.1)
+JITTER_RANGE_WIDE = (-0.2, 0.2)
+
+# Content limits
+SUMMARY_CHAR_LIMIT = 250
+PROOFREAD_MAX_TRIES = 5
+
 # --- Editing prompt and static editing info ---
 EDIT_TITLE_PROMPT = (
     "Edit the following PR title for release notes:\n"
     "- Keep the title to a single line, under 120 characters\n"
     "- Remove any ticket numbers, branch names, prefixes or double quotes (e.g., '9870:', 'hotfix:', 'nibz/cherry pick/1420', etc.)\n"
     "- Remove any 'Title:' prefix if present\n"
+    "- Remove any periods (.) from the end of the title\n"
     "- Enclose technical terms (words with underscores or file extensions like .py, .lock, etc.) in backticks\n"
     "- Use sentence-style capitalization (capitalize only the first word and proper nouns)\n"
     "- Make the title clear and concise for end users\n"
     "- DO NOT include any content from the PR body or summary in the title\n"
     "- DO NOT add any explanatory text or context\n"
+    "- DO NOT add any periods to the end of the title\n"
     "- The title should be a single, concise statement\n\n"
     "{title}\n"
     "{body}"
@@ -86,21 +125,23 @@ EDIT_CONTENT_INSTRUCTIONS = (
     "- Do not leave empty sections or headings without a clear placeholder comment.\n"
     "- Do not refer to the 'PR body' or 'PR summary' in the content.\n"
     "- DO NOT add, remove, or modify any comment tags (<!-- ... --> or <!--- ... --->), and ensure they remain on their own lines.\n"
-    "- DO NOT add any new sections, images, or headings that are not present in the original content. Only rephrase or clarify existing content; do not invent or supplement with additional examples, screenshots, or headings."
+    "- DO NOT add any new sections, images, or headings that are not present in the original content. Only rephrase or clarify existing content; do not invent or supplement with additional examples, screenshots, or headings.\n"
+    "- DO NOT add a concluding sentence or summary and remove any that exist in the original content."
 )
 
 # --- Content validation instructions ---
 VALIDATION_INSTRUCTIONS = (
     "You are a judge evaluating the quality of edited content.\n"
     "For {content_type}, check if the edit:\n"
+    "5. For titles: Is properly capitalized and does not end with a period\n"
+    "6. For titles: Contains a single line of text that is enclosed in double quotes\n"
     "1. Maintains the core meaning and facts of the original\n"
     "2. Uses proper formatting and structure\n"
     "3. Is clear and professional\n"
     "4. Does not add substantial new information not present or implied in the original\n"
-    "5. For titles: Is properly capitalized and punctuated\n"
-    "6. For summaries/notes: Has proper paragraph structure\n"
-    "7. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.)\n"
-    "8. Does not add any new sections, images, or headings that are not present in the original content\n"
+    "7. For summaries/notes: Has proper paragraph structure\n"
+    "8. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.)\n"
+    "9. Does not add any new sections, images, or headings that are not present in the original content\n"
     "9. Does not include any text like 'PR body' or 'PR summary'\n"
     "10. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content\n"
     "\n"
@@ -214,7 +255,7 @@ def classify_section(section_title, section_content, debug=False):
         )
             
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=MODEL_SECTION_CLASSIFICATION,
             messages=[
                 {
                     "role": "system",
@@ -225,8 +266,8 @@ def classify_section(section_title, section_content, debug=False):
                     "content": prompt
                 }
             ],
-            max_tokens=10,
-            temperature=0.0
+            max_tokens=MAX_TOKENS_CLASSIFICATION,
+            temperature=BASE_TEMPERATURE
         )
         
         result = response.choices[0].message.content.strip().upper()
@@ -438,14 +479,14 @@ class PR:
         """Unified function to edit PR content (summaries, titles, or release notes) with three-pass editing for notes/summary."""
         if skip_passes is None:
             skip_passes = set()
-        # Use multi-pass for 'notes', 'summary', and 'title'
-        if content_type in ("notes", "summary", "title") and edit:
+        # Use multi-pass for 'notes' and 'summary', single pass for 'title'
+        if content_type in ("notes", "summary") and edit:
             # Pass 1: Group and Flatten
             if 1 not in skip_passes:
                 grouped = self._edit_pass(
                     content_type,
                     content,
-                    EDIT_PASS_1_INSTRUCTIONS if content_type != "title" else "Extract the main change or feature from the title, removing any context or explanation.",
+                    EDIT_PASS_1_INSTRUCTIONS,
                     attr_name="grouped_text",
                     edit=edit
                 )
@@ -457,7 +498,7 @@ class PR:
                 deduped = self._edit_pass(
                     content_type,
                     grouped,
-                    EDIT_PASS_2_INSTRUCTIONS if content_type != "title" else "Ensure the title is a single, concise statement without any additional context.",
+                    EDIT_PASS_2_INSTRUCTIONS,
                     attr_name="deduplicated_text",
                     edit=edit
                 )
@@ -469,7 +510,7 @@ class PR:
                 final = self._edit_pass(
                     content_type,
                     deduped,
-                    EDIT_PASS_3_INSTRUCTIONS if content_type != "title" else "Format the title according to release notes standards, ensuring it's properly quoted and formatted.",
+                    EDIT_PASS_3_INSTRUCTIONS,
                     attr_name="edited_text",
                     edit=edit
                 )
@@ -477,14 +518,12 @@ class PR:
                 final = deduped
                 self.edited_text = final
             # Set output based on content type
-            if content_type == 'title':
-                self.cleaned_title = final
-            elif content_type == 'summary':
+            if content_type == 'summary':
                 self.pr_interpreted_summary = final
             elif content_type == 'notes':
                 self.edited_text = final
             return
-        # Fallback to original logic for other types or if not editing
+        # Single pass for titles or fallback for other types
         if not edit:
             if content_type == 'title':
                 self.cleaned_title = content.rstrip('.')
@@ -500,18 +539,15 @@ class PR:
             print(f"DEBUG: [edit_content] Editing instructions (first 100 chars): {repr(editing_instructions[:100]) if editing_instructions else None}")
         print(f"Editing {content_type} for PR #{self.pr_number} in {self.repo_name} ...")
         
-        try:
-            if self.debug:
-                print(f"DEBUG: [edit_content] Making OpenAI API call for PR #{self.pr_number}")
-            
+        try:            
             # Combine the specific editing instructions with the general content instructions
             full_instructions = f"{editing_instructions}\n\n{EDIT_CONTENT_INSTRUCTIONS}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
             
             # Initialize variables for retry loop
-            max_attempts = 10
-            initial_delay = 1
+            max_attempts = DEFAULT_MAX_RETRIES
+            initial_delay = DEFAULT_INITIAL_DELAY
             delay = initial_delay
-            max_delay = 2
+            max_delay = DEFAULT_MAX_DELAY
             last_validation_result = None
             failure_patterns = {}  # Track patterns in failures
             content_for_reedit = None
@@ -557,7 +593,7 @@ class PR:
 
                 # Make API call
                 response = client.chat.completions.create(
-                    model="gpt-4o",
+                    model=MODEL_EDITING,
                     messages=[
                         {
                             "role": "system",
@@ -568,10 +604,10 @@ class PR:
                             "content": f"Instructions:\n{full_instructions_with_dedup}\n\nContent to edit:\n{content_to_edit}"
                         }
                     ],
-                    max_tokens=4096,
-                    temperature=temperature,
-                    frequency_penalty=0.0,
-                    presence_penalty=0.0
+                    max_tokens=MAX_TOKENS_EDITING,
+                    temperature=BASE_TEMPERATURE,
+                    frequency_penalty=FREQUENCY_PENALTY,
+                    presence_penalty=PRESENCE_PENALTY
                 )
                 
                 current_edit = response.choices[0].message.content.strip()
@@ -670,10 +706,10 @@ class PR:
         if self.debug:
             print(f"DEBUG: [edit_content] {attr_name} pass for PR #{self.pr_number} in {self.repo_name}")
         full_instructions = f"{pass_instructions}\n\n{EDIT_CONTENT_INSTRUCTIONS}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
-        max_attempts = 10
-        initial_delay = 1
+        max_attempts = DEFAULT_MAX_RETRIES
+        initial_delay = DEFAULT_INITIAL_DELAY
         delay = initial_delay
-        max_delay = 2
+        max_delay = DEFAULT_MAX_DELAY
         last_validation_result = None
         failure_patterns = {}
         content_for_reedit = None
@@ -702,15 +738,15 @@ class PR:
             else:
                 content_to_edit = content
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model=MODEL_EDITING,
                 messages=[
                     {"role": "system", "content": "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes while maintaining the original PR's scope. Follow the instructions exactly."},
                     {"role": "user", "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content_to_edit}"}
                 ],
-                max_tokens=4096,
-                temperature=temperature,
-                frequency_penalty=0.0,
-                presence_penalty=0.0
+                max_tokens=MAX_TOKENS_EDITING,
+                temperature=BASE_TEMPERATURE,
+                frequency_penalty=FREQUENCY_PENALTY,
+                presence_penalty=PRESENCE_PENALTY
             )
             current_edit = response.choices[0].message.content.strip()
             if self.debug:
@@ -809,15 +845,15 @@ class PR:
             for criterion in validation_criteria[content_type]:
                 validation_prompt += f"- {criterion}\n"
 
-        max_retries = 5
-        retry_delay = 1
-        max_delay = 2
+        max_retries = DEFAULT_MAX_RETRIES
+        retry_delay = DEFAULT_INITIAL_DELAY
+        max_delay = DEFAULT_MAX_DELAY
         last_error = None
 
         for attempt in range(max_retries):
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4",
+                    model=MODEL_VALIDATION,
                     messages=[
                         {
                             "role": "system",
@@ -828,8 +864,8 @@ class PR:
                             "content": f"Original content: {original_content}\n\nEdited content: {edited_content}"
                         }
                     ],
-                    max_tokens=100,
-                    temperature=0.0
+                    max_tokens=MAX_TOKENS_VALIDATION,
+                    temperature=BASE_TEMPERATURE
                 )
                 result = response.choices[0].message.content.strip()
                 
@@ -1113,16 +1149,13 @@ def get_github_tag_url(repo, version):
     """
     return f"https://github.com/validmind/{repo}/releases/tag/{version}"
 
-def rate_limited_api_call(cmd, max_retries=3, initial_delay=1):
+def rate_limited_api_call(cmd, max_retries=DEFAULT_MAX_RETRIES, initial_delay=DEFAULT_INITIAL_DELAY):
     """Make a rate-limited API call with exponential backoff.
     
     Args:
         cmd (list): Command to run
         max_retries (int): Maximum number of retries
         initial_delay (int): Initial delay in seconds
-        
-    Returns:
-        tuple: (returncode, stdout, stderr)
     """
     delay = initial_delay
     for attempt in range(max_retries):
@@ -1135,8 +1168,8 @@ def rate_limited_api_call(cmd, max_retries=3, initial_delay=1):
         # If we hit rate limit, wait with exponential backoff
         if attempt < max_retries - 1:
             # Add jitter to prevent thundering herd
-            jitter = random.uniform(0, 0.1 * delay)
-            sleep_time = delay + jitter
+            jitter = random.uniform(*JITTER_RANGE) * delay
+            sleep_time = min(DEFAULT_MAX_DELAY, delay + jitter)
             print(f"Rate limit hit, waiting {sleep_time:.1f} seconds before retry...")
             time.sleep(sleep_time)
             delay *= 2  # Exponential backoff
@@ -2101,7 +2134,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             (commit.get('external_notes') and commit['external_notes'].strip()) or
             (commit.get('pr_summary') and commit['pr_summary'].strip())
         )
-    def generate_highlevel_summary(commits, char_limit=250):
+    def generate_highlevel_summary(commits, char_limit=SUMMARY_CHAR_LIMIT):
         # Only include PRs with user-facing content
         enhancement_titles = [
             c.get('cleaned_title') or c.get('title')
@@ -2157,7 +2190,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             return any(t and t.lower() in summary.lower() for t in enhancement_titles)
         return True
     # --- LLM proofread step ---
-    def proofread_summary_with_llm(summary, max_tries=5, debug=False):
+    def proofread_summary_with_llm(summary, max_tries=PROOFREAD_MAX_TRIES, debug=False):
         prompt = (
             "Proofread and streamline the following release summary for clarity and natural flow. "
             "Keep it concise, user-facing, and ensure it starts with 'This release includes'. "
@@ -2168,13 +2201,13 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         for attempt in range(max_tries):
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o",
+                    model=MODEL_PROOFREADING,
                     messages=[
                         {"role": "system", "content": "You are a professional technical writer."},
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=200,
-                    temperature=0.2
+                    max_tokens=MAX_TOKENS_PROOFREADING,
+                    temperature=BASE_TEMPERATURE
                 )
                 improved = response.choices[0].message.content.strip()
                 # Simple validation: must start with the required phrase and not be empty
@@ -2193,7 +2226,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         if 'enhancement' in (c.get('labels') or []) and has_user_facing_content(c)
     ]
     summary = generate_highlevel_summary(all_commits)
-    summary = proofread_summary_with_llm(summary, max_tries=5, debug=debug)
+    summary = proofread_summary_with_llm(summary, max_tries=PROOFREAD_MAX_TRIES, debug=debug)
     is_valid = validate_summary(summary, enhancement_titles)
     # --- End summary logic ---
     

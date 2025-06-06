@@ -1,0 +1,26 @@
+---
+title: "Update `helm` chart and add testing actions (#12)"
+categories: [installation, 25.05, release]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# Content edited by AI - 2025-06-05 17:38
+# Content validated by AI - 2025-06-05 17:38
+# Content overwritten from an earlier version - 2025-06-05 17:38
+# PR URL: https://github.com/validmind/installation/pull/12
+---
+
+* Update helm chart to be in line with infra repo so that can be retired.
+
+* Add keycloak to helm chart and example values.
+
+* Add keycloak documentation
+
+* Add github actions to do helm linting and chart render as PR tests.
+
+* ADd github actions to tar up the helm chart to secure section of s3 bucket and ecr
+
+TODO (move above this as they are done):
+
+* Fix symlink issues with quarto
+* Test on dev cluster

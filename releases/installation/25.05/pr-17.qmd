@@ -1,0 +1,12 @@
+---
+title: "Remove unneeded docs workflows and `makefile` (#17)"
+categories: [installation, 25.05, release]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# Content edited by AI - 2025-06-05 17:38
+# Content validated by AI - 2025-06-05 17:38
+# Content overwritten from an earlier version - 2025-06-05 17:38
+# PR URL: https://github.com/validmind/installation/pull/17
+---
+

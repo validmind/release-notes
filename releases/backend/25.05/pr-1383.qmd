@@ -1,0 +1,25 @@
+---
+title: "Improve template swap-merge experience (#1383)"
+categories: [backend, 25.05, release]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# Content edited by AI - 2025-06-05 17:37
+# Content validated by AI - 2025-06-05 17:37
+# Content overwritten from an earlier version - 2025-06-05 17:37
+# PR URL: https://github.com/validmind/backend/pull/1383
+---
+
+This update introduces functionality for creating and swapping documentation templates in inventory models. A new method, `create_template_version_from_json`, updates the current template version using document type and sections data. Additionally, three new HTTP POST endpoints have been added for `model_documentation`, `validation_report`, and `monitoring`. These endpoints validate document types, verify inventory models, check required fields, and handle errors, enhancing template management with proper validations and error handling.
+
+A new method, `create_template_version_from_json`, has been added to the inventory model code. This method updates the current template version using a document type and sections data, then saves a new template version through an internal helper method.
+
+Three new HTTP POST endpoints have been added to the UI routing layer for the following document types: `model_documentation`, `validation_report`, and `monitoring`. Each endpoint uses a common helper function, `_create_and_swap_template`, which performs several actions:
+
+- Validates the provided document type against allowed values.
+- Retrieves and verifies the inventory model based on the current user's organization and membership, with an authorization override for model admins.
+- Checks for the presence of required fields (`to_template_cuid`, `to_template_version`, and `new_template_json`) in the JSON payload.
+- Retrieves the target template and its version, performs the swap by calling the `swap_template` method on the inventory model, and calls `create_template_version_from_json` to update the template.
+- Handles errors by logging and raising a `BadRequestError` with relevant messages.
+
+These changes enhance the template management process, ensuring proper validations and error handling when swapping templates based on a provided JSON structure.

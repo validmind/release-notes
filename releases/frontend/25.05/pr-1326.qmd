@@ -1,0 +1,16 @@
+---
+title: "Model inventory sort by last updated date (#1326)"
+categories: [frontend, 25.05, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# CHECK: Title validation failed - FAIL: Is not properly capitalized and does not meet the title formatting requirements.
+# Content edited by AI - 2025-06-05 17:37
+# Content validated by AI - 2025-06-05 17:37
+# Content overwritten from an earlier version - 2025-06-05 17:37
+# PR URL: https://github.com/validmind/frontend/pull/1326
+---
+
+The Inventory Model List now includes two new sort columns: `Updated Date` and `Documentation Updated Date`.
+
+This update adds two new sorting options to the Model Inventory page: "Updated Date" and "Documentation Updated Date." You can sort data in descending order (latest first) or ascending order (oldest first). These enhancements integrate with the existing sorting mechanism, offering more flexibility in viewing and managing model-related data. The changes are implemented in the UI component within `src/pages/ModelInventory/index.tsx`.

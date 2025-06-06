@@ -1,0 +1,42 @@
+---
+title: "Add new introductory validation notebooks (#689)"
+categories: [documentation, 25.05, release, documentation]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# Content edited by AI - 2025-06-05 17:38
+# Content validated by AI - 2025-06-05 17:38
+# Content overwritten from an earlier version - 2025-06-05 17:38
+# PR URL: https://github.com/validmind/documentation/pull/689
+---
+
+#### # ValidMind for model validation notebooks
+These were added to the "developer" (now library) portal:
+
+| Sidenav | Listing tiles |
+|---|---|
+|<img width="363" alt="Screenshot 2025-04-09 at 2 36 33 PM" src="https://github.com/user-attachments/assets/f286ee8d-3936-4d3d-bb74-2c13a6f44f4b" /> | <img width="795" alt="Screenshot 2025-04-09 at 2 36 29 PM" src="https://github.com/user-attachments/assets/61e23af0-3602-4534-b807-4086a71021af" />|
+
+#### # ValidMind for model development notebooks
+These have the updated numbering structure:
+
+| Sidenav | Listing tiles |
+|---|---|
+|<img width="361" alt="Screenshot 2025-04-09 at 2 36 23 PM" src="https://github.com/user-attachments/assets/dfeb49d8-62de-4e8f-91ea-604306421f74" /> | <img width="819" alt="Screenshot 2025-04-09 at 2 36 19 PM" src="https://github.com/user-attachments/assets/9c8f0a36-43b8-4198-89d6-4006b311be08" />|
+
+#### # validmind.com
+I removed this link from the main top navigation as it doesn't need to feature so heavily when it's also in the footer, based on discussions we had during the homepage redesign. 
+
+| Main nav | Collapsed nav |
+|---|---|
+| <img width="1710" alt="Screenshot 2025-04-09 at 2 34 16 PM" src="https://github.com/user-attachments/assets/9b7ffe00-0134-4e7f-9b27-13a2c56143b0" /> | <img width="292" alt="Screenshot 2025-04-09 at 2 34 21 PM" src="https://github.com/user-attachments/assets/b0b03b47-9665-45d4-8ff3-7af55636d483" />|
+
+This update enhances the ValidMind documentation and testing framework with improved clarity, usability, and security. Key changes include updated documentation for the ValidMind Library, new sections and examples for model validation, and enhanced instructions for custom tests. Testing has been expanded with new scenarios and improved descriptions. Code readability and maintainability have been improved, and security documentation has been updated to ensure compliance and protect sensitive data.
+
+- **Documentation Updates**: Various files have been revised for clarity and consistency, with new sections and examples added. Detailed guides on setting up and using the ValidMind Library for model validation and development are now available. Instructions for custom tests and external test providers have been enhanced.
+
+- **Testing Enhancements**: New tests have been introduced, and existing ones updated to cover more scenarios, particularly in model validation and data quality. Test descriptions now include detailed explanations of parameters and expected outcomes.
+
+- **Code Improvements**: Code refactoring has improved readability and maintainability, with better organization of test files and documentation. Minor bugs and inconsistencies, especially in test execution and logging, have been fixed.
+
+- **Security and Compliance**: Security documentation has been updated to align with best practices. Improvements in handling sensitive data in test results and logging ensure that sensitive information is not inadvertently exposed.

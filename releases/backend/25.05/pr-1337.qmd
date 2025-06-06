@@ -1,0 +1,30 @@
+---
+title: "Date localization support (#1337)"
+categories: [backend, 25.05, release]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# CHECK: Title validation failed - FAIL: Title is not properly capitalized.
+# Content edited by AI - 2025-06-05 17:37
+# Content validated by AI - 2025-06-05 17:37
+# Content overwritten from an earlier version - 2025-06-05 17:37
+# PR URL: https://github.com/validmind/backend/pull/1337
+---
+
+This update enhances user settings by adding a new locale configuration field. 
+
+- **Database Migration:**
+  
+  - A new Alembic migration sets the default value of the `ui_settings` column in the `users` table to `{"locale": "en"}` for future entries.
+  
+  - Existing records are updated to include the locale setting if missing, ensuring all users have a default locale.
+  
+  - A downgrade option is available to revert the default to an empty JSON object if necessary.
+
+- **Application Code Update:**
+  
+  - The `ui_settings` column in the User model now defaults to `{"locale": "en"}`.
+  
+  - The JSON schema for `ui_settings` is updated to include a `locale` property of type string, ensuring proper format.
+
+These changes ensure consistent locale configuration handling and improve user settings management.

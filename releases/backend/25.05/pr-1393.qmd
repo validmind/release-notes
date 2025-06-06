@@ -1,0 +1,13 @@
+---
+title: "Enhance metadata filtering in `Figure` model to handle timestamp values (#1393)"
+categories: [backend, 25.05, release]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# Content edited by AI - 2025-06-05 17:37
+# Content validated by AI - 2025-06-05 17:37
+# Content overwritten from an earlier version - 2025-06-05 17:37
+# PR URL: https://github.com/validmind/backend/pull/1393
+---
+
+This update enhances metadata filtering in the `get_latest_figures` function by adding special handling for timestamp values. It checks if the metadata value is a `datetime` or `date` object. If so, the JSON string value is cast to a datetime type using SQLAlchemy's `func.cast` for comparison. Otherwise, the value is converted to a string. This ensures accurate filtering of records based on timestamp metadata, allowing date and time values to be correctly interpreted and compared within the query.
