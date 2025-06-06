@@ -56,7 +56,7 @@ EXCLUDED_SECTIONS = [
 
 # --- LLM settings ---
 # Model settings
-MODEL_SECTION_CLASSIFICATION = "gpt-4o-mini"  # For quick section classification
+MODEL_CLASSIFYING = "gpt-4o-mini"  # For quick section classification
 MODEL_PROOFREADING = "gpt-4o"                 # For proofreading tasks
 MODEL_EDITING = "gpt-4o"                      # For main content editing tasks
 MODEL_VALIDATION = "gpt-4o"                   # For critical validation tasks
@@ -80,9 +80,9 @@ MAX_TOKENS_EDITING = 4096
 MAX_TOKENS_PROOFREADING = 200
 
 # Retry and delay settings
-DEFAULT_MAX_RETRIES = 3
+DEFAULT_MAX_RETRIES = 7
 DEFAULT_INITIAL_DELAY = 0.5
-DEFAULT_MAX_DELAY = 2
+DEFAULT_MAX_DELAY = 1
 MIN_SLEEP_TIME = 0.5
 JITTER_RANGE = (0, 0.1)
 JITTER_RANGE_WIDE = (-0.2, 0.2)
@@ -115,10 +115,9 @@ EDIT_CONTENT_INSTRUCTIONS = (
     "- Uppercase acronyms (e.g., 'LLM', 'API') and spell proper names correctly.\n"
     "- Follow Quarto formatting (e.g., blank lines between blocks).\n"
     "- Use a space after list markers and start each item with a capital letter.\n"
-    "- Don’t leave empty sections—add a placeholder comment if needed.\n"
-    "- Don’t refer to the 'PR body' or 'PR summary'.\n"
-    "- Don’t alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
-    "- Don’t add a conclusion or summary."
+    "- Don't refer to the 'PR body' or 'PR summary'.\n"
+    "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
+    "- Don't add a conclusion or summary."
 )
 
 # --- Content validation instructions ---
@@ -156,6 +155,19 @@ SECTION_CLASSIFICATION_PROMPT = (
     "5. Exclude sections about testing, QA, or development processes.\n"
     "6. Exclude sections marked as internal or for team use only.\n\n"
     "Respond with only 'INCLUDE' or 'EXCLUDE'."
+)
+
+# --- Merge PR classification prompt ---
+MERGE_PR_CLASSIFICATION_PROMPT = (
+    "Analyze this PR title and determine if it represents an automatic merge PR.\n"
+    "A merge PR typically:\n"
+    "- Merges branches or changes between environments\n"
+    "- Syncs code between branches\n"
+    "- Deploys code to different environments\n"
+    "- Updates release candidates or hotfixes\n"
+    "- Contains keywords like 'merge', 'sync', 'deploy', 'release'\n\n"
+    "PR Title: {title}\n\n"
+    "Respond with only 'MERGE' if this is an automatic merge PR, or 'NOT_MERGE' if it contains actual changes."
 )
 
 # --- Heading level adjustment prompt ---
@@ -247,7 +259,7 @@ def classify_section(section_title, section_content, debug=False):
         )
             
         response = client.chat.completions.create(
-            model=MODEL_SECTION_CLASSIFICATION,
+            model=MODEL_CLASSIFYING,
             messages=[
                 {
                     "role": "system",
@@ -1262,7 +1274,7 @@ def adjust_heading_levels(content, min_level=4, debug=False):
     # Try LLM-based adjustment first
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=MODEL_CLASSIFYING,
             messages=[
                 {
                     "role": "system",
@@ -1336,19 +1348,54 @@ def adjust_heading_levels(content, min_level=4, debug=False):
     
     return result
 
-def is_merge_pr(title):
-    """Check if a PR title indicates it's an automatic merge PR.
+def is_merge_pr(title, debug=False):
+    """Use OpenAI to classify whether a PR is an automatic merge PR.
     
     Args:
         title (str): The PR title to check
+        debug (bool): Whether to show debug output
         
     Returns:
         bool: True if the PR appears to be an automatic merge
     """
     if not title:
         return False
-    title_lower = title.lower()
-    return any(keyword in title_lower for keyword in MERGE_KEYWORDS)
+        
+    if debug:
+        print(f"\nDEBUG: [is_merge_pr] Classifying PR title: {title}")
+    
+    try:
+        prompt = MERGE_PR_CLASSIFICATION_PROMPT.format(title=title)
+
+        response = client.chat.completions.create(
+            model=MODEL_CLASSIFYING,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a PR classifier. Your job is to determine if a PR represents an automatic merge or contains actual changes."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            max_tokens=MAX_TOKENS_CLASSIFICATION,
+            temperature=BASE_TEMPERATURE
+        )
+        
+        result = response.choices[0].message.content.strip().upper()
+        if debug:
+            print(f"DEBUG: [is_merge_pr] OpenAI response: {result}")
+        return result == 'MERGE'
+        
+    except Exception as e:
+        if debug:
+            print(f"DEBUG: [is_merge_pr] Error in OpenAI classification: {e}")
+            print("DEBUG: [is_merge_pr] Falling back to keyword matching...")
+            
+        # Fallback to keyword matching if OpenAI fails
+        title_lower = title.lower()
+        return any(keyword in title_lower for keyword in MERGE_KEYWORDS)
 
 def get_pr_content(pr_number, repo, debug=False, adjust_heading_levels=False):
     """Get content from a PR's external release notes, PR summary, title, and image URLs.
