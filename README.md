@@ -64,23 +64,19 @@ The script uses LLMs to edit and validate release notes content:
 
 ## Usage examples
 
+Generate release notes for `cmvm/25.06` and edit them:
+
 ```bash
-poetry run python scripts/generate_release_notes.py --tag cmvm/25.05 --edit
+poetry run python scripts/generate_release_notes.py --tag cmvm/25.06 --edit
 ```
 
+Generate release notes for `cmvm/25.06` and edit them, overwriting previous files, and output DEBUG information:
 
-
-## Output
-
-The script generates:
-- Release notes in Quarto Markdown format
-- A release history table
-- Categorized changes based on PR labels
-- Formatted and validated content
+```bash
+poetry run python scripts/generate_release_notes.py --tag cmvm/25.06 --edit --overwrite --debug
+```
 
 ## Repository Structure
 
 - `scripts/` - Contains the main Python script and Poetry configuration
-- `site/` - Output directory for generated release notes
-  - `installation/` - Contains release notes and release history
-  - `releases/` - Individual release documentation
+- `releases/` - Contains generated files
