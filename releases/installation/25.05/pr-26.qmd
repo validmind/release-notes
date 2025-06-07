@@ -1,15 +1,11 @@
 ---
-title: "Add version 25.05 to `cmvm` releases (#26)"
+title: "Add version `25.05` to `cmvm` releases (#26)"
 categories: [installation, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - Both the original and edited content convey the same basic information, but the edited version is clearer and more formal. Here's a breakdown of the improvements:
-
-1. **Clarity**: The edited version specifies "version 25.05," which is more precise than just "25.05." This helps readers immediately understand that it refers to a version number.
-
-2. **Formatting**: The use of backticks around `cmvm` in the edited version indicates that it is likely a code or a
-# Content overwritten from an earlier version - 2025-06-06 08:51
+# CHECK: Title validation failed - The edited content is a clear improvement over the original. It provides a more descriptive and formal explanation of the task. The use of backticks around "25.05" and "cmvm" helps to highlight these as specific terms or code elements, which is appropriate in a technical context. The edit also capitalizes the first word, making it consistent with standard sentence structure. Overall, the edited content is more precise and professional.
+# Content overwritten from an earlier version - 2025-06-06 09:34
 # PR URL: https://github.com/validmind/installation/pull/26
 ---
 

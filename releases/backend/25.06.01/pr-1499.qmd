@@ -1,0 +1,36 @@
+---
+title: "Enable customization of finding statuses via the `API` (#1499)"
+categories: [backend, 25.06.01, hotfix, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "June 05, 2025"
+# Content overwritten from an earlier version - 2025-06-07 09:55
+# PR URL: https://github.com/validmind/backend/pull/1499
+---
+
+#### What
+<!-- Describe what the change is doing, including behavior before and after the change -->
+Enables user to customize finding statuses in Settings page
+
+# PR Summary
+
+This pull request adds a new feature to manage the status of findings. It introduces a new database table and model for finding statuses that allow organizations to define custom statuses (e.g. open, closed, deleted) for findings. The changes include:
+
+- A migration script that creates a new table (finding_statuses) and a new column (status_id) in the findings table. The script also backfills existing findings using the old status values and then drops the deprecated column.
+- Updates to the Finding model to replace the string-based status field with a foreign key relationship to the FindingStatus model. This includes changes to the serialization, creation, updating, and deletion of findings to ensure the new status is properly managed.
+- Addition of a new FindingStatus model with methods to create, update, delete, and load default statuses for an organization. The model includes helper methods (such as serialization and mark_as_deleted) to support these operations.
+- API changes including new endpoints (via a dedicated namespace) for retrieving, creating, updating, and deleting finding statuses. The endpoints enforce validations (e.g. duplicate status names) as well as permissions using the requires_auth decorator.
+- Updates to related routes (such as ui, reporting, and SQL views) to join and filter against the new FindingStatus table rather than using the old status string.
+- Update to organization templates and platform configurations to include finding statuses.
+- Unit tests modifications to exercise the new functionality for creating, updating, and deleting finding statuses as part of finding CRUD operations.
+
+Overall, this PR integrates finding status management into the application, improves data integrity by using a relational approach, and extends the API interfaces for enhanced UI interaction.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: FAILED
+Attempts: 7
+Last Validation: 2025-06-07 09:50:12
+Result: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary details and uses simpler language while maintaining the core idea. The use of the word "Enable" clearly indicates the action, and "customization of finding statuses" is a straightforward way ...
+Reedit Available: Yes
+Reedit Message: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary details and uses simpler language while maintaining the core idea. The use of the word "Ena...
+--->

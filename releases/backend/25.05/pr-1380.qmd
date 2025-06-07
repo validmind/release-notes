@@ -1,11 +1,11 @@
 ---
-title: "Fix document download issue by updating `authorization` logic (#1380)"
+title: "Fix document download issue by updating `authorization` logic for report generation (#1380)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content effectively addresses the issue presented in the original content by providing a clear and actionable solution. It specifies that the problem with downloading documents can be resolved by updating the `authorization` logic, which is likely the root cause of the regression. The edited version is concise and directly communicates the necessary action to fix the issue. Overall, the edit improves clarity and provides a specific direction for resolving the problem.
-# Content overwritten from an earlier version - 2025-06-06 08:50
+# CHECK: Title validation failed - The edited content provides a clearer and more actionable description of the issue. It specifies the problem (document download issue) and suggests a potential solution (updating `authorization` logic for report generation). This makes it more useful for someone trying to address the problem. The original content was vague and did not offer any guidance on how to resolve the issue. Overall, the edited content is a significant improvement in terms of clarity and utility.
+# Content overwritten from an earlier version - 2025-06-06 09:34
 # PR URL: https://github.com/validmind/backend/pull/1380
 ---
 

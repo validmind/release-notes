@@ -4,8 +4,8 @@ categories: [installation, 25.05, release, documentation]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content is identical to the original content. There are no changes or improvements made. If the goal was to make edits, consider checking for any necessary updates, formatting improvements, or additional information that could enhance the release notes.
-# Content overwritten from an earlier version - 2025-06-06 08:51
+# CHECK: Title validation failed - The edited content is identical to the original content. There are no changes or improvements made. If the goal was to make edits for clarity, accuracy, or style, further modifications would be necessary. However, if the content was already deemed satisfactory, then no changes were needed.
+# Content overwritten from an earlier version - 2025-06-06 09:34
 # PR URL: https://github.com/validmind/installation/pull/24
 ---
 

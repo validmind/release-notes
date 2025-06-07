@@ -5,7 +5,7 @@ sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
 # CHECK: Title validation failed - The edited content improves clarity by specifying that "Customer-managed-releases.qmd" is a file, which helps readers understand the context better. The use of backticks around the file name is a common convention in technical writing to denote code or file names, enhancing readability. Overall, the edit is a positive change that provides clearer communication.
-# Content overwritten from an earlier version - 2025-06-06 08:51
+# Content overwritten from an earlier version - 2025-06-06 09:34
 # PR URL: https://github.com/validmind/installation/pull/18
 ---
 

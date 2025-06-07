@@ -1,11 +1,11 @@
 ---
-title: "Add date localization support across the application (#1312)"
+title: "Add date localization support with `FormattedDate` component and locale-based formatting across the app (#1312)"
 categories: [frontend, 25.05, release, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content effectively condenses the original content while maintaining its core message. The original reference "[SC-9370]" seems to be an internal identifier, which is omitted in the edited version, focusing solely on the action required. This makes the edited content more direct and actionable, which is suitable for a task or feature description. However, if the identifier is important for tracking or context, it should be retained. Overall, the edit is clear and concise.
-# Content overwritten from an earlier version - 2025-06-06 08:51
+# CHECK: Title validation failed - The edited content provides a more specific and actionable description of the task or feature. It clearly states the implementation of date localization support using the `FormattedDate` component and emphasizes the use of locale-based formatting throughout the application. This makes the content more informative and focused, which is beneficial for understanding the scope and purpose of the task. Overall, the edited content is a clear and concise improvement over the original.
+# Content overwritten from an earlier version - 2025-06-06 09:34
 # PR URL: https://github.com/validmind/frontend/pull/1312
 ---
 

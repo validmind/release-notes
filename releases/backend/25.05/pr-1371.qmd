@@ -1,11 +1,11 @@
 ---
-title: "Improve metadata filtering for `figure` queries (#1371)"
+title: "Enhance metadata filtering in `figure` queries for better timestamp handling (#1371)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content is a clear improvement over the original. It provides a more specific and descriptive action ("Improve" instead of "Fix") and clarifies the context by specifying "metadata filtering" rather than just "metadata." Additionally, the use of backticks around "figure" indicates that it is likely a code or query term, which adds clarity. Overall, the edited version is more precise and informative.
-# Content overwritten from an earlier version - 2025-06-06 08:50
+# CHECK: Title validation failed - The edited content is a clear improvement over the original. It provides a more specific and descriptive explanation of the task, indicating that the enhancement involves improving the filtering of metadata specifically related to `figure` queries, with an emphasis on better handling of timestamps. This makes the purpose and scope of the task more understandable. The use of the word "enhance" suggests a positive improvement, which is more engaging than the vague "fix" in the original. Overall, the edited content effectively communicates the intended action
+# Content overwritten from an earlier version - 2025-06-06 09:34
 # PR URL: https://github.com/validmind/backend/pull/1371
 ---
 

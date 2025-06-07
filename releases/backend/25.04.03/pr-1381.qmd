@@ -1,13 +1,20 @@
 ---
-title: "Refine authorization for report generation in the `UI` reporting route (#1381)"
+title: "Enhance authorization for `report_generation` endpoint in UI reporting (#1381)"
 categories: [backend, 25.04.03, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "April 17, 2025"
-# Content overwritten from an earlier version - 2025-06-04 12:19
+date: "April 14, 2025"
+ai_edited: true
+ai_edited_date: "2025-06-07 13:23"
+# Content edited by AI - 2025-06-07 13:23
+# Content overwritten from an earlier version - 2025-06-07 13:23
 # PR URL: https://github.com/validmind/backend/pull/1381
 ---
 
-This update refines authorization for the report generation endpoint in the UI reporting route. The authorization decorator on the GET endpoint now uses a general `read` action instead of `download_report`. In-method permission checks are added based on the document type in the request. The endpoint performs an authorization check for `download_doc` for `documentation-report` or `monitoring-report`, and `download_vr` for `validation-report`. A `BadRequestError` is raised for unsupported document types.
+This update enhances authorization for the report generation endpoint in the UI reporting route. The authorization decorator on the GET endpoint now uses a generic `read` action instead of `download_report`. In-method permission checks are added based on the document type in the request:
 
-These changes ensure users have the correct permissions for the specific report type they wish to access.
+- For `documentation-report` or `monitoring-report`, it checks `download_doc` authorization.
+- For `validation-report`, it checks `download_vr` authorization.
+- If the document type is unsupported, a `BadRequestError` is raised.
+
+These changes ensure users have the correct permissions for the report type they access.

@@ -1,0 +1,13 @@
+---
+title: "Update `Customer-managed-releases.qmd` file (#16)"
+categories: [installation, 25.04.03, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "April 14, 2025"
+ai_edited: true
+ai_edited_date: "2025-06-07 13:23"
+# Content edited by AI - 2025-06-07 13:23
+# Content overwritten from an earlier version - 2025-06-07 13:23
+# PR URL: https://github.com/validmind/installation/pull/16
+---
+

@@ -1,0 +1,40 @@
+---
+title: "Allow users to customize `finding` statuses in the UI (#1407)"
+categories: [frontend, 25.06.01, hotfix, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "June 05, 2025"
+# Content overwritten from an earlier version - 2025-06-07 09:55
+# PR URL: https://github.com/validmind/frontend/pull/1407
+---
+
+#### What
+<!-- Describe what the change is doing, including behavior before and after the change -->
+Enables users to customize finding statuses
+
+- Supports creating new finding statuses
+- Support 'soft-deleting' finding statuses
+- If a finding status is deleted, all findings currently using that status default to `Open`
+
+#### Breaking Changes
+<!-- List any breaking changes -->
+
+#### Screenshots/Videos (Frontend Only)
+<!-- Add screenshots or videos showing before/after -->
+
+# PR Summary
+
+This PR introduces a new feature for managing finding statuses within the application. It adds a set of new API endpoints for fetching, creating, updating, and deleting finding statuses. The data model is expanded by introducing a new type for finding status that includes a unique identifier, a color scheme, a name, and a default flag. 
+
+New UI components were implemented to support this functionality. A dedicated modal (AddFindingStatusModal) was built that leverages a shared color grid selector for choosing color schemes. The modal carefully handles default statuses by disabling edits on their names. The main application and various settings pages have been updated to integrate the new finding statuses, including adding a new sidebar link for users with the appropriate permissions. In addition, existing components that display finding statuses (such as in findings lists and detailed views) now use these new statuses and display them using the updated design (e.g., using a VMTag component with colors dynamically derived from the status data).
+
+Furthermore, several settings pages were refactored to consistently use a new SettingsSection layout, ensuring a uniform look and feel across the application. Overall, the PR integrates the new finding statuses feature both on the backend (via API enhancements) and the frontend (via component and layout updates).
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: FAILED
+Attempts: 7
+Last Validation: 2025-06-07 09:53:48
+Result: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary words and focuses on the key action and subject, making it clearer and more direct. The use of backticks around "finding" suggests it might be a specific term or feature, which can be helpful...
+Reedit Available: Yes
+Reedit Message: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary words and focuses on the key action and subject, making it clearer and more direct. The use...
+--->

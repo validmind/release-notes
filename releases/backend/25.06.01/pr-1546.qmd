@@ -1,0 +1,61 @@
+---
+title: "Update `PYTHONPATH` for improved module resolution and error handling (#1546)"
+categories: [backend, 25.06.01, hotfix]
+sidebar: release-notes
+toc-expand: true
+date: "June 05, 2025"
+# Content overwritten from an earlier version - 2025-06-07 09:55
+# PR URL: https://github.com/validmind/backend/pull/1546
+---
+
+#### Changes
+- `PYTHONPATH` ensures that we can spawn scripts and have the scripts assume the original base path of the application
+- Use module calling syntax so we the rest of the code dependencies can be loaded properly since they are using relative imports
+- Fixed how error messages are passed around and printed, I wasn't seeing anything on the console or the HTTP response. Now it works:
+
+```
+{
+    "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "Failed to generate monitoring report",
+        "details": {
+            "error": "/Users/andres/code/backend/.venv/bin/python3: Error while finding module specification for 'workers.report_worker' (ModuleNotFoundError: No module named 'workers')\n"
+        },
+        "user_response": "Please search for INTERNAL_ERROR in the documentation for troubleshooting information.",
+        "status": 500
+    },
+    "message": "Failed to generate monitoring report"
+}
+```
+
+and on the logs:
+
+```
+2025-06-04T10:20:40.062556 [error] Error generating monitoring report: /Users/andres/code/backend/.venv/bin/python3: Error while finding module specification for 'workers.report_worker' (ModuleNotFoundError: No module named 'workers')
+```
+
+---
+
+About `PYTHONPATH`:
+
+#### Alternative Import Strategies
+Without PYTHONPATH, you could also use:
+
+# PR Summary
+
+This PR introduces a few functional changes to improve the robustness and maintainability of the API and worker processes:
+
+1. In the Makefile, the command for running the API has been updated to include the current backend source directory in the PYTHONPATH. This makes module resolution more explicit and can help avoid path issues.
+
+2. In the UI reporting route, the report worker is now invoked using module syntax (i.e. using the "-m" flag) rather than constructing a file path manually. This change avoids potential issues with path resolution and simplifies the command line invocation. In addition, the error handling has been enhanced by checking for detailed error information before logging and propagating errors.
+
+3. In the report worker file, the import statements have been refactored. The previous reliance on deeply nested module paths (e.g. from src/backend/...) has been replaced with imports directly from the db package, which should streamline module dependencies and improve maintainability.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: FAILED
+Attempts: 7
+Last Validation: 2025-06-07 09:50:54
+Result: The edited content provides a clearer and more specific description of the purpose of updating the `PYTHONPATH`. By mentioning "improved module resolution and error handling," it gives the reader a better understanding of the benefits and reasons for making changes to the `PYTHONPATH`. This makes th...
+Reedit Available: Yes
+Reedit Message: The edited content provides a clearer and more specific description of the purpose of updating the `PYTHONPATH`. By mentioning "improved module resolution and error handling," it gives the reader a be...
+--->

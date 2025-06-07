@@ -1,11 +1,11 @@
 ---
-title: "Added new introductory `validation` notebooks for `ValidMind` (#689)"
+title: "Add new introductory `validation` notebooks (#689)"
 categories: [documentation, 25.05, release, documentation]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content provides additional context by specifying that the validation notebooks are for "ValidMind." This clarification can be helpful for readers who may not be familiar with the term "validation notebooks" in the original content. The use of backticks around "validation" and "ValidMind" suggests that these terms might be specific to a particular software or framework, which can further aid in understanding. Overall, the edit improves the clarity and specificity of the original content.
-# Content overwritten from an earlier version - 2025-06-06 08:51
+# CHECK: Title validation failed - The edited content is concise and uses the imperative form, which is often preferred in technical documentation or task lists. The use of backticks around "validation" suggests that it might be a specific term or keyword, which can be helpful for clarity if it refers to a code element or specific feature. However, if "validation" is not a specific term that requires emphasis, the backticks might be unnecessary. Overall, the edit is effective for its likely context.
+# Content overwritten from an earlier version - 2025-06-06 09:34
 # PR URL: https://github.com/validmind/documentation/pull/689
 ---
 
@@ -22,6 +22,24 @@ These have the updated numbering structure:
 | Sidenav | Listing tiles |
 |---|---|
 |<img width="361" alt="Screenshot 2025-04-09 at 2 36 23 PM" src="https://github.com/user-attachments/assets/dfeb49d8-62de-4e8f-91ea-604306421f74" /> | <img width="819" alt="Screenshot 2025-04-09 at 2 36 19 PM" src="https://github.com/user-attachments/assets/9c8f0a36-43b8-4198-89d6-4006b311be08" />|
+
+#### # Developers > ValidMind Library
+- Since this portal is much more than a developer portal, I've made the language and links surrounding the portal more universal:
+
+| Main drop-down | Collapsed drop-down |
+|---|---|
+| <img width="453" alt="Screenshot 2025-04-09 at 2 35 39 PM" src="https://github.com/user-attachments/assets/a7b9c0da-e793-40d4-9479-063d0623e16d" /> | <img width="292" alt="Screenshot 2025-04-09 at 2 34 21 PM" src="https://github.com/user-attachments/assets/d7071541-64fb-4f78-8455-fec350781843" />|
+
+- You may notice that I also applied the styling that the API docs have to this and the notebooks/test descriptions, since it's jarring for the two sections to have different side navigations (BONUS: This also takes care of the really squished long-titles we have for notebooks!):
+
+<img width="1706" alt="Screenshot 2025-04-09 at 2 37 38 PM" src="https://github.com/user-attachments/assets/c662fb02-32e8-4d0b-b8bf-83d606671b6c" />
+
+
+- I also moved the sidebar for this landing section to its own `_sidebar.yaml`:
+
+https://github.com/validmind/documentation/blob/a89901c1e08dd3320d989474289e0cc03b652c64/site/developer/_sidebar.yaml#L3
+
+https://github.com/validmind/documentation/blob/a89901c1e08dd3320d989474289e0cc03b652c64/site/_quarto.yml#L5
 
 #### # validmind.com
 I removed this link from the main top navigation as it doesn't need to feature so heavily when it's also in the footer, based on discussions we had during the homepage redesign. 

@@ -8,18 +8,6 @@ label_hierarchy = ["highlight", "enhancement", "breaking-change", "deprecation",
 # Labels that should exclude PRs from release notes
 EXCLUDED_LABELS = ["internal", "auto-merge"]
 
-# Keywords that indicate a PR is an automatic merge
-MERGE_KEYWORDS = [
-    "main branch", "branch merged", "merged into", "merge main", "merge staging",
-    "merge branch", "merge pull request", "merge into", "release", "deploy", "sync", "auto-merge",
-    "merge production", "merge develop", "merge hotfix", "merge feature", "merge bugfix",
-    "merge master", "merge to", "merge from", "merge changes", "merge update", "merge upstream",
-    "merge down", "merge up", "merge test", "merge qa", "merge rc", "merge candidate",
-    "sync main", "sync develop", "sync branch", "sync changes", "sync upstream",
-    "deploy to", "deploy prod", "deploy production", "deploy staging", "deploy develop",
-    "release candidate", "release hotfix", "release patch", "release update"
-]
-
 label_to_category = {
     "highlight": "## Release highlights",
     "enhancement": "## Enhancements",
@@ -154,24 +142,19 @@ VALIDATION_SYSTEM = "You are a judge evaluating the quality of edited content."
 VALIDATION_PROMPT = (
     "You are a judge evaluating the quality of edited content.\n"
     "For {content_type}, check if the edit:\n"
- 
-    "1. Maintains the core meaning and facts of the original.\n"
-    "2. Uses proper formatting and structure.\n"
-    "3. Is clear and professional.\n"
-    "4. Does not add substantial new information not present or implied in the original.\n"
-    "7. For summaries/notes: Has proper paragraph structure.\n"
-    "8. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.).\n"
-    "9. Does not add any new sections, images, or headings that are not present in the original content.\n"
-    "9. Does not include any text like 'PR body' or 'PR summary'.\n"
-    "10. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content.\n"
     "\n"
-    "Minor clarifications, rewording, or formatting improvements are allowed as long as the meaning is preserved.\n"
+    "1. Is clear, professional, and concise.\n"
+    "2. Does not add substantial new information not present in the original.\n"
+    "3. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.).\n"
+    "4. Does not add any new sections, images, or headings that are not present in the original content.\n"
+    "5. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content.\n"
+    "\n"
+    "Minor clarifications, rewording, or formatting improvements are allowed as long as the general meaning is preserved.\n"
     "If the edit only clarifies, rewords, or improves formatting, respond with 'PASS'.\n"
-    "If the edit adds substantial new information not present or implied in the original, respond with 'FAIL: Adds unsupported information'.\n"
+    "If the edit adds substantial new information not present in the original, respond with 'CHECK: Edits may add unsupported information'.\n"
     "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
 )
 
-# --- Content validation criteria ---
 VALIDATION_CRITERIA = {
     'title': [
         "Is properly capitalized and punctuated",
@@ -181,19 +164,20 @@ VALIDATION_CRITERIA = {
         "Is clear and concise for end users",
         "Is 80 characters or less"
     ],
-    'summary': [
-        "Maintains core meaning and facts",
-        "Uses proper formatting and structure",
-        "Is clear and professional",
-        "Does not contain unwanted sections",
-        "Does not contain any Markdown headings"
-    ],
     'notes': [
+        "Maintains core meaning and facts",
         "Maintains technical accuracy",
         "Uses consistent formatting",
         "Is user-focused",
-        "Does not contain internal notes",
-        "Does not contain any Markdown headings"
+        "Does not contain internal notes and unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.)",
+        "Does not include any Markdown headings like '# PR summary' or '## External Release Notes'"
+    ],
+    'summary': [
+        "Maintains core meaning and facts",
+        "Uses proper formatting and paragraph structure",
+        "Is clear and professional",
+        "Does not contain unwanted sections",
+        "Does not contain references to ticket numbers, prefixes, or branch names"
     ]
 }
 
@@ -217,6 +201,18 @@ SECTION_CLASSIFICATION_PROMPT = (
 # --- Merge PR classification prompt ---
 MERGE_PR_CLASSIFICATION_SYSTEM = "You are a PR classifier. Your job is to determine if a PR represents an automatic merge or contains actual changes."
 
+# Keywords that indicate a PR is an automatic merge
+MERGE_KEYWORDS = [
+    "main branch", "branch merged", "merged into", "merge main", "merge staging",
+    "merge branch", "merge pull request", "merge into", "release", "deploy", "sync", "auto-merge",
+    "merge production", "merge develop", "merge hotfix", "merge feature", "merge bugfix",
+    "merge master", "merge to", "merge from", "merge changes", "merge update", "merge upstream",
+    "merge down", "merge up", "merge test", "merge qa", "merge rc", "merge candidate",
+    "sync main", "sync develop", "sync branch", "sync changes", "sync upstream",
+    "deploy to", "deploy prod", "deploy production", "deploy staging", "deploy develop",
+    "release candidate", "release hotfix", "release patch", "release update"
+]
+
 MERGE_PR_CLASSIFICATION_PROMPT = (
     "Analyze this PR title and determine if it represents an automatic merge PR.\n"
     "A merge PR typically:\n"
@@ -224,13 +220,14 @@ MERGE_PR_CLASSIFICATION_PROMPT = (
     "- Syncs code between branches\n"
     "- Deploys code to different environments\n"
     "- Updates release candidates or hotfixes\n"
-    "- Contains keywords like 'merge', 'sync', 'deploy', 'release'\n\n"
+    f"- Contains keywords like: {', '.join(MERGE_KEYWORDS)}\n\n"
     "PR Title: {title}\n\n"
     "Respond with only 'MERGE' if this is an automatic merge PR, or 'NOT_MERGE' if it contains actual changes."
 )
 
 # --- Heading level adjustment prompt ---
 HEADING_LEVEL_SYSTEM = "You are a markdown heading level adjuster. Your job is to adjust heading levels while maintaining proper hierarchy."
+
 HEADING_LEVEL_PROMPT = (
     "Fix heading levels in the markdown content while maintaining proper hierarchy:\n"
     "1. The first heading (PR title) should be level 3 (###).\n"
@@ -243,8 +240,16 @@ HEADING_LEVEL_PROMPT = (
     "{content}"
 )
 
-# --- Technical writing system prompt ---
+# --- Summary proofreading prompt ---
 MODEL_PROOFREADING_SYSTEM = "You are a professional technical writer."
+
+PROOFREAD_SUMMARY_PROMPT = (
+    "Proofread and streamline the following release summary for clarity and natural flow. "
+    "Keep it concise, user-facing, and ensure it starts with 'This release includes'. "
+    "Do not add or remove features, just improve the language and flow. "
+    "Return only the improved summary.\n\n"
+    "Summary:\n{summary}"
+)
 
 import subprocess
 import json
@@ -345,6 +350,72 @@ def classify_section(section_title, section_content, debug=False):
         if debug:
             print("DEBUG: No patterns matched, excluding section")
         return False
+
+def generate_validation_comment(commit, debug=False):
+    """Generate HTML comment with validation summary information.
+    
+    Args:
+        commit (dict): Commit/PR data with validation information
+        debug (bool): Whether to include debug information
+        
+    Returns:
+        str: HTML comment with validation summary (only if debug=True)
+    """
+    # Only output validation summary if debug is enabled
+    if not debug:
+        return ""
+        
+    # Handle both single validation_summary and multiple validation_summaries
+    validation_summaries = []
+    
+    if commit.get('validation_summaries'):
+        validation_summaries = commit['validation_summaries']
+    elif commit.get('validation_summary'):
+        validation_summaries = [commit['validation_summary']]
+    
+    if not validation_summaries:
+        return ""
+    
+    all_comment_lines = []
+    
+    for i, validation_info in enumerate(validation_summaries):
+        if i == 0:
+            header = "\n\n<!--- VALIDATION SUMMARY"
+        else:
+            header = f"\nVALIDATION SUMMARY {i+1}"
+            
+        comment_lines = [
+            header,
+            f"Content Type: {validation_info.get('content_type', 'unknown')}",
+            f"Validation Status: {'FAILED' if validation_info.get('validation_failed') else 'PASSED'}",
+            f"Attempts: {validation_info.get('attempts', 'unknown')}",
+            f"Last Validation: {validation_info.get('last_validation_time', 'unknown')}"
+        ]
+        
+        if validation_info.get('validation_result'):
+            result = validation_info['validation_result']
+            # Truncate very long results
+            if len(result) > 300:
+                result = result[:300] + "..."
+            comment_lines.append(f"Result: {result}")
+        
+        if validation_info.get('failure_patterns'):
+            patterns = validation_info['failure_patterns']
+            comment_lines.append(f"Failure Patterns: {patterns}")
+        
+        if validation_info.get('reedit_available'):
+            comment_lines.append("Reedit Available: Yes")
+            if validation_info.get('reedit_message'):
+                # Truncate long messages
+                msg = validation_info['reedit_message']
+                if len(msg) > 200:
+                    msg = msg[:200] + "..."
+                comment_lines.append(f"Reedit Message: {msg}")
+        
+        all_comment_lines.extend(comment_lines)
+    
+    all_comment_lines.append("--->\n")
+    return "\n".join(all_comment_lines)
 
 class PR:
     def __init__(self, repo_name=None, pr_number=None, title=None, body=None, url=None, labels=None, debug=False):
@@ -520,6 +591,10 @@ class PR:
         """Unified function to edit PR content (summaries, titles, or release notes) with three-pass editing for notes/summary."""
         if skip_passes is None:
             skip_passes = set()
+        
+        # Reset validation state for this edit operation
+        if hasattr(self, 'validation_summary'):
+            delattr(self, 'validation_summary')
         # Use multi-pass for 'notes' and 'summary', single pass for 'title'
         if content_type in ("notes", "summary") and edit:
             # Pass 1: Group and Flatten
@@ -676,7 +751,19 @@ class PR:
                     time.sleep(sleep_time)
                     delay = min(max_delay, delay * 2)  # Exponential backoff with cap
                 else:
-                    self.validation_warning = f"# CHECK: {content_type.capitalize()} validation indicates a substantial edit compared to the original\n"
+                    # Instead, build comprehensive validation summary for HTML comments
+                    self.validation_summary = {
+                        'content_type': content_type,
+                        'validation_failed': True,
+                        'attempts': max_attempts,
+                        'validation_result': validation_result,
+                        'failure_patterns': failure_patterns,
+                        'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    if content_for_reedit:
+                        self.validation_summary['reedit_available'] = True
+                        self.validation_summary['reedit_message'] = content_for_reedit.get('validation_message', '')
+                    
                     print(f"WARN: All {max_attempts} content edit attempts failed for {content_type} in PR #{self.pr_number}")
                     if self.debug:
                         print(f"Validation result: {validation_result}")
@@ -812,8 +899,9 @@ class PR:
                 print(f"Failure patterns: {failure_patterns}")
                 if content_for_reedit:
                     print(f"Content available for reedit with validation message: {content_for_reedit['validation_message']}")
-                setattr(self, attr_name, content)
-                return content
+                # Do NOT revert to the original content; keep the last attempted edit
+                setattr(self, attr_name, current_edit)
+                return current_edit
 
     def validate_edit(self, content_type, original_content, edited_content, edit=False):
         """Uses LLM to validate edits by checking for common issues.
@@ -2141,22 +2229,27 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         validated = False
         edited = False
         if edit:
+            # Store all validation summaries
+            validation_summaries = []
+            
             if commit.get('pr_summary'):
                 pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.", edit=True)
                 commit['pr_summary'] = pr_obj.pr_interpreted_summary
-                if hasattr(pr_obj, 'validation_warning'):
-                    commit['validation_warning'] = pr_obj.validation_warning
+                if hasattr(pr_obj, 'validation_summary'):
+                    validation_summaries.append(pr_obj.validation_summary)
+                # Set edited=True if editing was attempted, regardless of validation status
+                edited = True
                 if pr_obj.validated:
                     validated = True
-                    edited = True
             if commit.get('external_notes'):
                 pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.", edit=True)
                 commit['external_notes'] = pr_obj.edited_text
-                if hasattr(pr_obj, 'validation_warning'):
-                    commit['validation_warning'] = pr_obj.validation_warning
+                if hasattr(pr_obj, 'validation_summary'):
+                    validation_summaries.append(pr_obj.validation_summary)
+                # Set edited=True if editing was attempted, regardless of validation status
+                edited = True
                 if pr_obj.validated:
                     validated = True
-                    edited = True
             context = ''
             if commit.get('pr_summary'):
                 context += f"\nPR Summary: {commit['pr_summary']}"
@@ -2165,11 +2258,16 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
             pr_obj.edit_content('title', commit.get('title', ''), title_prompt, edit=True)
             commit['cleaned_title'] = pr_obj.cleaned_title
-            if hasattr(pr_obj, 'validation_warning'):
-                commit['validation_warning'] = pr_obj.validation_warning
+            if hasattr(pr_obj, 'validation_summary'):
+                validation_summaries.append(pr_obj.validation_summary)
+            # Set edited=True if editing was attempted, regardless of validation status
+            edited = True
             if pr_obj.validated:
                 validated = True
-                edited = True
+            
+            # Store all validation summaries if any exist
+            if validation_summaries:
+                commit['validation_summaries'] = validation_summaries
         else:
             commit['cleaned_title'] = commit.get('title', '')
             commit['pr_summary'] = commit.get('pr_summary', '')
@@ -2189,6 +2287,11 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         # Store validation and editing status in the commit object
         commit['validated'] = validated
         commit['edited'] = edited
+        
+        # Also transfer final validation summary to commit if available (fallback for single validations)
+        if hasattr(pr_obj, 'validation_summary') and 'validation_summaries' not in commit:
+            commit['validation_summary'] = pr_obj.validation_summary
+            
         return validated, edited
     with concurrent.futures.ThreadPoolExecutor() as executor:
         for repo in REPOS:
@@ -2280,13 +2383,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         return True
     # --- LLM proofread step ---
     def proofread_summary_with_llm(summary, max_tries=PROOFREAD_MAX_TRIES, debug=False):
-        prompt = (
-            "Proofread and streamline the following release summary for clarity and natural flow. "
-            "Keep it concise, user-facing, and ensure it starts with 'This release includes'. "
-            "Do not add or remove features, just improve the language and flow. "
-            "Return only the improved summary.\n\n"
-            f"Summary:\n{summary}"
-        )
+        prompt = PROOFREAD_SUMMARY_PROMPT.format(summary=summary)
         for attempt in range(max_tries):
             try:
                 response = client.chat.completions.create(
@@ -2416,9 +2513,14 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             f'toc-expand: true',
             f'date: "{date}"' if date else '',
         ]
-        # Add validation warnings if any
-        if commit.get('validation_warning'):
-            yaml_header.append(commit['validation_warning'].rstrip())
+        
+        # Add metadata about editing status
+        if commit.get('edited', False):
+            yaml_header.append(f'ai_edited: true')
+            yaml_header.append(f'ai_edited_date: "{current_time}"')
+        if commit.get('validated', False):
+            yaml_header.append(f'ai_validated: true')
+        # Remove validation warnings from YAML headers - they'll be added as HTML comments later
         # Add informational comments
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         if commit.get('edited', False):
@@ -2431,18 +2533,23 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         yaml_header.append('---\n\n')
         # Prepare content (notes, summary, body)
         content_parts = []
-        # Prefer edited/validated content fields
-        if commit.get('edited_text'):
-            content_parts.append(update_image_links(commit['edited_text'], version, debug))
-        elif commit.get('external_notes'):
+        # Use edited content (stored back in external_notes after editing)
+        if commit.get('external_notes'):
             content_parts.append(update_image_links(commit['external_notes'], version, debug))
-        if commit.get('pr_interpreted_summary'):
-            content_parts.append(update_image_links(commit['pr_interpreted_summary'], version, debug))
-        elif commit.get('pr_summary'):
+        # Use edited summary content (stored in pr_summary after editing, with fallback to pr_interpreted_summary)
+        if commit.get('pr_summary'):
             content_parts.append(update_image_links(commit['pr_summary'], version, debug))
+        elif commit.get('pr_interpreted_summary'):
+            content_parts.append(update_image_links(commit['pr_interpreted_summary'], version, debug))
         if not content_parts and commit.get('pr_body'):
             content_parts.append(update_image_links(commit['pr_body'], version, debug))
         content = '\n\n'.join([c for c in content_parts if c])
+        
+        # Add validation summary at the end if available
+        validation_comment = generate_validation_comment(commit, debug)
+        if validation_comment:
+            content += validation_comment
+            
         # Write file
         with open(pr_file, 'w') as f:
             f.write('\n'.join(yaml_header))
@@ -3114,6 +3221,13 @@ def write_file(file, release_components, label_to_category):
                     pr_lines.append(pr.content_warning_comment)
                 if pr['notes']:
                     pr_lines.append(f"{pr['notes']}\n\n")
+                
+                # Add validation summary if available
+                if hasattr(pr, 'validation_summary') or 'validation_summary' in pr:
+                    validation_comment = generate_validation_comment(pr, debug=False)
+                    if validation_comment:
+                        pr_lines.append(validation_comment)
+                
                 for line in pr_lines:
                     if line.strip() == "":
                         if last_line_was_blank:

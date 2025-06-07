@@ -1,11 +1,15 @@
 ---
-title: "Clean up `readme` file (#22)"
+title: "Clean up `README` file (#22)"
 categories: [installation, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content provides a clearer and more direct description of the task. By changing "Readme cleanup" to "Clean up `readme` file," it specifies the action to be taken and the target file, making it more understandable. The use of backticks around "readme" is a nice touch, as it indicates that "readme" is a file or code element, which is a common convention in technical documentation. Overall, the edit improves clarity and precision.
-# Content overwritten from an earlier version - 2025-06-06 08:51
+# CHECK: Title validation failed - Both versions of the content convey the same idea, but the edited version is clearer and more specific. Here's a breakdown of the differences:
+
+1. **Clarity**: The edited version, "Clean up `README` file," is more straightforward and uses standard language, making it immediately clear what the task involves. The original, "feat: Readme cleanup," uses a more technical or shorthand style that might be common in certain development environments but is less accessible to a general audience.
+
+2. **
+# Content overwritten from an earlier version - 2025-06-06 09:34
 # PR URL: https://github.com/validmind/installation/pull/22
 ---
 

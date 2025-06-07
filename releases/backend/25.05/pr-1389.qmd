@@ -1,11 +1,15 @@
 ---
-title: "Add more `db` connections to prevent pool exhaustion (#1389)"
+title: "Increase `db` connections to prevent pool exhaustion (#1389)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content effectively improves the original by capitalizing the first letter, which is standard for titles or headings. It also uses backticks around "db," which is a common convention to denote code or technical terms, enhancing clarity for readers familiar with programming or database management. Overall, the edit maintains the original meaning while presenting it in a more polished and professional manner.
-# Content overwritten from an earlier version - 2025-06-06 08:50
+# CHECK: Title validation failed - Both the original and edited content convey the same essential information, but the edited version is more polished and clear. Here's a breakdown of the changes:
+
+1. **Clarity and Formality**: The edited version uses "Increase" instead of "hotfix: add more," which is more direct and formal. It removes the jargon "hotfix," which might not be necessary for all audiences.
+
+2. **Technical Precision**: The edited version uses backticks around `db`, which is a common
+# Content overwritten from an earlier version - 2025-06-06 09:33
 # PR URL: https://github.com/validmind/backend/pull/1389
 ---
 

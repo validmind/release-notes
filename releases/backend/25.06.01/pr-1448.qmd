@@ -1,0 +1,54 @@
+---
+title: "Include custom fields in exported organization templates (#1448)"
+categories: [backend, 25.06.01, hotfix, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "June 05, 2025"
+# Content overwritten from an earlier version - 2025-06-07 09:55
+# PR URL: https://github.com/validmind/backend/pull/1448
+---
+
+#### What
+<!-- Describe what the change is doing, including behavior before and after the change -->
+This adds custom fields to the exported organization template. When making a new org with this template, the custom fields are included.
+
+#### Why
+<!-- Explain why the change is being made and needed -->
+This makes it easier for customers to setup new orgs.
+
+#### External Release Notes
+<!--- REPLACE THIS COMMENT WITH YOUR DESCRIPTION --->
+When exporting an organization template, custom fields are now included. When making a new organization with this template, the custom fields will be present.
+
+#### Breaking Changes
+<!-- List any breaking changes -->
+
+#### Screenshots/Videos (Frontend Only)
+<!-- Add screenshots or videos showing before/after -->
+
+# PR Summary
+
+This PR introduces several functional enhancements related to custom fields and template processing in organization and inventory model management. The main changes include:
+
+1. In the inventory model serialization, a new static method, sanitize_custom_fields, is added to process custom fields. It filters out empty fields, values that are explicitly 'null' or 'n/a' (case insensitive), and values starting with 'err:'. The method ensures that only valid custom field values are included in the serialized output of organization templates.
+
+2. The serialization method for organization templates now includes these sanitized custom fields, providing more consistent and clean data.
+
+3. In the organization creation workflow, after setting up a new organization, the code now retrieves a user from the new organization and triggers field update events for custom fields. This ensures that any default or template-specified custom fields are properly propagated to related inventory models.
+
+4. An improvement in the retrieval of inventory models, replacing a list comprehension with a database filter to retrieve models by their cuid, thereby streamlining the query and error handling.
+
+5. The template serialization in the template model has been updated to use the latest version data rather than relying on the static data structure. This allows for better handling of versioned template data.
+
+6. Minor formatting adjustments and improvements in logging and error message consistency have been made.
+
+Overall, these enhancements streamline the process of handling custom fields and improve the robustness of organization and template management workflows.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: FAILED
+Attempts: 7
+Last Validation: 2025-06-07 09:50:08
+Result: The edited content is a clear improvement over the original. It provides a more specific and actionable description of the task, indicating that custom fields should be included in exported organization templates. This makes the purpose and scope of the action clearer to the reader. Overall, the edi...
+Reedit Available: Yes
+Reedit Message: The edited content is a clear improvement over the original. It provides a more specific and actionable description of the task, indicating that custom fields should be included in exported organizati...
+--->

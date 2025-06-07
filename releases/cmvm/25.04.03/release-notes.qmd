@@ -1,13 +1,14 @@
 ---
 title: "25.04.03 Hotfix release notes"
-date: "April 17, 2025"
+date: "April 14, 2025"
 categories: [cmvm, 25.04.03, hotfix]
 sidebar: release-notes
 toc-expand: true
-# Content overwritten from an earlier version - 2025-06-04 12:19
+# Content edited by AI - 2025-06-07 13:23
+# Content overwritten from an earlier version - 2025-06-07 13:23
 ---
 
-This release includes refined authorization for report generation in the `UI` reporting route.
+This release includes enhanced authorization for the `report_generation` endpoint in UI reporting.
 
 # Backend
 <!--- Tag: [cmvm/25.04.03](https://github.com/validmind/backend/releases/tag/cmvm/25.04.03) --->
@@ -18,29 +19,42 @@ This release includes refined authorization for report generation in the `UI` re
 
 <!--- PR #1381: https://github.com/validmind/backend/pull/1381 --->
 <!--- Labels: none --->
-### Refine authorization for report generation in the `UI` reporting route (#1381)
+### Enhance authorization for `report_generation` endpoint in UI reporting (#1381)
 
-This update refines authorization for the report generation endpoint in the UI reporting route. The authorization decorator on the GET endpoint now uses a general `read` action instead of `download_report`. In-method permission checks are added based on the document type in the request. The endpoint performs an authorization check for `download_doc` for `documentation-report` or `monitoring-report`, and `download_vr` for `validation-report`. A `BadRequestError` is raised for unsupported document types.
+This update enhances authorization for the report generation endpoint in the UI reporting route. The authorization decorator on the GET endpoint now uses a generic `read` action instead of `download_report`. In-method permission checks are added based on the document type in the request:
 
-These changes ensure users have the correct permissions for the specific report type they wish to access.
+- For `documentation-report` or `monitoring-report`, it checks `download_doc` authorization.
+- For `validation-report`, it checks `download_vr` authorization.
+- If the document type is unsupported, a `BadRequestError` is raised.
+
+These changes ensure users have the correct permissions for the report type they access.
 
 
 <!--- # Frontend --->
-<!--- Tag: [cmvm/25.04.03](https://github.com/validmind/frontend/releases/tag/cmvm/25.04.03) --->
-<!--- Compare API call: gh api repos/validmind/frontend/compare/bb95c83bd4cb4b8e0ad4bda17e2643fc03e0c7cf...bb95c83bd4cb4b8e0ad4bda17e2643fc03e0c7cf --->
-<!-- No public PRs found for this release -->
+<!--- Tag cmvm/25.04.03 not found in frontend repository --->
+<!-- No tag found in this repository -->
 
 <!--- # Agents --->
-<!--- Tag: [cmvm/25.04.03](https://github.com/validmind/agents/releases/tag/cmvm/25.04.03) --->
-<!--- Compare API call: gh api repos/validmind/agents/compare/cd2ef65cd3794430ba70924ad35a25b2ae8179a7...cd2ef65cd3794430ba70924ad35a25b2ae8179a7 --->
-<!-- No public PRs found for this release -->
+<!--- Tag cmvm/25.04.03 not found in agents repository --->
+<!-- No tag found in this repository -->
+
+# Installation
+<!--- Tag: [cmvm/25.04.03](https://github.com/validmind/installation/releases/tag/cmvm/25.04.03) --->
+<!--- Compare API call: gh api repos/validmind/installation/compare/d5ca801584af26c2ba69c9ab28264fda8b916ce4...d5ca801584af26c2ba69c9ab28264fda8b916ce4 --->
+
+<!-- ### Changes with no label -->
+
+
+<!--- PR #16: https://github.com/validmind/installation/pull/16 --->
+<!--- Labels: none --->
+<!--- ### Update `Customer-managed-releases.qmd` file (#16) --->
+<!-- No release notes or summary provided. -->
+
 
 <!--- # Documentation --->
-<!--- Tag: [cmvm/25.04.03](https://github.com/validmind/documentation/releases/tag/cmvm/25.04.03) --->
-<!--- Compare API call: gh api repos/validmind/documentation/compare/36342c67c902ee80d3b9e78948dae2102148758b...36342c67c902ee80d3b9e78948dae2102148758b --->
-<!-- No public PRs found for this release -->
+<!--- Tag cmvm/25.04.03 not found in documentation repository --->
+<!-- No tag found in this repository -->
 
 <!--- # Validmind-library --->
-<!--- Tag: [cmvm/25.04.03](https://github.com/validmind/validmind-library/releases/tag/cmvm/25.04.03) --->
-<!--- Compare API call: gh api repos/validmind/validmind-library/compare/cmvm/25.04.03...cmvm/25.04.03 --->
-<!-- No public PRs found for this release -->
+<!--- Tag cmvm/25.04.03 not found in validmind-library repository --->
+<!-- No tag found in this repository -->
