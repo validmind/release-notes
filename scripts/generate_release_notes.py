@@ -107,6 +107,7 @@ EDIT_TITLE_PROMPT = (
 
 # --- Content editing instructions ---
 EDIT_CONTENT_SYSTEM = "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes while maintaining the original PR's scope. Follow the instructions exactly."
+
 EDIT_CONTENT_PROMPT = (
     "When editing content:\n"
     "- Remove all Markdown headings (e.g., '#### What', '# PR Summary').\n"
@@ -124,8 +125,8 @@ EDIT_CONTENT_PROMPT = (
 # --- Content editing instructions for multi-pass editing ---
 EDIT_PASS_1_INSTRUCTIONS = (
     "Pass 1 — Group and Flatten:\n"
+    "- Remove ALL Markdown headings (#, ##, ###, ####, etc.) including '# PR Summary'\n"
     "- Combine related or similar content into cohesive blocks\n"
-    "- Remove all Markdown headings (#, ##, etc.)\n"
     "- Preserve paragraph breaks and list formatting\n"
     "Output only the grouped and flattened text."
 )
@@ -149,11 +150,11 @@ EDIT_PASS_3_INSTRUCTIONS = (
 
 # --- Content validation instructions ---
 VALIDATION_SYSTEM = "You are a judge evaluating the quality of edited content."
+
 VALIDATION_PROMPT = (
     "You are a judge evaluating the quality of edited content.\n"
     "For {content_type}, check if the edit:\n"
-    "5. For titles: Is properly capitalized and does not end with a period.\n"
-    "6. For titles: Contains a single line of text that is enclosed in double quotes.\n"
+ 
     "1. Maintains the core meaning and facts of the original.\n"
     "2. Uses proper formatting and structure.\n"
     "3. Is clear and professional.\n"
@@ -170,8 +171,35 @@ VALIDATION_PROMPT = (
     "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
 )
 
+# --- Content validation criteria ---
+VALIDATION_CRITERIA = {
+    'title': [
+        "Is properly capitalized and punctuated",
+        "Contains a single line of text",
+        "Is enclosed in double quotes",
+        "Does not contain ticket numbers or branch names",
+        "Is clear and concise for end users",
+        "Is 80 characters or less"
+    ],
+    'summary': [
+        "Maintains core meaning and facts",
+        "Uses proper formatting and structure",
+        "Is clear and professional",
+        "Does not contain unwanted sections",
+        "Does not contain any Markdown headings"
+    ],
+    'notes': [
+        "Maintains technical accuracy",
+        "Uses consistent formatting",
+        "Is user-focused",
+        "Does not contain internal notes",
+        "Does not contain any Markdown headings"
+    ]
+}
+
 # --- Section classification prompt ---
 SECTION_CLASSIFICATION_SYSTEM = "You are a release notes classifier. Your job is to determine if a section should be included in public release notes."
+
 SECTION_CLASSIFICATION_PROMPT = (
     "Classify if this section should be included in public release notes.\n"
     "Section title: {title}\n"
@@ -188,6 +216,7 @@ SECTION_CLASSIFICATION_PROMPT = (
 
 # --- Merge PR classification prompt ---
 MERGE_PR_CLASSIFICATION_SYSTEM = "You are a PR classifier. Your job is to determine if a PR represents an automatic merge or contains actual changes."
+
 MERGE_PR_CLASSIFICATION_PROMPT = (
     "Analyze this PR title and determine if it represents an automatic merge PR.\n"
     "A merge PR typically:\n"
@@ -647,7 +676,7 @@ class PR:
                     time.sleep(sleep_time)
                     delay = min(max_delay, delay * 2)  # Exponential backoff with cap
                 else:
-                    self.validation_warning = f"# CHECK: {content_type.capitalize()} validation failed - {validation_result}\n"
+                    self.validation_warning = f"# CHECK: {content_type.capitalize()} validation indicates a substantial edit compared to the original\n"
                     print(f"WARN: All {max_attempts} content edit attempts failed for {content_type} in PR #{self.pr_number}")
                     if self.debug:
                         print(f"Validation result: {validation_result}")
@@ -828,33 +857,11 @@ class PR:
             print(f"DEBUG: [validate_edit] Original (first 100 chars): {repr(original_content[:100]) if original_content else None}")
             print(f"DEBUG: [validate_edit] Edited (first 100 chars): {repr(edited_content[:100]) if edited_content else None}")
 
-        # Structured validation criteria based on content type
-        validation_criteria = {
-            'title': [
-                "Is properly capitalized and punctuated",
-                "Does not contain ticket numbers or branch names",
-                "Is clear and concise for end users",
-                "Is 80 characters or less"
-            ],
-            'summary': [
-                "Maintains core meaning and facts",
-                "Uses proper formatting and structure",
-                "Is clear and professional",
-                "Does not contain unwanted sections"
-            ],
-            'notes': [
-                "Maintains technical accuracy",
-                "Uses consistent formatting",
-                "Is user-focused",
-                "Does not contain internal notes"
-            ]
-        }
-
         # Build detailed validation prompt
         validation_prompt = VALIDATION_PROMPT.format(content_type=content_type)
-        if content_type in validation_criteria:
+        if content_type in VALIDATION_CRITERIA:
             validation_prompt += "\n\nSpecific criteria to check:\n"
-            for criterion in validation_criteria[content_type]:
+            for criterion in VALIDATION_CRITERIA[content_type]:
                 validation_prompt += f"- {criterion}\n"
 
         max_retries = DEFAULT_MAX_RETRIES
@@ -1715,31 +1722,56 @@ def get_previous_tag(repo, tag, debug=False):
     
     # For regular releases
     else:
-        # First try previous regular release
-        for t in reversed(valid_tags[:current_idx]):
-            if t['rc'] is None:
-                if debug:
-                    print(f"DEBUG: [get_previous_tag] {repo} previous non-RC tag for {tag}: {t['name']}")
-                return t['name']
-        
-        # Then try RCs of current version
-        for t in reversed(valid_tags[:current_idx]):
-            if t['major'] == major and t['minor'] == minor and t['rc'] is not None:
-                if debug:
-                    print(f"DEBUG: [get_previous_tag] {repo} previous version RC for {tag}: {t['name']}")
-                return t['name']
+        # For major.minor releases, look for previous major.minor release (same format)
+        if patch is None:
+            # Look for previous regular release with major.minor format (no patch)
+            for t in reversed(valid_tags[:current_idx]):
+                if t['rc'] is None and t['patch'] is None:
+                    if debug:
+                        print(f"DEBUG: [get_previous_tag] {repo} previous major.minor release for {tag}: {t['name']}")
+                    return t['name']
+        # For hotfix releases (major.minor.patch), look for previous patch in same version
+        else:
+            # Look for previous patch in same major.minor version
+            for t in reversed(valid_tags[:current_idx]):
+                if (t['major'] == major and t['minor'] == minor and 
+                    t['rc'] is None and t['patch'] is not None):
+                    if debug:
+                        print(f"DEBUG: [get_previous_tag] {repo} previous patch in same version for {tag}: {t['name']}")
+                    return t['name']
+            # Fallback to base major.minor version
+            for t in reversed(valid_tags[:current_idx]):
+                if (t['major'] == major and t['minor'] == minor and 
+                    t['rc'] is None and t['patch'] is None):
+                    if debug:
+                        print(f"DEBUG: [get_previous_tag] {repo} base version for hotfix {tag}: {t['name']}")
+                    return t['name']
     
-    # Fallback to immediate previous tag if no better match found
-    if debug:
-        print(f"DEBUG: [get_previous_tag] {repo} fallback previous tag for {tag}: {valid_tags[current_idx - 1]['name']}")
-    return valid_tags[current_idx - 1]['name']
+    # If no appropriate previous tag found, this is an error
+    print(f"ERROR: [get_previous_tag] Could not find appropriate previous tag for {tag} in {repo}")
+    return None
 
 def get_commits_for_tag(repo, tag, debug=False):
     """Get all PRs merged between the previous tag and this tag, excluding internal PRs.
+    If the tag doesn't exist in the repository, return empty list.
     If no previous tag is found, fall back to extracting PRs from the release or tag body.
     """
     try:
+        # First check if the current tag exists in this repository
+        current_tag_with_prefix = f"cmvm/{tag}" if not tag.startswith('cmvm/') else tag
+        cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags/{current_tag_with_prefix}']
+        if debug:
+            print(f"DEBUG: [get_commits_for_tag] Checking if tag {current_tag_with_prefix} exists in {repo}")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            if debug:
+                print(f"DEBUG: [get_commits_for_tag] Tag {current_tag_with_prefix} not found in {repo}, skipping")
+            return []
+        
         prev_tag = get_previous_tag(repo, tag, debug=debug)
+        if prev_tag is None:
+            print(f"ERROR: [get_commits_for_tag] Failed to find previous tag for {tag} in {repo}")
+            sys.exit(1)
         if not prev_tag:
             if debug:
                 print(f"DEBUG: [get_commits_for_tag] No previous tag found for {tag} in {repo}, using tag/release body as fallback.")
@@ -1961,6 +1993,13 @@ def generate_changelog_content(repo, tag, commits, has_release):
     repo_name = repo.capitalize()
     tag_url = f"https://github.com/validmind/{repo}/releases/tag/{tag}"
     
+    # If no commits at all, the tag likely doesn't exist in this repo
+    if not commits:
+        content = f"<!--- # {repo_name} --->\n"
+        content += f"<!--- Tag {tag} not found in {repo} repository --->\n"
+        content += "<!-- No tag found in this repository -->\n"
+        return content
+    
     # Get the commit SHA for the tag
     try:
         cmd = ['gh', 'api', f'repos/validmind/{repo}/git/refs/tags/{tag}']
@@ -2147,6 +2186,9 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             commit['external_notes'] = update_image_links(commit['external_notes'], version, debug)
         if commit.get('pr_body'):
             commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
+        # Store validation and editing status in the commit object
+        commit['validated'] = validated
+        commit['edited'] = edited
         return validated, edited
     with concurrent.futures.ThreadPoolExecutor() as executor:
         for repo in REPOS:
@@ -2379,9 +2421,9 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             yaml_header.append(commit['validation_warning'].rstrip())
         # Add informational comments
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        if any_edited:
+        if commit.get('edited', False):
             yaml_header.append(f'# Content edited by AI - {current_time}')
-        if any_validated:
+        if commit.get('validated', False):
             yaml_header.append(f'# Content validated by AI - {current_time}')
         if overwrite:
             yaml_header.append(f'# Content overwritten from an earlier version - {current_time}')
