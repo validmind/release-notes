@@ -4,9 +4,11 @@ date: "June 05, 2025"
 categories: [cmvm, 25.06.01, hotfix]
 sidebar: release-notes
 toc-expand: true
+# Content edited by AI - 2025-06-08 14:30
+# Content overwritten from an earlier version - 2025-06-08 14:30
 ---
 
-This release includes the ability to configure finding statuses via the API, add custom fields to exported organization templates, upload sourcemaps to Datadog and Sentry without deployment, and customize finding statuses in the UI.
+This release includes the ability to configure finding statuses via the API, export organization custom fields in templates, upload sourcemaps to Datadog and Sentry without deployment, and customize finding statuses in the UI, among other enhancements.
 
 <!-- WARNING: Summary may not mention an enhancement PR -->
 
@@ -21,111 +23,55 @@ This release includes the ability to configure finding statuses via the API, add
 <!--- Labels: enhancement --->
 ### Configure finding statuses via the `API` (#1499)
 
-#### What
-<!-- Describe what the change is doing, including behavior before and after the change -->
-Enables user to customize finding statuses in Settings page
+Users can now customize finding statuses on the Settings page. This feature allows users to define their own status values, enhancing interaction with the platform.
 
-#### Why
-<!-- Explain why the change is being made and needed -->
-Users may want custom finding status values when interacting with the platform
+This update introduces a feature for managing the status of findings, allowing organizations to define custom statuses such as open, closed, or deleted. It includes a new database table and model for finding statuses, enhancing data integrity and API interfaces for improved UI interaction.
 
-# PR Summary
+Key changes include:
 
-This pull request adds a new feature to manage the status of findings. It introduces a new database table and model for finding statuses that allow organizations to define custom statuses (e.g. open, closed, deleted) for findings. The changes include:
+- A migration script creates a `finding_statuses` table and adds a `status_id` column to the `findings` table, backfilling existing findings and removing the deprecated column.
 
-- A migration script that creates a new table (finding_statuses) and a new column (status_id) in the findings table. The script also backfills existing findings using the old status values and then drops the deprecated column.
-- Updates to the Finding model to replace the string-based status field with a foreign key relationship to the FindingStatus model. This includes changes to the serialization, creation, updating, and deletion of findings to ensure the new status is properly managed.
-- Addition of a new FindingStatus model with methods to create, update, delete, and load default statuses for an organization. The model includes helper methods (such as serialization and mark_as_deleted) to support these operations.
-- API changes including new endpoints (via a dedicated namespace) for retrieving, creating, updating, and deleting finding statuses. The endpoints enforce validations (e.g. duplicate status names) as well as permissions using the requires_auth decorator.
-- Updates to related routes (such as ui, reporting, and SQL views) to join and filter against the new FindingStatus table rather than using the old status string.
-- Update to organization templates and platform configurations to include finding statuses.
-- Unit tests modifications to exercise the new functionality for creating, updating, and deleting finding statuses as part of finding CRUD operations.
+- The `Finding` model now uses a foreign key to the `FindingStatus` model, affecting serialization, creation, updating, and deletion processes.
 
-Overall, this PR integrates finding status management into the application, improves data integrity by using a relational approach, and extends the API interfaces for enhanced UI interaction.
+- A `FindingStatus` model is introduced with methods for managing statuses, including serialization and `mark_as_deleted`.
+
+- New API endpoints for managing finding statuses, with validations for duplicate names and permission checks using `requires_auth`.
+
+- Updates to routes, UI, reporting, and SQL views to use the new `FindingStatus` table.
+
+- Changes to organization templates and platform configurations to incorporate finding statuses.
+
+- Unit tests are adjusted to cover the new functionality for managing finding statuses.
 
 
 <!--- PR #1448: https://github.com/validmind/backend/pull/1448 --->
 <!--- Labels: enhancement, python --->
-### Include custom fields in exported organization templates (#1448)
+### Export organization `custom_fields` in templates (#1448)
 
-#### What
-<!-- Describe what the change is doing, including behavior before and after the change -->
-This adds custom fields to the exported organization template. When making a new org with this template, the custom fields are included.
+This update improves the exported organization template by adding previously missing custom fields. Their absence could complicate the setup process for new organizations. Now, when customers create a new organization using the template, these custom fields are automatically included, simplifying the setup process.
 
-#### Why
-<!-- Explain why the change is being made and needed -->
-This makes it easier for customers to setup new orgs.
+This update enhances custom fields and template processing in organization and inventory model management.
 
-#### External Release Notes
-<!--- REPLACE THIS COMMENT WITH YOUR DESCRIPTION --->
-When exporting an organization template, custom fields are now included. When making a new organization with this template, the custom fields will be present.
+- The `sanitize_custom_fields` method now filters out empty fields, values marked as 'null' or 'n/a', and those starting with 'err:', ensuring only valid custom field values are included in serialized organization templates.
 
-#### Breaking Changes
-<!-- List any breaking changes -->
+- Organization template serialization includes these sanitized custom fields for cleaner data.
 
-#### Screenshots/Videos (Frontend Only)
-<!-- Add screenshots or videos showing before/after -->
+- During organization creation, the system retrieves a user from the new organization and triggers custom field updates, ensuring default or template-specified fields are applied to related inventory models.
 
-# PR Summary
+- Inventory model retrieval is improved by using a database filter for `cuid`, enhancing query efficiency and error handling.
 
-This PR introduces several functional enhancements related to custom fields and template processing in organization and inventory model management. The main changes include:
+- Template serialization now uses the latest version data, improving versioned template data handling.
 
-1. In the inventory model serialization, a new static method, sanitize_custom_fields, is added to process custom fields. It filters out empty fields, values that are explicitly 'null' or 'n/a' (case insensitive), and values starting with 'err:'. The method ensures that only valid custom field values are included in the serialized output of organization templates.
+- Minor formatting, logging, and error message consistency improvements have been made.
 
-2. The serialization method for organization templates now includes these sanitized custom fields, providing more consistent and clean data.
-
-3. In the organization creation workflow, after setting up a new organization, the code now retrieves a user from the new organization and triggers field update events for custom fields. This ensures that any default or template-specified custom fields are properly propagated to related inventory models.
-
-4. An improvement in the retrieval of inventory models, replacing a list comprehension with a database filter to retrieve models by their cuid, thereby streamlining the query and error handling.
-
-5. The template serialization in the template model has been updated to use the latest version data rather than relying on the static data structure. This allows for better handling of versioned template data.
-
-6. Minor formatting adjustments and improvements in logging and error message consistency have been made.
-
-Overall, these enhancements streamline the process of handling custom fields and improve the robustness of organization and template management workflows.
+These changes streamline custom field handling and enhance organization and template management workflows.
 
 <!-- ### Changes with no label -->
-
-
-<!--- PR #1564: https://github.com/validmind/backend/pull/1564 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.30.16) (#1564) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1534: https://github.com/validmind/backend/pull/1534 --->
-<!--- Labels: none --->
-<!--- ### feat: merge prod deploy workflows, port elsewhere (#1534) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1560: https://github.com/validmind/backend/pull/1560 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.30.16) (#1560) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1407: https://github.com/validmind/backend/pull/1407 --->
-<!--- Labels: none --->
-<!--- ### chore: Merge litellm dockerfiles (#1407) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1555: https://github.com/validmind/backend/pull/1555 --->
-<!--- Labels: none --->
-<!--- ### Cullen/merge main into staging (#1555) --->
-<!-- No release notes or summary provided. -->
 
 
 <!--- PR #1561: https://github.com/validmind/backend/pull/1561 --->
 <!--- Labels: none --->
 <!--- ### Merge Staging into Prod (prod-1.30.16) (#1561) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1558: https://github.com/validmind/backend/pull/1558 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.30.16) (#1558) --->
 <!-- No release notes or summary provided. -->
 
 
@@ -135,58 +81,65 @@ Overall, these enhancements streamline the process of handling custom fields and
 <!-- No release notes or summary provided. -->
 
 
+<!--- PR #1564: https://github.com/validmind/backend/pull/1564 --->
+<!--- Labels: none --->
+<!--- ### Merge Staging into Prod (prod-1.30.16) (#1564) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1407: https://github.com/validmind/backend/pull/1407 --->
+<!--- Labels: none --->
+<!--- ### chore: Merge litellm dockerfiles (#1407) --->
+<!-- No release notes or summary provided. -->
+
+
 <!--- PR #1557: https://github.com/validmind/backend/pull/1557 --->
 <!--- Labels: none --->
 <!--- ### Merge Main into Staging (staging-1.30.16) (#1557) --->
 <!-- No release notes or summary provided. -->
 
 
+<!--- PR #1555: https://github.com/validmind/backend/pull/1555 --->
+<!--- Labels: none --->
+<!--- ### Cullen/merge main into staging (#1555) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1558: https://github.com/validmind/backend/pull/1558 --->
+<!--- Labels: none --->
+<!--- ### Merge Staging into Prod (prod-1.30.16) (#1558) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1560: https://github.com/validmind/backend/pull/1560 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Staging (staging-1.30.16) (#1560) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1534: https://github.com/validmind/backend/pull/1534 --->
+<!--- Labels: none --->
+<!--- ### feat: merge prod deploy workflows, port elsewhere (#1534) --->
+<!-- No release notes or summary provided. -->
+
+
 <!--- PR #1546: https://github.com/validmind/backend/pull/1546 --->
 <!--- Labels: none --->
-### Update `PYTHONPATH` for improved module resolution and error handling (#1546)
+### Improve `PYTHONPATH` handling for API and worker processes (#1546)
 
-#### Changes
-- `PYTHONPATH` ensures that we can spawn scripts and have the scripts assume the original base path of the application
-- Use module calling syntax so we the rest of the code dependencies can be loaded properly since they are using relative imports
-- Fixed how error messages are passed around and printed, I wasn't seeing anything on the console or the HTTP response. Now it works:
+`PYTHONPATH` ensures scripts run with the application's original base path, enabling the correct loading of code dependencies, particularly for relative imports.
 
-```
-{
-    "error": {
-        "code": "INTERNAL_ERROR",
-        "message": "Failed to generate monitoring report",
-        "details": {
-            "error": "/Users/andres/code/backend/.venv/bin/python3: Error while finding module specification for 'workers.report_worker' (ModuleNotFoundError: No module named 'workers')\n"
-        },
-        "user_response": "Please search for INTERNAL_ERROR in the documentation for troubleshooting information.",
-        "status": 500
-    },
-    "message": "Failed to generate monitoring report"
-}
-```
+Error message handling has been enhanced. Errors now appear on the console and in the HTTP response, including details like error code, message, and user guidance. For internal errors, the response will have a status code of 500, and the error will be logged with a timestamp and detailed message.
 
-and on the logs:
+Alternative import strategies can be considered if `PYTHONPATH` is not used.
 
-```
-2025-06-04T10:20:40.062556 [error] Error generating monitoring report: /Users/andres/code/backend/.venv/bin/python3: Error while finding module specification for 'workers.report_worker' (ModuleNotFoundError: No module named 'workers')
-```
+This update enhances the API and worker processes for improved robustness and maintainability:
 
----
+- The `Makefile` command for running the API now includes the current backend source directory in the `PYTHONPATH`, ensuring clearer module resolution and avoiding path issues.
 
-About `PYTHONPATH`:
+- The UI reporting route now invokes the report worker using module syntax with the `-m` flag, simplifying command line usage and preventing path resolution issues. Error handling is improved by checking for detailed error information before logging and propagating errors.
 
-#### Alternative Import Strategies
-Without PYTHONPATH, you could also use:
-
-# PR Summary
-
-This PR introduces a few functional changes to improve the robustness and maintainability of the API and worker processes:
-
-1. In the Makefile, the command for running the API has been updated to include the current backend source directory in the PYTHONPATH. This makes module resolution more explicit and can help avoid path issues.
-
-2. In the UI reporting route, the report worker is now invoked using module syntax (i.e. using the "-m" flag) rather than constructing a file path manually. This change avoids potential issues with path resolution and simplifies the command line invocation. In addition, the error handling has been enhanced by checking for detailed error information before logging and propagating errors.
-
-3. In the report worker file, the import statements have been refactored. The previous reliance on deeply nested module paths (e.g. from src/backend/...) has been replaced with imports directly from the db package, which should streamline module dependencies and improve maintainability.
+- Import statements in the report worker file have been refactored to use direct imports from the `db` package, replacing deeply nested module paths. This change streamlines dependencies and enhances maintainability.
 
 
 # Frontend
@@ -198,70 +151,46 @@ This PR introduces a few functional changes to improve the robustness and mainta
 
 <!--- PR #1434: https://github.com/validmind/frontend/pull/1434 --->
 <!--- Labels: enhancement --->
-### Upload `sourcemaps` to Datadog and Sentry without deployment (#1434)
+### Upload `sourcemaps` to `Datadog` and `Sentry` without deployment (#1434)
 
-#### What and why?
-This PR does a few things:
-- Add npm command to upload the sourcemaps to Datadog & Sentry for debugging help
-- Run the sourcemaps upload command during `prod` docker image build
-- `rm` the sourcemaps from the final build target to avoid exposing proprietary information
+This update allows sourcemaps to be uploaded to Datadog and Sentry, improving debugging capabilities. An `npm` command is run during the `prod` Docker image build to enable this. Sourcemaps are not included in the final build to protect proprietary information. For more information, see the documentation for [Datadog sourcemap](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/), [Sentry sourcemap](https://docs.sentry.io/platforms/javascript/sourcemaps/uploading/cli/), and [Sentry release](https://docs.sentry.io/cli/releases/).
 
-See the docs for [Datadog sourcemap](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/), [Sentry sourcemap](https://docs.sentry.io/platforms/javascript/sourcemaps/uploading/cli/), and [Sentry release](https://docs.sentry.io/cli/releases/) for details.
+Note: A related update in GitHub actions is needed for new variables during the build, as detailed in https://github.com/validmind/backend/pull/1539.
 
-#### Dependencies, breaking changes, and deployment notes
-https://github.com/validmind/backend/pull/1539 updates the github actions for the new variables needed during build.
-
-#### External Release Notes
-- Adds the ability to upload sourcemaps to datadog and/or sentry
-
-# PR Summary
-This pull request introduces a new multi-stage Docker build to handle the uploading of sourcemaps for enhanced error tracking and debugging in production. A dedicated build stage named `sourcemaps-upload` is added which leverages build secrets to securely handle API keys for Datadog and Sentry. The new stage uses a custom NPM script (`sourcemaps-upload`) defined in the package configuration and implemented in the `scripts/sourcemaps-upload.sh` file. This script checks for the presence of required environment variables and conditionally uploads the sourcemaps to Datadog and Sentry. Additionally, the production stage now copies the build output from the sourcemaps upload stage and removes sourcemap files from the final container to prevent exposure of source details. Finally, the initialization of Sentry in the frontend application is updated to include the current release version, which should help in correlating sourcemap data with application versions.
+This update introduces a multi-stage Docker build to streamline sourcemap uploads, enhancing error tracking and debugging in production. A new `sourcemaps-upload` build stage securely manages API keys for Datadog and Sentry using build secrets. A custom NPM script checks environment variables and uploads sourcemaps to Datadog and Sentry. The production stage now removes sourcemap files to protect source details. Sentry initialization is updated to include the release version, improving data correlation.
 
 Functional changes include:
-- Introducing a new Docker build stage for uploading sourcemaps.
-- Integrating Datadog and Sentry APIs for automated sourcemap uploads.
-- Updating package scripts and adding necessary dev dependencies.
-- Modifying Sentry initialization in the application to include the release version.
+
+- Adding a Docker build stage for sourcemap uploads.
+- Automating sourcemap uploads via Datadog and Sentry APIs.
+- Updating package scripts and adding development dependencies.
+- Modifying Sentry initialization to include the release version.
 
 
 <!--- PR #1407: https://github.com/validmind/frontend/pull/1407 --->
 <!--- Labels: enhancement --->
-### Allow users to customize `finding` statuses in the UI (#1407)
+### Allow users to customize finding statuses in the `UI` (#1407)
 
-#### What
-<!-- Describe what the change is doing, including behavior before and after the change -->
-Enables users to customize finding statuses
+This update allows users to customize finding statuses by creating new ones and 'soft-deleting' existing ones. When a status is deleted, all associated findings will automatically revert to `Open`.
 
-- Supports creating new finding statuses
-- Support 'soft-deleting' finding statuses
-- If a finding status is deleted, all findings currently using that status default to `Open`
+This update adds a feature for managing finding statuses in the application, including new API endpoints for fetching, creating, updating, and deleting these statuses. The data model now includes a type for finding status with a unique identifier, color scheme, name, and default flag.
 
-#### Breaking Changes
-<!-- List any breaking changes -->
+New UI components support this feature, such as the `AddFindingStatusModal`, which uses a shared color grid selector. Default statuses have restricted name edits. The main application and settings pages now integrate these statuses, with a new sidebar link for authorized users. Existing components, like findings lists and detailed views, now display updated statuses using the `VMTag` component with colors from the status data.
 
-#### Screenshots/Videos (Frontend Only)
-<!-- Add screenshots or videos showing before/after -->
-
-# PR Summary
-
-This PR introduces a new feature for managing finding statuses within the application. It adds a set of new API endpoints for fetching, creating, updating, and deleting finding statuses. The data model is expanded by introducing a new type for finding status that includes a unique identifier, a color scheme, a name, and a default flag. 
-
-New UI components were implemented to support this functionality. A dedicated modal (AddFindingStatusModal) was built that leverages a shared color grid selector for choosing color schemes. The modal carefully handles default statuses by disabling edits on their names. The main application and various settings pages have been updated to integrate the new finding statuses, including adding a new sidebar link for users with the appropriate permissions. In addition, existing components that display finding statuses (such as in findings lists and detailed views) now use these new statuses and display them using the updated design (e.g., using a VMTag component with colors dynamically derived from the status data).
-
-Furthermore, several settings pages were refactored to consistently use a new SettingsSection layout, ensuring a uniform look and feel across the application. Overall, the PR integrates the new finding statuses feature both on the backend (via API enhancements) and the frontend (via component and layout updates).
+Several settings pages were refactored to use a new `SettingsSection` layout for consistency. This update enhances both the backend (API) and frontend (components and layout) to support the new finding statuses.
 
 <!-- ### Changes with no label -->
-
-
-<!--- PR #1445: https://github.com/validmind/frontend/pull/1445 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.36.3) (#1445) --->
-<!-- No release notes or summary provided. -->
 
 
 <!--- PR #1446: https://github.com/validmind/frontend/pull/1446 --->
 <!--- Labels: none --->
 <!--- ### Merge Staging into Prod (prod-1.36.3) (#1446) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #1445: https://github.com/validmind/frontend/pull/1445 --->
+<!--- Labels: none --->
+<!--- ### Merge Main into Staging (staging-1.36.3) (#1445) --->
 <!-- No release notes or summary provided. -->
 
 
@@ -280,6 +209,24 @@ Furthermore, several settings pages were refactored to consistently use a new Se
 <!-- ### Changes with no label -->
 
 
+<!--- PR #730: https://github.com/validmind/documentation/pull/730 --->
+<!--- Labels: none --->
+<!--- ### Merge main into staging (#730) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #733: https://github.com/validmind/documentation/pull/733 --->
+<!--- Labels: none --->
+<!--- ### Merge main into staging (#733) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #741: https://github.com/validmind/documentation/pull/741 --->
+<!--- Labels: none --->
+<!--- ### Merge main into staging (#741) --->
+<!-- No release notes or summary provided. -->
+
+
 <!--- PR #739: https://github.com/validmind/documentation/pull/739 --->
 <!--- Labels: none --->
 <!--- ### Merge main into staging (#739) --->
@@ -295,24 +242,6 @@ Furthermore, several settings pages were refactored to consistently use a new Se
 <!--- PR #738: https://github.com/validmind/documentation/pull/738 --->
 <!--- Labels: none --->
 <!--- ### Merge main into staging (#738) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #741: https://github.com/validmind/documentation/pull/741 --->
-<!--- Labels: none --->
-<!--- ### Merge main into staging (#741) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #730: https://github.com/validmind/documentation/pull/730 --->
-<!--- Labels: none --->
-<!--- ### Merge main into staging (#730) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #733: https://github.com/validmind/documentation/pull/733 --->
-<!--- Labels: none --->
-<!--- ### Merge main into staging (#733) --->
 <!-- No release notes or summary provided. -->
 
 

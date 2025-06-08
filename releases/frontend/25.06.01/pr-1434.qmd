@@ -1,49 +1,41 @@
 ---
-title: "Upload `sourcemaps` to Datadog and Sentry without deployment (#1434)"
+title: "Upload `sourcemaps` to `Datadog` and `Sentry` without deployment (#1434)"
 categories: [frontend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "June 05, 2025"
-# Content overwritten from an earlier version - 2025-06-07 09:55
+ai_edited: true
+ai_edited_date: "2025-06-08 14:30"
+# Content edited by AI - 2025-06-08 14:30
+# Content overwritten from an earlier version - 2025-06-08 14:30
 # PR URL: https://github.com/validmind/frontend/pull/1434
 ---
 
-#### What and why?
-This PR does a few things:
-- Add npm command to upload the sourcemaps to Datadog & Sentry for debugging help
-- Run the sourcemaps upload command during `prod` docker image build
-- `rm` the sourcemaps from the final build target to avoid exposing proprietary information
+This update allows sourcemaps to be uploaded to Datadog and Sentry, improving debugging capabilities. An `npm` command is run during the `prod` Docker image build to enable this. Sourcemaps are not included in the final build to protect proprietary information. For more information, see the documentation for [Datadog sourcemap](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/), [Sentry sourcemap](https://docs.sentry.io/platforms/javascript/sourcemaps/uploading/cli/), and [Sentry release](https://docs.sentry.io/cli/releases/).
 
-See the docs for [Datadog sourcemap](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/), [Sentry sourcemap](https://docs.sentry.io/platforms/javascript/sourcemaps/uploading/cli/), and [Sentry release](https://docs.sentry.io/cli/releases/) for details.
+Note: A related update in GitHub actions is needed for new variables during the build, as detailed in https://github.com/validmind/backend/pull/1539.
 
-#### Dependencies, breaking changes, and deployment notes
-https://github.com/validmind/backend/pull/1539 updates the github actions for the new variables needed during build.
-
-#### External Release Notes
-- Adds the ability to upload sourcemaps to datadog and/or sentry
-
-# PR Summary
-This pull request introduces a new multi-stage Docker build to handle the uploading of sourcemaps for enhanced error tracking and debugging in production. A dedicated build stage named `sourcemaps-upload` is added which leverages build secrets to securely handle API keys for Datadog and Sentry. The new stage uses a custom NPM script (`sourcemaps-upload`) defined in the package configuration and implemented in the `scripts/sourcemaps-upload.sh` file. This script checks for the presence of required environment variables and conditionally uploads the sourcemaps to Datadog and Sentry. Additionally, the production stage now copies the build output from the sourcemaps upload stage and removes sourcemap files from the final container to prevent exposure of source details. Finally, the initialization of Sentry in the frontend application is updated to include the current release version, which should help in correlating sourcemap data with application versions.
+This update introduces a multi-stage Docker build to streamline sourcemap uploads, enhancing error tracking and debugging in production. A new `sourcemaps-upload` build stage securely manages API keys for Datadog and Sentry using build secrets. A custom NPM script checks environment variables and uploads sourcemaps to Datadog and Sentry. The production stage now removes sourcemap files to protect source details. Sentry initialization is updated to include the release version, improving data correlation.
 
 Functional changes include:
-- Introducing a new Docker build stage for uploading sourcemaps.
-- Integrating Datadog and Sentry APIs for automated sourcemap uploads.
-- Updating package scripts and adding necessary dev dependencies.
-- Modifying Sentry initialization in the application to include the release version.
+
+- Adding a Docker build stage for sourcemap uploads.
+- Automating sourcemap uploads via Datadog and Sentry APIs.
+- Updating package scripts and adding development dependencies.
+- Modifying Sentry initialization to include the release version.
+
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: FAILED
 Attempts: 7
-Last Validation: 2025-06-07 09:54:45
+Last Validation: 2025-06-08 14:30:07
 Result: The edited content is a clear and concise improvement over the original. Here are some specific points of evaluation:
 
 1. **Clarity and Readability**: 
-   - The edited version removes the ticket number "[SC-10091]", which may not be relevant to all readers and improves clarity.
-   - The use of backt...
-Failure Patterns: {'formatting': 1}
+   - The edited version uses backticks to highlight `sourcemaps`, `Datadog`, and `Sentry`, which helps in distinguishing these as specific terms or ...
 Reedit Available: Yes
 Reedit Message: The edited content is a clear and concise improvement over the original. Here are some specific points of evaluation:
 
 1. **Clarity and Readability**: 
-   - The edited version removes the ticket numbe...
+   - The edited version uses backticks to highli...
 --->

@@ -1,36 +1,43 @@
 ---
-title: "Enable customization of finding statuses via the `API` (#1499)"
+title: "Configure finding statuses via the `API` (#1499)"
 categories: [backend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "June 05, 2025"
-# Content overwritten from an earlier version - 2025-06-07 09:55
+ai_edited: true
+ai_edited_date: "2025-06-08 14:30"
+# Content edited by AI - 2025-06-08 14:30
+# Content overwritten from an earlier version - 2025-06-08 14:30
 # PR URL: https://github.com/validmind/backend/pull/1499
 ---
 
-#### What
-<!-- Describe what the change is doing, including behavior before and after the change -->
-Enables user to customize finding statuses in Settings page
+Users can now customize finding statuses on the Settings page. This feature allows users to define their own status values, enhancing interaction with the platform.
 
-# PR Summary
+This update introduces a feature for managing the status of findings, allowing organizations to define custom statuses such as open, closed, or deleted. It includes a new database table and model for finding statuses, enhancing data integrity and API interfaces for improved UI interaction.
 
-This pull request adds a new feature to manage the status of findings. It introduces a new database table and model for finding statuses that allow organizations to define custom statuses (e.g. open, closed, deleted) for findings. The changes include:
+Key changes include:
 
-- A migration script that creates a new table (finding_statuses) and a new column (status_id) in the findings table. The script also backfills existing findings using the old status values and then drops the deprecated column.
-- Updates to the Finding model to replace the string-based status field with a foreign key relationship to the FindingStatus model. This includes changes to the serialization, creation, updating, and deletion of findings to ensure the new status is properly managed.
-- Addition of a new FindingStatus model with methods to create, update, delete, and load default statuses for an organization. The model includes helper methods (such as serialization and mark_as_deleted) to support these operations.
-- API changes including new endpoints (via a dedicated namespace) for retrieving, creating, updating, and deleting finding statuses. The endpoints enforce validations (e.g. duplicate status names) as well as permissions using the requires_auth decorator.
-- Updates to related routes (such as ui, reporting, and SQL views) to join and filter against the new FindingStatus table rather than using the old status string.
-- Update to organization templates and platform configurations to include finding statuses.
-- Unit tests modifications to exercise the new functionality for creating, updating, and deleting finding statuses as part of finding CRUD operations.
+- A migration script creates a `finding_statuses` table and adds a `status_id` column to the `findings` table, backfilling existing findings and removing the deprecated column.
 
-Overall, this PR integrates finding status management into the application, improves data integrity by using a relational approach, and extends the API interfaces for enhanced UI interaction.
+- The `Finding` model now uses a foreign key to the `FindingStatus` model, affecting serialization, creation, updating, and deletion processes.
+
+- A `FindingStatus` model is introduced with methods for managing statuses, including serialization and `mark_as_deleted`.
+
+- New API endpoints for managing finding statuses, with validations for duplicate names and permission checks using `requires_auth`.
+
+- Updates to routes, UI, reporting, and SQL views to use the new `FindingStatus` table.
+
+- Changes to organization templates and platform configurations to incorporate finding statuses.
+
+- Unit tests are adjusted to cover the new functionality for managing finding statuses.
+
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: FAILED
 Attempts: 7
-Last Validation: 2025-06-07 09:50:12
-Result: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary details and uses simpler language while maintaining the core idea. The use of the word "Enable" clearly indicates the action, and "customization of finding statuses" is a straightforward way ...
+Last Validation: 2025-06-08 14:26:36
+Result: The edited content is a concise and clear version of the original. It effectively communicates the main idea without unnecessary details. However, it omits the reference number "[SC-10229]," which might be important for tracking or context within a specific system or documentation. If the reference ...
+Failure Patterns: {'meaning': 2}
 Reedit Available: Yes
-Reedit Message: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary details and uses simpler language while maintaining the core idea. The use of the word "Ena...
+Reedit Message: The edited content is a concise and clear version of the original. It effectively communicates the main idea without unnecessary details. However, it omits the reference number "[SC-10229]," which mig...
 --->
