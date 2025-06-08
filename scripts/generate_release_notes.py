@@ -48,7 +48,6 @@ MODEL_CLASSIFYING = "gpt-4o-mini"  # For quick section classification
 MODEL_PROOFREADING = "gpt-4o"                 # For proofreading tasks
 MODEL_EDITING = "gpt-4o"                      # For main content editing tasks
 MODEL_VALIDATION = "gpt-4o"                   # For critical validation tasks
-MODEL_SUMMARY = "gpt-4o-mini"                 # For summary generation
 
 # Temperature settings
 BASE_TEMPERATURE = 0.0
@@ -225,21 +224,6 @@ MERGE_PR_CLASSIFICATION_PROMPT = (
     "Respond with only 'MERGE' if this is an automatic merge PR, or 'NOT_MERGE' if it contains actual changes."
 )
 
-# --- Heading level adjustment prompt ---
-HEADING_LEVEL_SYSTEM = "You are a markdown heading level adjuster. Your job is to adjust heading levels while maintaining proper hierarchy."
-
-HEADING_LEVEL_PROMPT = (
-    "Fix heading levels in the markdown content while maintaining proper hierarchy:\n"
-    "1. The first heading (PR title) should be level 3 (###).\n"
-    "2. Section headings (like 'External Release Notes', 'Breaking Changes', etc.) should be level 4 (####).\n"
-    "3. All other headings should be at least level 5 (#####).\n"
-    "4. Preserve the relative hierarchy between headings.\n"
-    "5. Only change the number of # symbols at the start of headings.\n"
-    "6. Keep everything else exactly the same.\n\n"
-    "Content:\n"
-    "{content}"
-)
-
 # --- Summary proofreading prompt ---
 MODEL_PROOFREADING_SYSTEM = "You are a professional technical writer."
 
@@ -387,7 +371,7 @@ def generate_validation_comment(commit, debug=False):
         comment_lines = [
             header,
             f"Content Type: {validation_info.get('content_type', 'unknown')}",
-            f"Validation Status: {'FAILED' if validation_info.get('validation_failed') else 'PASSED'}",
+            f"Validation Status: {'CHECK' if validation_info.get('validation_failed') else 'PASSED'}",
             f"Attempts: {validation_info.get('attempts', 'unknown')}",
             f"Last Validation: {validation_info.get('last_validation_time', 'unknown')}"
         ]
@@ -1354,103 +1338,6 @@ def get_all_cmvm_tags(repo, version=None, debug=False):
             print(f"  WARN: Error getting tags from {repo}: {e}")
     return []
 
-def adjust_heading_levels(content, min_level=4, debug=False):
-    """Adjust heading levels in content using LLM or fallback to basic adjustment.
-    
-    Args:
-        content (str): The content to adjust
-        min_level (int): Minimum heading level (default: 4)
-        debug (bool): Whether to show debug output
-        
-    Returns:
-        str: Content with adjusted heading levels
-    """
-    if not content:
-        if debug:
-            print("DEBUG: [adjust_heading_levels] Empty content, returning as is")
-        return content
-        
-    if debug:
-        print(f"\nDEBUG: [adjust_heading_levels] Adjusting heading levels to minimum {min_level}")
-        print(f"DEBUG: [adjust_heading_levels] Input content (first 200 chars): {content[:200]}")
-    
-    # Try LLM-based adjustment first
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_CLASSIFYING,
-            messages=[
-                {
-                    "role": "system",
-                    "content": HEADING_LEVEL_SYSTEM
-                },
-                {
-                    "role": "user",
-                    "content": content
-                }
-            ],
-            max_tokens=4096,
-            temperature=0.0
-        )
-        
-        result = response.choices[0].message.content.strip()
-        
-        if debug:
-            print(f"DEBUG: [adjust_heading_levels] LLM result (first 200 chars): {result[:200]}")
-            print("\nDEBUG: [adjust_heading_levels] Heading changes:")
-            for i, (in_line, out_line) in enumerate(zip(content.split('\n'), result.split('\n'))):
-                if in_line != out_line and '#' in in_line:
-                    print(f"  Line {i+1}:")
-                    print(f"    Input:  {in_line}")
-                    print(f"    Output: {out_line}")
-        
-        return result
-        
-    except Exception as e:
-        if debug:
-            print(f"DEBUG: [adjust_heading_levels] LLM adjustment failed: {e}")
-            print("DEBUG: [adjust_heading_levels] Falling back to basic adjustment")
-    
-    # Fall back to basic adjustment
-    lines = content.split('\n')
-    result_lines = []
-    
-    for line in lines:
-        # Skip empty lines
-        if not line.strip():
-            result_lines.append(line)
-            continue
-            
-        # Strip leading whitespace before checking for #
-        stripped = line.lstrip()
-        if stripped.startswith('#'):
-            # Count leading #s
-            heading_level = len(stripped) - len(stripped.lstrip('#'))
-            # Get the text after the #s and any whitespace
-            text = stripped[heading_level:].strip()
-            if text:  # Only adjust if there's actual text
-                # Add #s until we reach min_level
-                new_level = max(heading_level, min_level)
-                # Preserve original indentation
-                indent = line[:len(line) - len(line.lstrip())]
-                result_lines.append(indent + '#' * new_level + ' ' + text)
-            else:
-                result_lines.append(line)
-        else:
-            result_lines.append(line)
-    
-    result = '\n'.join(result_lines)
-    
-    if debug:
-        print(f"DEBUG: [adjust_heading_levels] Basic adjustment result (first 200 chars): {result[:200]}")
-        print("\nDEBUG: [adjust_heading_levels] Heading changes:")
-        for i, (in_line, out_line) in enumerate(zip(lines, result_lines)):
-            if in_line != out_line and '#' in in_line:
-                print(f"  Line {i+1}:")
-                print(f"    Input:  {in_line}")
-                print(f"    Output: {out_line}")
-    
-    return result
-
 def is_merge_pr(title, debug=False):
     """Use OpenAI to classify whether a PR is an automatic merge PR.
     
@@ -1500,7 +1387,7 @@ def is_merge_pr(title, debug=False):
         title_lower = title.lower()
         return any(keyword in title_lower for keyword in MERGE_KEYWORDS)
 
-def get_pr_content(pr_number, repo, debug=False, adjust_heading_levels=False):
+def get_pr_content(pr_number, repo, debug=False):
     """Get content from a PR's external release notes, PR summary, title, and image URLs.
     
     Args:
@@ -1566,17 +1453,11 @@ def get_pr_content(pr_number, repo, debug=False, adjust_heading_levels=False):
                 if debug:
                     print(f"\nDEBUG: [get_pr_content] Found section: {section_title}")
                     print(f"DEBUG: [get_pr_content] Section content (first 200 chars): {section_content[:200]}")
-                    print(f"DEBUG: [get_pr_content] Passing to adjust_heading_levels (section_content):\n{section_content}")
                 # Use OpenAI to classify the section
                 if classify_section(section_title, section_content, debug):
                     if debug:
                         print(f"DEBUG: [get_pr_content] Including section: {section_title}")
-                    if adjust_heading_levels:
-                        adjusted_content = adjust_heading_levels(section_content, min_level=4, debug=debug)
-                    else:
-                        adjusted_content = section_content
-                    # Add the section with adjusted heading level
-                    sections.append(f"#### {section_title}\n{adjusted_content}")
+                    sections.append(f"#### {section_title}\n{section_content}")
                 else:
                     if debug:
                         print(f"DEBUG: [get_pr_content] Excluding section: {section_title}")
@@ -1605,13 +1486,8 @@ def get_pr_content(pr_number, repo, debug=False, adjust_heading_levels=False):
                     if match:
                         if debug:
                             print(f"DEBUG: [get_pr_content] Found match with pattern: {pattern}")
-                            print(f"DEBUG: [get_pr_content] Passing to adjust_heading_levels (extracted_text):\n{match.group(1).strip()}")
                         extracted_text = match.group(1).strip()
-                        if adjust_heading_levels:
-                            adjusted_text = adjust_heading_levels(extracted_text, min_level=4, debug=debug)
-                        else:
-                            adjusted_text = extracted_text
-                        external_notes = adjusted_text
+                        external_notes = extracted_text
                         break
 
         # Extract PR summary (robust: search all comments for '# PR Summary')
@@ -1627,10 +1503,6 @@ def get_pr_content(pr_number, repo, debug=False, adjust_heading_levels=False):
                 match = re.search(r"(# PR Summary\s*.+?)(?=^## |\Z)", body, re.DOTALL | re.MULTILINE)
                 if match:
                     pr_summary = match.group(1).strip()
-                    if debug:
-                        print(f"DEBUG: [get_pr_content] Passing to adjust_heading_levels (pr_summary):\n{pr_summary}")
-                    if adjust_heading_levels:
-                        pr_summary = adjust_heading_levels(pr_summary, min_level=4, debug=debug)
                     if debug:
                         print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Found PR summary: {pr_summary[:80]!r}")
                     break
@@ -2193,7 +2065,7 @@ def check_github_release(repo, version):
         print(f"  WARN: Error checking release {version} in {repo}: {e}")
         return False
 
-def create_release_file(release, overwrite=False, debug=False, edit=False, single=False, adjust_heading_levels=False, internal=False):
+def create_release_file(release, overwrite=False, debug=False, edit=False, single=False, internal=False):
     """Create release note files for a specific version: one per PR, and a new release-notes.qmd, or legacy single file if single=True."""
     import glob
     version = release['version']
@@ -2272,12 +2144,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             commit['cleaned_title'] = commit.get('title', '')
             commit['pr_summary'] = commit.get('pr_summary', '')
             commit['external_notes'] = commit.get('external_notes', '')
-        if commit.get('pr_summary') and adjust_heading_levels:
-            commit['pr_summary'] = adjust_heading_levels_fn(commit['pr_summary'], min_level=4, debug=debug)
-        if commit.get('external_notes') and adjust_heading_levels:
-            commit['external_notes'] = adjust_heading_levels_fn(commit['external_notes'], min_level=4, debug=debug)
-        if commit.get('pr_body') and adjust_heading_levels:
-            commit['pr_body'] = adjust_heading_levels_fn(commit['pr_body'], min_level=4, debug=debug)
+
         if commit.get('pr_body'):
             commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
         if commit.get('external_notes'):
@@ -2728,7 +2595,7 @@ def parse_release_tables(qmd_file_path, version=None, debug=False):
     
     return releases, seen_versions
 
-def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False, single=False, adjust_heading_levels=False, internal=False):
+def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False, single=False, internal=False):
     """Process all releases and create release note files.
     
     Args:
@@ -2795,7 +2662,7 @@ def process_releases(releases, overwrite, seen_versions, debug=False, version=No
             
         print("Creating release file ...")
         # Create the release file once per version
-        create_release_file(version_releases[0], overwrite, debug, edit, single, adjust_heading_levels, internal)
+        create_release_file(version_releases[0], overwrite, debug, edit, single, internal)
         print(f"✓ Completed processing version {version_key}")
         
         # If a specific tag was requested by the user, we're done after processing it
@@ -3667,8 +3534,6 @@ def main():
                       help='Show debug output')
     parser.add_argument('--edit', action='store_true',
                       help='Edit content using OpenAI')
-    parser.add_argument('--adjust-heading-levels', action='store_true',
-                      help='Adjust heading levels in PR text (calls adjust_heading_levels)')
     parser.add_argument('--internal', action='store_true',
                       help='Include all PR labels, not just category labels')
     args = parser.parse_args()
@@ -3701,7 +3566,7 @@ def main():
         # Process releases (check tags and create files)
         # Create a new empty set for seen_versions
         seen_versions = set()
-        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=False, adjust_heading_levels=args.adjust_heading_levels, internal=args.internal)
+        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=False, internal=args.internal)
             
         sys.exit(0)
         
