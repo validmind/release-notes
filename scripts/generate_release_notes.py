@@ -106,7 +106,7 @@ EDIT_CONTENT_PROMPT = (
     "- Use a space after list markers and start each item with a capital letter.\n"
     "- Don't refer to the 'PR body' or 'PR summary'.\n"
     "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
-    "- Don't add a conclusion or summary."
+    "- Don't add concluding or summary statements."
 )
 
 # --- Content editing instructions for multi-pass editing ---
@@ -132,6 +132,7 @@ EDIT_PASS_3_INSTRUCTIONS = (
     "- Improve clarity and flow\n"
     "- Ensure a summary paragraph at the top (≤ 500 characters)\n"
     "- Trim filler words or overly verbose phrasing\n"
+    "- Remove concluding or summary statements at appear at the end of the text."
     "Input: deduplicated text from Pass 2. Output only the final edited text."
 )
 
@@ -2346,6 +2347,12 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             continue
         # Skip merge PRs
         if is_merge_pr(commit.get('title', '')):
+            continue
+        # Skip PRs with no content (same logic as in generate_changelog_content)
+        has_content = bool(commit.get('external_notes') or commit.get('pr_summary') or commit.get('pr_body'))
+        if not has_content:
+            if debug:
+                print(f"DEBUG: [create_release_file] Skipping per-PR file for #{commit.get('pr_number')} in {repo} (no content)")
             continue
         pr_number = commit.get('pr_number')
         tag_str = version.split('/')[-1]
