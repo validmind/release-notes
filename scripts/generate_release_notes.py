@@ -45,9 +45,9 @@ EXCLUDED_SECTIONS = [
 # --- LLM settings ---
 # Model settings
 MODEL_CLASSIFYING = "gpt-4o-mini"  # For quick section classification
-MODEL_PROOFREADING = "gpt-4o"                 # For proofreading tasks
-MODEL_EDITING = "gpt-4o"                      # For main content editing tasks
-MODEL_VALIDATION = "gpt-4o"                   # For critical validation tasks
+MODEL_PROOFREADING = "gpt-4o"      # For proofreading tasks
+MODEL_EDITING = "gpt-4o"           # For content editing
+MODEL_VALIDATION = "gpt-4o"        # For edit validation
 
 # Temperature settings
 BASE_TEMPERATURE = 0.0
@@ -1991,14 +1991,7 @@ def generate_changelog_content(repo, tag, commits, has_release):
         content += "<!-- No public PRs found for this release -->\n"
         return content  # <-- EARLY RETURN, nothing else is executed!
     
-    # If there are public PRs, proceed as before
-    content = f"# {repo_name}\n"
-    if has_release:
-        content += f"<!--- Release: [{tag}]({tag_url}) --->\n"
-        content += f"<!--- {compare_url} --->\n\n"
-    else:
-        content += f"<!--- Tag: [{tag}]({tag_url}) --->\n"
-        content += f"<!--- {compare_url} --->\n\n"
+    # If there are public PRs, proceed as before but defer the heading decision
     labeled_commits = defaultdict(list)
     for commit in public_commits:
         if commit['labels']:
@@ -2010,42 +2003,84 @@ def generate_changelog_content(repo, tag, commits, has_release):
                 labeled_commits['other'].append(commit)
         else:
             labeled_commits['other'].append(commit)
+    
+    # Generate all PR content and track if any has actual user-facing content
+    pr_sections = []
+    has_any_real_content = False
+    
     for label in label_hierarchy + ['other']:
         if label in labeled_commits and labeled_commits[label]:
+            section_content = ""
             # Skip Documentation heading if repository is documentation
             if label == 'documentation' and repo == 'documentation':
-                content += "\n"
+                section_content += "\n"
             else:
-                content += f"{label_to_category.get(label, '<!-- ### Changes with no label -->')}\n\n"
+                section_content += f"{label_to_category.get(label, '<!-- ### Changes with no label -->')}\n\n"
+            
             for commit in labeled_commits[label]:
                 pr_url = f"https://github.com/validmind/{repo}/pull/{commit['pr_number']}"
                 pr_number = commit['pr_number']
                 title = commit.get('cleaned_title') or commit.get('title') or f"PR #{pr_number}"
                 has_content = bool(commit.get('external_notes') or commit.get('pr_summary') or commit.get('pr_body'))
-                if not has_content:
-                    # Comment out the entire PR section if no content
-                    content += f"\n<!--- PR #{pr_number}: {pr_url} --->\n"
-                    content += f"<!--- Labels: {', '.join(commit['labels']) if commit['labels'] else 'none'} --->\n"
-                    content += f"<!--- ### {title} (#{pr_number}) --->\n"
-                    content += f"<!-- No release notes or summary provided. -->\n\n"
+                is_merge = commit.get('is_merge_pr', False)
+                
+                if not has_content or is_merge:
+                    # Comment out the entire PR section if no content or if it's a merge PR
+                    section_content += f"\n<!--- PR #{pr_number}: {pr_url} --->\n"
+                    section_content += f"<!--- Labels: {', '.join(commit['labels']) if commit['labels'] else 'none'} --->\n"
+                    section_content += f"<!--- ### {title} (#{pr_number}) --->\n"
+                    # Check if this is a merge PR and add appropriate comment
+                    if is_merge:
+                        section_content += f"<!-- Merge PR - not included in release notes. -->\n\n"
+                    else:
+                        section_content += f"<!-- No release notes or summary provided. -->\n\n"
                     continue
-                content += f"\n<!--- PR #{pr_number}: {pr_url} --->\n"
-                content += f"<!--- Labels: {', '.join(commit['labels']) if commit['labels'] else 'none'} --->\n"
-                content += f"### {title} (#{pr_number})\n\n"
+                
+                # This PR has real content
+                has_any_real_content = True
+                section_content += f"\n<!--- PR #{pr_number}: {pr_url} --->\n"
+                section_content += f"<!--- Labels: {', '.join(commit['labels']) if commit['labels'] else 'none'} --->\n"
+                section_content += f"### {title} (#{pr_number})\n\n"
                 # Embed images as markdown using local paths
                 for url in commit.get('image_urls', []):
                     local_path = download_image(url, tag, debug=False)
                     if local_path:
                         rel_path = os.path.relpath(local_path, os.getcwd())
-                        content += f'![Image]({rel_path})\n'
+                        section_content += f'![Image]({rel_path})\n'
                 if commit['external_notes']:
-                    content += f"{update_image_links(commit['external_notes'], tag, False)}\n\n"
+                    section_content += f"{update_image_links(commit['external_notes'], tag, False)}\n\n"
                 if commit['pr_summary']:
-                    content += f"{update_image_links(commit['pr_summary'], tag, False)}\n\n"
+                    section_content += f"{update_image_links(commit['pr_summary'], tag, False)}\n\n"
                 # If no notes or summary, use PR body as fallback
                 if not commit['external_notes'] and not commit['pr_summary']:
                     if commit.get('pr_body'):
-                        content += f"{update_image_links(commit['pr_body'], tag, False)}\n\n"
+                        section_content += f"{update_image_links(commit['pr_body'], tag, False)}\n\n"
+            
+            pr_sections.append(section_content)
+    
+    # Now decide on the repo heading based on whether we found real content
+    if not has_any_real_content:
+        # Comment out the entire section if no real content
+        content = f"<!--- # {repo_name} --->\n"
+        if has_release:
+            content += f"<!--- Release: [{tag}]({tag_url}) --->\n"
+            content += f"<!--- {compare_url} --->\n"
+        else:
+            content += f"<!--- Tag: [{tag}]({tag_url}) --->\n"
+            content += f"<!--- {compare_url} --->\n"
+        content += "<!-- No public PRs found for this release -->\n"
+        return content
+    else:
+        # Use normal heading
+        content = f"# {repo_name}\n"
+        if has_release:
+            content += f"<!--- Release: [{tag}]({tag_url}) --->\n"
+            content += f"<!--- {compare_url} --->\n\n"
+        else:
+            content += f"<!--- Tag: [{tag}]({tag_url}) --->\n"
+            content += f"<!--- {compare_url} --->\n\n"
+        content += "".join(pr_sections)
+    
     return content
 
 def check_github_release(repo, version):
@@ -2093,11 +2128,13 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         # Skip internal PRs
         if 'internal' in commit.get('labels', []):
             return False, False
-        # Skip merge PRs
+        # Mark merge PRs but don't skip them - they'll be added as comments
         if is_merge_pr(commit.get('title', '')):
             if debug:
-                print(f"DEBUG: [process_pr] Skipping merge PR #{commit.get('pr_number')} in {repo} (merge PR detected by title)")
-            return False, False
+                print(f"DEBUG: [process_pr] Marking merge PR #{commit.get('pr_number')} in {repo} for comment inclusion")
+            commit['is_merge_pr'] = True
+        else:
+            commit['is_merge_pr'] = False
         pr_obj = PR(repo_name=repo, pr_number=commit['pr_number'], title=commit.get('title'), body=commit.get('pr_body'), debug=debug)
         validated = False
         edited = False

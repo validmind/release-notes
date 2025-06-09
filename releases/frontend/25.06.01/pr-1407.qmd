@@ -1,30 +1,32 @@
 ---
-title: "Allow users to customize finding statuses in the `UI` (#1407)"
+title: "Allow users to customize `finding` statuses in the UI (#1407)"
 categories: [frontend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "June 05, 2025"
-ai_edited: true
-ai_edited_date: "2025-06-08 14:30"
-# Content edited by AI - 2025-06-08 14:30
-# Content overwritten from an earlier version - 2025-06-08 14:30
+# Content edited by AI - 2025-06-08 18:17
+# Content overwritten from an earlier version - 2025-06-08 18:17
 # PR URL: https://github.com/validmind/frontend/pull/1407
 ---
 
-This update allows users to customize finding statuses by creating new ones and 'soft-deleting' existing ones. When a status is deleted, all associated findings will automatically revert to `Open`.
+This update enables users to customize finding statuses by:
 
-This update adds a feature for managing finding statuses in the application, including new API endpoints for fetching, creating, updating, and deleting these statuses. The data model now includes a type for finding status with a unique identifier, color scheme, name, and default flag.
+- Creating new finding statuses.
+- Soft-deleting existing finding statuses.
+- Defaulting all findings to `Open` if their status is deleted.
 
-New UI components support this feature, such as the `AddFindingStatusModal`, which uses a shared color grid selector. Default statuses have restricted name edits. The main application and settings pages now integrate these statuses, with a new sidebar link for authorized users. Existing components, like findings lists and detailed views, now display updated statuses using the `VMTag` component with colors from the status data.
+This update introduces a feature for managing finding statuses, including new API endpoints for fetching, creating, updating, and deleting these statuses. The data model now includes a new type for finding status with a unique identifier, color scheme, name, and default flag.
 
-Several settings pages were refactored to use a new `SettingsSection` layout for consistency. This update enhances both the backend (API) and frontend (components and layout) to support the new finding statuses.
+New UI components, such as the `AddFindingStatusModal`, support this functionality. The modal uses a shared color grid selector for color schemes and manages default statuses by disabling name edits. The main application and settings pages have been updated to integrate the new finding statuses, with a new sidebar link for users with the appropriate permissions. Existing components, like findings lists and detailed views, now use these new statuses and display them with the updated design, such as the `VMTag` component with colors from the status data.
+
+Several settings pages were refactored to use a new `SettingsSection` layout, ensuring a consistent look and feel across the application. This update integrates the new finding statuses feature on both the backend (via API enhancements) and the frontend (via component and layout updates).
 
 <!--- VALIDATION SUMMARY
 Content Type: title
-Validation Status: FAILED
+Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-08 14:29:12
-Result: The edited content effectively conveys the main idea of the original content in a more concise manner. It removes unnecessary words and focuses directly on the action and the subject. However, it might be beneficial to maintain some context or structure from the original content, especially if this ...
+Last Validation: 2025-06-08 18:16:07
+Result: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary words and focuses on the key action and subject. The use of backticks around "finding" suggests it might be a specific term or feature, which can be helpful for clarity if that's the case. Ov...
 Reedit Available: Yes
-Reedit Message: The edited content effectively conveys the main idea of the original content in a more concise manner. It removes unnecessary words and focuses directly on the action and the subject. However, it migh...
+Reedit Message: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary words and focuses on the key action and subject. The use of backticks around "finding" sugg...
 --->

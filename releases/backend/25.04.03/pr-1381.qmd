@@ -4,27 +4,19 @@ categories: [backend, 25.04.03, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "April 10, 2025"
-# Content edited by AI - 2025-06-08 17:58
-# Content overwritten from an earlier version - 2025-06-08 17:58
+# Content edited by AI - 2025-06-08 18:21
+# Content overwritten from an earlier version - 2025-06-08 18:21
 # PR URL: https://github.com/validmind/backend/pull/1381
 ---
 
-This update refines authorization for the report generation endpoint in the UI reporting route. Key changes include:
-
-- The authorization decorator on the GET endpoint now uses a generic `read` action instead of the specific `download_report` action.
-- In-method permission checks are added based on the document type in the request. The endpoint performs:
-  - `download_doc` authorization for `documentation-report` or `monitoring-report`.
-  - `download_vr` authorization for `validation-report`.
-  - A `BadRequestError` is raised for unsupported document types.
-
-These changes ensure users have the correct permissions for the specific report type they access.
+This update refines authorization for the report generation endpoint in the UI reporting route. The authorization decorator on the GET endpoint now uses a generic `read` action. In-method permission checks are added based on the document type in the request. The endpoint performs `download_doc` authorization for `documentation-report` or `monitoring-report`, `download_vr` authorization for `validation-report`, and raises `BadRequestError` for unsupported document types. These changes ensure users have the correct permissions for the specific report type they access.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-08 17:57:43
-Result: The edited content provides a clearer and more specific description of the task or change being made. Instead of using the vague term "cherry pick #1380 onto prod," which might not be immediately understandable to all team members, the edited version specifies the action being taken: refining author...
+Last Validation: 2025-06-08 18:20:49
+Result: The edited content provides a clearer and more specific description of the task or change being made. It replaces the vague term "cherry pick #1380 onto prod" with a precise action, "Refine authorization for `report_generation` endpoint in UI reporting route," which helps in understanding the exact ...
 Reedit Available: Yes
-Reedit Message: The edited content provides a clearer and more specific description of the task or change being made. Instead of using the vague term "cherry pick #1380 onto prod," which might not be immediately unde...
+Reedit Message: The edited content provides a clearer and more specific description of the task or change being made. It replaces the vague term "cherry pick #1380 onto prod" with a precise action, "Refine authorizat...
 --->

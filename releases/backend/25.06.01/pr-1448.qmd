@@ -4,38 +4,34 @@ categories: [backend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "June 05, 2025"
-ai_edited: true
-ai_edited_date: "2025-06-08 14:30"
-# Content edited by AI - 2025-06-08 14:30
-# Content overwritten from an earlier version - 2025-06-08 14:30
+# Content edited by AI - 2025-06-08 18:17
+# Content overwritten from an earlier version - 2025-06-08 18:17
 # PR URL: https://github.com/validmind/backend/pull/1448
 ---
 
-This update improves the exported organization template by adding previously missing custom fields. Their absence could complicate the setup process for new organizations. Now, when customers create a new organization using the template, these custom fields are automatically included, simplifying the setup process.
+Custom fields are now included in the exported organization template. These fields are automatically added when creating a new organization, simplifying the setup process.
 
-This update enhances custom fields and template processing in organization and inventory model management.
+This update enhances custom fields and template processing in organization and inventory model management. Key improvements include a new `sanitize_custom_fields` method for inventory model serialization, filtering out empty or invalid custom field values. Organization template serialization now uses these sanitized fields for cleaner data. The organization creation workflow ensures proper propagation of custom fields. Inventory model retrieval is streamlined with a database filter, and template serialization now uses the latest version data. Minor formatting and logging improvements are also included.
 
-- The `sanitize_custom_fields` method now filters out empty fields, values marked as 'null' or 'n/a', and those starting with 'err:', ensuring only valid custom field values are included in serialized organization templates.
+- A new static method, `sanitize_custom_fields`, is added to inventory model serialization. It filters out empty fields, values marked as 'null' or 'n/a' (case insensitive), and values starting with 'err:', ensuring only valid custom field values are included in the serialized output of organization templates.
 
-- Organization template serialization includes these sanitized custom fields for cleaner data.
+- The serialization method for organization templates now incorporates these sanitized custom fields, resulting in more consistent and clean data.
 
-- During organization creation, the system retrieves a user from the new organization and triggers custom field updates, ensuring default or template-specified fields are applied to related inventory models.
+- In the organization creation workflow, after setting up a new organization, the system retrieves a user from the new organization and triggers field update events for custom fields, ensuring proper propagation to related inventory models.
 
-- Inventory model retrieval is improved by using a database filter for `cuid`, enhancing query efficiency and error handling.
+- Inventory model retrieval is improved by using a database filter to retrieve models by their `cuid`, streamlining the query and error handling process.
 
-- Template serialization now uses the latest version data, improving versioned template data handling.
+- Template serialization in the template model now uses the latest version data, allowing for better handling of versioned template data.
 
-- Minor formatting, logging, and error message consistency improvements have been made.
-
-These changes streamline custom field handling and enhance organization and template management workflows.
+- Minor formatting adjustments and improvements in logging and error message consistency have been implemented.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
-Validation Status: FAILED
+Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-08 14:26:39
-Result: The edited content provides a clearer and more specific instruction by using backticks to highlight `custom_fields`, indicating it is likely a specific term or code element. Additionally, the phrase "in templates" adds context, suggesting that the export process is related to templates. This makes t...
-Failure Patterns: {'formatting': 2}
+Last Validation: 2025-06-08 18:13:34
+Result: The edited content provides a clearer and more specific instruction by using backticks to highlight `custom_fields`, indicating that it is likely a specific field or variable name. Additionally, the phrase "in templates" adds context, suggesting that the export process is related to templates. This ...
+Failure Patterns: {'formatting': 2, 'meaning': 2}
 Reedit Available: Yes
-Reedit Message: The edited content provides a clearer and more specific instruction by using backticks to highlight `custom_fields`, indicating it is likely a specific term or code element. Additionally, the phrase "...
+Reedit Message: The edited content provides a clearer and more specific instruction by using backticks to highlight `custom_fields`, indicating that it is likely a specific field or variable name. Additionally, the p...
 --->
