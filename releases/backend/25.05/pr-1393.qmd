@@ -1,14 +1,23 @@
 ---
-title: "Enhance metadata filtering in `Figure` model to handle timestamp values (#1393)"
+title: "Enhance metadata filtering in `Figure` model to support timestamp values (#1393)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content is a clear improvement over the original. By enclosing "Figure" in backticks, it indicates that "Figure" is likely a class or model name in a programming context, which helps clarify the meaning for readers familiar with coding conventions. The rest of the sentence remains unchanged, as it was already clear and concise. Overall, the edit enhances readability and understanding without altering the original intent.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/backend/pull/1393
 ---
 
-# PR Summary
+This update improves metadata filtering in the `get_latest_figures` function by handling timestamp values. It checks if the metadata value is a `datetime` or `date` object. If it is, the JSON string value is cast to a datetime type using SQLAlchemy's `func.cast` for comparison. Otherwise, it is converted to a string. This ensures accurate filtering of records based on timestamp metadata, allowing date and time values to be correctly interpreted within the query.
 
-This pull request enhances the metadata filtering in the `get_latest_figures` function by adding special handling for timestamp values. The changes introduce a check to determine if the metadata value is a `datetime` or `date` object. If it is, the code casts the JSON string value to a datetime type using SQLAlchemy's `func.cast` and compares it with the provided value. If not, the value is converted to a string for comparison. This improvement allows for accurate filtering of records based on timestamp metadata, ensuring that date and time values are correctly interpreted and compared within the query.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:16:47
+Result: The edited content improves clarity and precision by enclosing "Figure" in backticks, indicating it is likely a class or model name in a programming context. Additionally, the word "handle" is replaced with "support," which is more specific and appropriate in this context. Overall, the edit enhances...
+Failure Patterns: {'meaning': 4}
+Reedit Available: Yes
+Reedit Message: The edited content improves clarity and precision by enclosing "Figure" in backticks, indicating it is likely a class or model name in a programming context. Additionally, the word "handle" is replace...
+--->

@@ -1,14 +1,25 @@
 ---
-title: "Local dev responds with test message in `UI` (#10)"
+title: "Local dev displays test message in `UI` (#10)"
 categories: [agents, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content is a clear and concise improvement over the original. It changes the verb form to "responds," which is more grammatically correct and consistent in tense. The use of backticks around "UI" is a stylistic choice often used in technical writing to denote code or specific terms, which can be helpful for clarity. Overall, the edited version is more polished and professional.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/agents/pull/10
 ---
 
 ![image](https://github.com/user-attachments/assets/433e6e73-dd0e-4714-a514-e226375669ad)
 
 When running locally, we have logic that checks if litellm is running by sending a single "hello" to the llm. This is a great way to be able to fall back to the bare openai api if the developer doesn't want to run litellm locally. However the problem is that this invoke to the langchain llm client happens within the task node of the langgraph workflow. Meaning that the "Hello" back from the LLM is streamed to the UI. The solution is simply to remove the callbacks array when running `client.invoke()`.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:22:58
+Result: The edited content is a clear and concise improvement over the original. It uses the verb "displays" instead of "responding with," which is more direct and appropriate for describing an action. Additionally, the use of backticks around "UI" is a common convention in technical writing to denote code ...
+Failure Patterns: {'meaning': 2}
+Reedit Available: Yes
+Reedit Message: The edited content is a clear and concise improvement over the original. It uses the verb "displays" instead of "responding with," which is more direct and appropriate for describing an action. Additi...
+--->

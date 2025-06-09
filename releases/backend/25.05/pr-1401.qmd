@@ -1,22 +1,29 @@
 ---
-title: "Update dev deployments to use new `values-new.yaml` format (#1401)"
+title: "Update dev deployments to use new `values` format (#1401)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content improves clarity and specificity. Here's a breakdown of the changes:
-
-1. **Clarity**: The original term "dev deploys" is expanded to "dev deployments," which is clearer and more formal.
-
-2. **Specificity**: The edited version specifies the exact file format being used, `values-new.yaml`, which provides more detailed information to the reader.
-
-3. **Tone**: The edited content removes the informal "chore:" prefix, making it more suitable for documentation
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/backend/pull/1401
 ---
 
-# PR Summary
+The GitHub Actions deployment workflow now uses the `values-new.yaml` template to generate `values.yaml`, integrating updated configuration values and aligning with new deployment parameters. The `sed` substitutions for tokens such as site, environment, vault ID, repository, and API SHA remain unchanged.
 
-This PR updates the GitHub Actions deployment workflow by modifying the file templating process for Kubernetes manifests. The change involves replacing the source file for generating the values.yaml file from the old template (values.yaml) to a new template file (values-new.yaml). This adjustment is expected to incorporate updated configuration values and align with new deployment parameters.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:18:32
+Result: The edited content improves upon the original by making it clearer and more formal. Here are some specific points of improvement:
 
-The rest of the substitutions performed using sed remain unchanged, ensuring that tokens such as the site, environment, vault ID, repository, and API SHA are correctly replaced in the templated file.
+1. **Clarity**: The edited version replaces "dev deploys" with "dev deployments," which is more explicit and avoids any potential confusion with abbreviations.
+
+2. **For...
+Failure Patterns: {'formatting': 1}
+Reedit Available: Yes
+Reedit Message: The edited content improves upon the original by making it clearer and more formal. Here are some specific points of improvement:
+
+1. **Clarity**: The edited version replaces "dev deploys" with "dev d...
+--->

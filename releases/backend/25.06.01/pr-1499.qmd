@@ -1,33 +1,23 @@
 ---
-title: "Enable configuration of `finding statuses` via the API (#1499)"
+title: "Configure `finding statuses` through the API (#1499)"
 categories: [backend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "June 05, 2025"
-# Content edited by AI - 2025-06-08 18:17
-# Content overwritten from an earlier version - 2025-06-08 18:17
+date: "June 06, 2025"
+# Content edited by AI - 2025-06-09 16:40
+# Content overwritten from an earlier version - 2025-06-09 16:40
 # PR URL: https://github.com/validmind/backend/pull/1499
 ---
 
-Users can now customize finding statuses on the Settings page, enabling them to define their own `finding status` values for improved interaction with the platform.
+Users can now customize `finding status` values on the Settings page for a personalized experience.
 
-This update introduces a feature for managing the status of findings, allowing organizations to define custom statuses like open, closed, and deleted. It includes a new database table and model for finding statuses.
+This update adds a feature for managing finding statuses, allowing organizations to define custom statuses like open, closed, or deleted.
 
-Key changes:
+A migration script creates a `finding_statuses` table and adds a `status_id` column to the `findings` table. Existing findings are backfilled with old status values, and the deprecated column is removed. The `Finding` model now uses a foreign key to the `FindingStatus` model, affecting serialization, creation, updating, and deletion processes for status management.
 
-- A migration script creates a `finding_statuses` table and adds a `status_id` column to the `findings` table, backfilling existing findings and removing the deprecated column.
+A new `FindingStatus` model is introduced, with methods to create, update, delete, and load default statuses for an organization. It includes helper methods like serialization and `mark_as_deleted`. API changes add new endpoints for managing finding statuses, with validations for duplicate status names and enforced permissions using the `requires_auth` decorator.
 
-- The `Finding` model now uses a foreign key relationship to the `FindingStatus` model, affecting serialization, creation, updating, and deletion processes.
-
-- A `FindingStatus` model is introduced with methods for creating, updating, deleting, and loading default statuses, including helper methods like serialization and `mark_as_deleted`.
-
-- New API endpoints for retrieving, creating, updating, and deleting finding statuses, with validations for duplicate names and permission enforcement using the `requires_auth` decorator.
-
-- Updates to related routes, including UI, reporting, and SQL views, to use the new `FindingStatus` table.
-
-- Modifications to organization templates and platform configurations to incorporate finding statuses.
-
-- Adjustments to unit tests to cover the new functionality for creating, updating, and deleting finding statuses as part of finding CRUD operations.
+Related routes, including UI, reporting, and SQL views, are updated to join and filter against the new `FindingStatus` table. Organization templates and platform configurations are updated to incorporate finding statuses. Unit tests are modified to test the new functionality for creating, updating, and deleting finding statuses as part of finding CRUD operations.
 
 This integration enhances data integrity by adopting a relational approach and extends API interfaces for improved UI interaction.
 
@@ -35,8 +25,9 @@ This integration enhances data integrity by adopting a relational approach and e
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-08 18:13:17
-Result: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary details and focuses on the key action, which is the ability to configure finding statuses through the API. The use of backticks around "finding statuses" helps to emphasize the term, making i...
+Last Validation: 2025-06-09 16:36:48
+Result: The edited content effectively condenses the original message while maintaining its core meaning. It removes unnecessary words and uses backticks to highlight "finding statuses," which is a common convention for denoting code or specific terms. The phrase "through the API" is a more concise alternat...
+Failure Patterns: {'meaning': 2}
 Reedit Available: Yes
-Reedit Message: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary details and focuses on the key action, which is the ability to configure finding statuses t...
+Reedit Message: The edited content effectively condenses the original message while maintaining its core meaning. It removes unnecessary words and uses backticks to highlight "finding statuses," which is a common con...
 --->

@@ -4,10 +4,20 @@ categories: [installation, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content improves the original by capitalizing the first word, which is standard for titles or headings, and by enclosing "helm" in backticks, which is a common practice to denote code or command-line tools. This makes the content clearer and more professional. Overall, the edit enhances readability and aligns with technical documentation standards.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/installation/pull/23
 ---
 
 * Helm chart testing will now run on pushes to main
 * Fix helm release workflow
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:23:22
+Result: The edited content improves the original by capitalizing the first word, which is standard for titles or headings, and by enclosing "helm" in backticks, which is a common practice to denote code or command-line tools. This makes the content clearer and more professional. Overall, the edit enhances r...
+Reedit Available: Yes
+Reedit Message: The edited content improves the original by capitalizing the first word, which is standard for titles or headings, and by enclosing "helm" in backticks, which is a common practice to denote code or co...
+--->

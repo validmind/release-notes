@@ -1,27 +1,32 @@
 ---
-title: "Update user guide for `attestation` (#687)"
+title: "Update user guide for `attestation` process management (#687)"
 categories: [documentation, 25.05, release, documentation, highlight]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content is clear and concise, effectively conveying the action of updating the user guide specifically for "attestation." The use of the word "update" as a verb makes the instruction more direct and actionable. Additionally, enclosing "attestation" in backticks can imply that it is a specific term or feature, which may be helpful for clarity. Overall, the edited content is an improvement in terms of clarity and directness.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/documentation/pull/687
 ---
 
-#### External Release Notes
-Model attestation is now available.
-
-Attestation allows model owners and validators to formally review and certify key details about a model at a specific point in time. This helps support internal governance and compliance with external requirements. Progress for the attestation process is tracked through clear status updates and role-specific tasks. 
+Model attestation is now available, enabling model owners and validators to formally review and certify key details about a model at a specific point in time. This feature supports internal governance and compliance with external requirements. The attestation process includes status updates and role-specific tasks to track progress.
 
 [Working with attestations](/guide/attestation/working-with-attestations.qmd)
 
-# PR Summary
-This pull request introduces a new feature for managing attestations within the platform. The changes include the addition of new documentation files and updates to existing ones to support the attestation process. Key functional changes include:
+This update introduces a feature for managing attestations, enhancing compliance and governance capabilities with new documentation and updates.
 
-- **Attestation Documentation**: New guides and glossary entries have been added to explain the attestation process, including setting up attestations, completing questionnaires, and reviewing them. This includes detailed steps for model owners and validators to follow during the attestation process.
-- **Glossary Update**: A new glossary entry for 'Attestation' has been added to provide definitions and context for terms related to the attestation process.
-- **Mermaid Diagram Styling**: Updates to the theme styling for Mermaid diagrams, including changes to node and edge colors, and the addition of rounded corners for nodes.
-- **Guide Organization**: The guides have been reorganized to include a new section specifically for attestation, making it easier for users to find relevant information.
+- **Attestation Documentation**: New guides and glossary entries explain the attestation process, including setup, completion, and review instructions. Detailed steps are provided for model owners and validators.
 
-These changes aim to enhance the platform's compliance and governance capabilities by providing a structured process for model attestation.
+- **Mermaid Diagram Styling**: Updates include changes to node and edge colors and the addition of rounded corners for nodes.
+
+- **Guide Organization**: Guides now have a dedicated section for attestation, making it easier to find relevant information.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:25:59
+Result: The edited content is a clear and concise improvement over the original. It specifies the action ("Update") and provides a more detailed focus on the "attestation process management," which adds clarity to the purpose of the user guide updates. The use of backticks around "attestation" suggests it m...
+Reedit Available: Yes
+Reedit Message: The edited content is a clear and concise improvement over the original. It specifies the action ("Update") and provides a more detailed focus on the "attestation process management," which adds clari...
+--->

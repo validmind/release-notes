@@ -3,30 +3,30 @@ title: "Allow users to customize `finding` statuses in the UI (#1407)"
 categories: [frontend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "June 05, 2025"
-# Content edited by AI - 2025-06-08 18:17
-# Content overwritten from an earlier version - 2025-06-08 18:17
+date: "June 06, 2025"
+# Content edited by AI - 2025-06-09 16:40
+# Content overwritten from an earlier version - 2025-06-09 16:40
 # PR URL: https://github.com/validmind/frontend/pull/1407
 ---
 
-This update enables users to customize finding statuses by:
+Users can now customize finding statuses by creating new ones and deleting existing ones. When a status is deleted, associated findings will revert to `Open`.
 
-- Creating new finding statuses.
-- Soft-deleting existing finding statuses.
-- Defaulting all findings to `Open` if their status is deleted.
+This update introduces a feature for managing finding statuses, including API endpoints for fetching, creating, updating, and deleting them. The data model now includes a type for finding status with a unique identifier, color scheme, name, and default flag.
 
-This update introduces a feature for managing finding statuses, including new API endpoints for fetching, creating, updating, and deleting these statuses. The data model now includes a new type for finding status with a unique identifier, color scheme, name, and default flag.
+New UI components support this functionality, such as a modal (`AddFindingStatusModal`) with a shared color grid selector for choosing color schemes. The modal manages default statuses by disabling edits on their names. The main application and settings pages now integrate the new finding statuses, with a new sidebar link for users with appropriate permissions. Existing components that display finding statuses now use these new statuses and display them using the updated design, utilizing a `VMTag` component with colors derived from the status data.
 
-New UI components, such as the `AddFindingStatusModal`, support this functionality. The modal uses a shared color grid selector for color schemes and manages default statuses by disabling name edits. The main application and settings pages have been updated to integrate the new finding statuses, with a new sidebar link for users with the appropriate permissions. Existing components, like findings lists and detailed views, now use these new statuses and display them with the updated design, such as the `VMTag` component with colors from the status data.
-
-Several settings pages were refactored to use a new `SettingsSection` layout, ensuring a consistent look and feel across the application. This update integrates the new finding statuses feature on both the backend (via API enhancements) and the frontend (via component and layout updates).
+Several settings pages were refactored to use a new `SettingsSection` layout, ensuring a consistent look and feel across the application.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-08 18:16:07
-Result: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary words and focuses on the key action and subject. The use of backticks around "finding" suggests it might be a specific term or feature, which can be helpful for clarity if that's the case. Ov...
+Last Validation: 2025-06-09 16:39:23
+Result: Both the original and edited content convey the same idea, but the edited version is more concise and direct. Here are some points to consider:
+
+1. **Clarity and Brevity**: The edited content is shorter and gets straight to the point, which is often preferable in technical or instructional contexts....
 Reedit Available: Yes
-Reedit Message: The edited content effectively conveys the original message in a more concise manner. It removes unnecessary words and focuses on the key action and subject. The use of backticks around "finding" sugg...
+Reedit Message: Both the original and edited content convey the same idea, but the edited version is more concise and direct. Here are some points to consider:
+
+1. **Clarity and Brevity**: The edited content is short...
 --->

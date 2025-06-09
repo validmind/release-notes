@@ -1,17 +1,17 @@
 ---
-title: "Enhance `PYTHONPATH` for API and worker processes (#1546)"
+title: "Enhance `PYTHONPATH` for module resolution and error logging (#1546)"
 categories: [backend, 25.06.01, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "June 05, 2025"
-# Content edited by AI - 2025-06-08 18:17
-# Content overwritten from an earlier version - 2025-06-08 18:17
+date: "June 06, 2025"
+# Content edited by AI - 2025-06-09 16:40
+# Content overwritten from an earlier version - 2025-06-09 16:40
 # PR URL: https://github.com/validmind/backend/pull/1546
 ---
 
-`PYTHONPATH` ensures scripts run with the application's original base path, allowing code dependencies to load correctly, especially with relative imports. This is achieved using module calling syntax. If `PYTHONPATH` is not used, alternative import strategies can be considered.
+The `PYTHONPATH` environment variable now ensures scripts run with the application's original base path, aiding in the correct loading of code dependencies, especially for relative imports.
 
-Error message handling has been improved. Previously, error messages were not visible on the console or in the HTTP response. Now, errors are displayed correctly. For example, if there is an internal error, the response will include details such as:
+Error messages are now clearly displayed in both the console and HTTP responses:
 
 ```
 {
@@ -28,26 +28,28 @@ Error message handling has been improved. Previously, error messages were not vi
 }
 ```
 
-The logs will also reflect these errors, providing a clear message such as:
+Logs now accurately capture errors:
 
 ```
 2025-06-04T10:20:40.062556 [error] Error generating monitoring report: /Users/andres/code/backend/.venv/bin/python3: Error while finding module specification for 'workers.report_worker' (ModuleNotFoundError: No module named 'workers')
 ```
 
-This update enhances the API and worker processes for improved robustness and maintainability:
+Consider alternative import strategies if not using `PYTHONPATH`.
 
-- The `Makefile` now includes the current backend source directory in the `PYTHONPATH` when running the API, ensuring explicit module resolution and avoiding path issues.
+This update improves the API and worker processes for better robustness and maintainability:
 
-- The UI reporting route uses module syntax with the `-m` flag to invoke the report worker, simplifying command line invocation and preventing path resolution issues. Error handling is improved by checking for detailed error information before logging and propagating errors.
+- The `Makefile` command for running the API now includes the current backend source directory in the `PYTHONPATH`, ensuring explicit module resolution and avoiding path issues.
 
-- Import statements in the report worker file have been refactored to import directly from the `db` package, replacing deeply nested module paths. This change streamlines dependencies and enhances maintainability.
+- The UI reporting route uses module syntax with the `-m` flag to invoke the report worker, simplifying command line use and preventing path resolution issues. Error handling now checks for detailed error information before logging and propagating errors.
+
+- Import statements in the report worker file have been refactored to import directly from the `db` package, streamlining module dependencies and enhancing maintainability.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-08 18:13:46
-Result: The edited content provides a more specific and action-oriented description compared to the original. By using the word "Enhance," it suggests an improvement or optimization, and specifying "for API and worker processes" clarifies the context in which the `PYTHONPATH` is being modified. This makes t...
+Last Validation: 2025-06-09 16:37:00
+Result: The edited content improves clarity and specificity by suggesting an enhancement to `PYTHONPATH` for specific purposes, namely module resolution and error logging. This makes the content more informative and actionable for readers who might be looking to optimize their Python environment. The use of...
 Reedit Available: Yes
-Reedit Message: The edited content provides a more specific and action-oriented description compared to the original. By using the word "Enhance," it suggests an improvement or optimization, and specifying "for API a...
+Reedit Message: The edited content improves clarity and specificity by suggesting an enhancement to `PYTHONPATH` for specific purposes, namely module resolution and error logging. This makes the content more informat...
 --->

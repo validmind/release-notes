@@ -1,32 +1,33 @@
 ---
-title: "Improve template swap-merge experience for `inventory models` (#1383)"
+title: "Improve template swap and merge experience in `inventory models` (#1383)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content provides a more specific context by mentioning "inventory models," which clarifies the scope of the improvement. However, it removes the "feat(templates):" prefix, which is typically used in commit messages to indicate the type of change. If this is intended to be a commit message, it's important to retain the prefix for consistency and clarity in version control systems. 
-
-If the context allows for the removal of the prefix, the edited content is an improvement in terms of specificity. Otherwise,
-# Content overwritten from an earlier version - 2025-06-06 09:33
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/backend/pull/1383
 ---
 
-# PR Summary
+This update enhances the creation and swapping of documentation templates in inventory models. Key changes include:
 
-This PR introduces new functionality to allow users to create and swap documentation templates for inventory models. The major changes include:
+- The `create_template_version_from_json` method now updates the current template version using document type and sections data, then saves a new version.
 
-1. A new method, create_template_version_from_json, added to the inventory model code. This method accepts a document type and sections data to update the current template version, then saves a new template version via an internal helper method.
+- Three new HTTP POST endpoints for `model_documentation`, `validation_report`, and `monitoring` use a common helper function, `_create_and_swap_template`, which:
+  - Validates the document type.
+  - Verifies the inventory model based on the user's organization and membership, with an authorization override for model admins.
+  - Checks for required fields (`to_template_cuid`, `to_template_version`, and `new_template_json`) in the JSON payload.
+  - Retrieves the target template and version, performs the swap using `swap_template`, and updates the template with `create_template_version_from_json`.
+  - Logs and raises a `BadRequestError` for errors with relevant messages.
 
-2. Three new HTTP POST endpoints added to the UI routing layer for the following document types:
-   - model_documentation
-   - validation_report
-   - monitoring
+These changes improve template management by ensuring validation and error handling when swapping templates based on a JSON structure.
 
-   Each endpoint maps to a common helper function (_create_and_swap_template) that performs several key actions:
-   - Validates the provided document type against allowed values.
-   - Retrieves and verifies the inventory model based on the current user's organization and membership (with an authorization override for model admins).
-   - Checks for the presence of required fields (to_template_cuid, to_template_version, and new_template_json) in the JSON payload.
-   - Retrieves the target template and its version, performs the swap by calling the swap_template method on the inventory model, and finally, calls create_template_version_from_json to update the template.
-   - Appropriately handles errors by logging and raising a BadRequestError with relevant messages.
-
-The functional changes focus on enhancing the templatization process and ensuring that proper validations and error handling are in place for swapping templates based on a provided JSON structure.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:17:28
+Result: The edited content provides a clearer and more specific description of the improvement. By specifying "in `inventory models`," it gives a better context for where the changes are applied. However, it removes the "feat(templates):" prefix, which might be important if this is part of a commit message ...
+Reedit Available: Yes
+Reedit Message: The edited content provides a clearer and more specific description of the improvement. By specifying "in `inventory models`," it gives a better context for where the changes are applied. However, it ...
+--->

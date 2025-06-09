@@ -1,73 +1,29 @@
 ---
-title: "Add new introductory `validation` notebooks (#689)"
+title: "Added new introductory `validation` notebooks for `ValidMind` (#689)"
 categories: [documentation, 25.05, release, documentation]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content is concise and uses the imperative form, which is often preferred in technical documentation or task lists. The use of backticks around "validation" suggests that it might be a specific term or keyword, which can be helpful for clarity if it refers to a code element or specific feature. However, if "validation" is not a specific term that requires emphasis, the backticks might be unnecessary. Overall, the edit is effective for its likely context.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/documentation/pull/689
 ---
 
-#### # ValidMind for model validation notebooks
-These were added to the "developer" (now library) portal:
+ValidMind for model validation and development notebooks are now available in the library portal. The updated numbering structure is reflected in the side navigation and listing tiles.
 
-| Sidenav | Listing tiles |
-|---|---|
-|<img width="363" alt="Screenshot 2025-04-09 at 2 36 33 PM" src="https://github.com/user-attachments/assets/f286ee8d-3936-4d3d-bb74-2c13a6f44f4b" /> | <img width="795" alt="Screenshot 2025-04-09 at 2 36 29 PM" src="https://github.com/user-attachments/assets/61e23af0-3602-4534-b807-4086a71021af" />|
+The Developers > ValidMind Library portal now uses universal language and links, broadening its purpose beyond a developer portal. Consistent styling from the API documentation has been applied, resolving issues with side navigation and long notebook titles. The sidebar for this section is now in its own `_sidebar.yaml` file.
 
-#### # ValidMind for model development notebooks
-These have the updated numbering structure:
+The link to validmind.com has been removed from the main top navigation, as it is already in the footer.
 
-| Sidenav | Listing tiles |
-|---|---|
-|<img width="361" alt="Screenshot 2025-04-09 at 2 36 23 PM" src="https://github.com/user-attachments/assets/dfeb49d8-62de-4e8f-91ea-604306421f74" /> | <img width="819" alt="Screenshot 2025-04-09 at 2 36 19 PM" src="https://github.com/user-attachments/assets/9c8f0a36-43b8-4198-89d6-4006b311be08" />|
+This update enhances the ValidMind documentation and testing framework. Documentation now includes clearer instructions, new sections, and examples for setting up and using the library for model validation and development, including custom tests and external test providers. New tests have been added, and existing ones updated to cover more scenarios in model validation and data quality. Test descriptions now detail parameters and expected outcomes. Code refactoring improves readability and maintainability, and minor bugs in test execution and logging have been fixed. Security documentation has been updated to align with best practices for handling sensitive data.
 
-#### # Developers > ValidMind Library
-- Since this portal is much more than a developer portal, I've made the language and links surrounding the portal more universal:
-
-| Main drop-down | Collapsed drop-down |
-|---|---|
-| <img width="453" alt="Screenshot 2025-04-09 at 2 35 39 PM" src="https://github.com/user-attachments/assets/a7b9c0da-e793-40d4-9479-063d0623e16d" /> | <img width="292" alt="Screenshot 2025-04-09 at 2 34 21 PM" src="https://github.com/user-attachments/assets/d7071541-64fb-4f78-8455-fec350781843" />|
-
-- You may notice that I also applied the styling that the API docs have to this and the notebooks/test descriptions, since it's jarring for the two sections to have different side navigations (BONUS: This also takes care of the really squished long-titles we have for notebooks!):
-
-<img width="1706" alt="Screenshot 2025-04-09 at 2 37 38 PM" src="https://github.com/user-attachments/assets/c662fb02-32e8-4d0b-b8bf-83d606671b6c" />
-
-
-- I also moved the sidebar for this landing section to its own `_sidebar.yaml`:
-
-https://github.com/validmind/documentation/blob/a89901c1e08dd3320d989474289e0cc03b652c64/site/developer/_sidebar.yaml#L3
-
-https://github.com/validmind/documentation/blob/a89901c1e08dd3320d989474289e0cc03b652c64/site/_quarto.yml#L5
-
-#### # validmind.com
-I removed this link from the main top navigation as it doesn't need to feature so heavily when it's also in the footer, based on discussions we had during the homepage redesign. 
-
-| Main nav | Collapsed nav |
-|---|---|
-| <img width="1710" alt="Screenshot 2025-04-09 at 2 34 16 PM" src="https://github.com/user-attachments/assets/9b7ffe00-0134-4e7f-9b27-13a2c56143b0" /> | <img width="292" alt="Screenshot 2025-04-09 at 2 34 21 PM" src="https://github.com/user-attachments/assets/b0b03b47-9665-45d4-8ff3-7af55636d483" />|
-
-# PR Summary
-
-This pull request introduces several enhancements and bug fixes to the ValidMind documentation and testing framework. The key changes include:
-
-1. **Documentation Updates**:
-   - Updated various documentation files to improve clarity and consistency, particularly in the ValidMind Library and its usage.
-   - Added new sections and examples to the documentation, including detailed guides on setting up and using the ValidMind Library for model validation and development.
-   - Enhanced the documentation for custom tests and external test providers, providing clearer instructions and examples.
-
-2. **Testing Enhancements**:
-   - Introduced new tests and updated existing ones to cover more scenarios, particularly in the areas of model validation and data quality.
-   - Improved the test descriptions and added more detailed explanations for test parameters and expected outcomes.
-   - Added new test files and updated existing ones to ensure comprehensive coverage of the ValidMind functionalities.
-
-3. **Code Improvements**:
-   - Refactored code to improve readability and maintainability, including better organization of test files and documentation.
-   - Fixed minor bugs and inconsistencies in the codebase, particularly in the test execution and logging mechanisms.
-
-4. **Security and Compliance**:
-   - Updated security-related documentation to ensure compliance with best practices and standards.
-   - Improved the handling of sensitive data in test results and logging, ensuring that sensitive information is not exposed inadvertently.
-
-Overall, these changes aim to enhance the usability, clarity, and security of the ValidMind framework, making it easier for users to implement and document their models effectively.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:26:49
+Result: The edited content provides additional context by specifying that the validation notebooks are for "ValidMind." This clarification can be helpful for readers who are familiar with or are looking for resources related to ValidMind. Additionally, the use of backticks around "validation" and "ValidMind...
+Failure Patterns: {'formatting': 1, 'meaning': 4}
+Reedit Available: Yes
+Reedit Message: The edited content provides additional context by specifying that the validation notebooks are for "ValidMind." This clarification can be helpful for readers who are familiar with or are looking for r...
+--->

@@ -1,27 +1,30 @@
 ---
-title: "Add configurable `SQLAlchemy` connection pool settings to prevent exhaustion (#1388)"
+title: "Increase database connections to prevent pool exhaustion (#1388)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content provides a clearer and more detailed description of the change. It specifies that the connection pool settings are now configurable and mentions the use of `SQLAlchemy`, which adds context and specificity. This makes the update more informative for those who need to understand the technical details of the change. Overall, the edit improves the clarity and usefulness of the original content.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/backend/pull/1388
 ---
 
-#### What
-Increases database connection pool default size and upper limit
+The default size and upper limit of the database connection pool have been increased. Two new environment variables for the API server, `SQLALCHEMY_MAX_OVERFLOW` and `SQLALCHEMY_POOL_SIZE`, are introduced with default values of 25 and 15, respectively. These variables are used by Flask-SQLAlchemy through `app.config`.
 
-#### Release Notes
-Two new environment variables are available to the API server:
+Configurable settings for the SQLAlchemy connection pool in the Flask backend API are now available. The parameters `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW` can be set via environment variables, with default values of 25 and 15. This allows operators to adjust connection pool settings dynamically based on deployment needs without modifying the source code. Using environment variables enhances flexibility in managing database connections under varied load conditions. If not set, the system defaults to the provided values, ensuring continuity in functionality.
 
-SQLALCHEMY_MAX_OVERFLOW
-SQLALCHEMY_POOL_SIZE
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:19:20
+Result: Both versions of the content convey the same essential information, but the edited content is more polished and formal. Here are some points of evaluation:
 
-Defaults to 25, 15 respectively. These are passed directly to `app.config` and used by flask-sqlalchemy.
+1. **Clarity and Conciseness**: 
+   - The edited content is clear and concise. It removes the technical jargon "hotfix" and directly states the...
+Reedit Available: Yes
+Reedit Message: Both versions of the content convey the same essential information, but the edited content is more polished and formal. Here are some points of evaluation:
 
-# PR Summary
-
-This PR introduces configurable settings for the SQLAlchemy connection pool in the Flask backend API. Two new configuration parameters, SQLALCHEMY_POOL_SIZE and SQLALCHEMY_MAX_OVERFLOW, are set via environment variables with default values of 25 and 15 respectively. This allows operators to dynamically adjust the connection pool settings based on deployment needs without modifying the source code.
-
-By leveraging environment variables, the implementation enhances flexibility for managing database connections, particularly under varied load conditions. If the environment variables are not present, the system uses the provided defaults, ensuring continuity in functionality.
+1. **Clarity and Conciseness**: 
+   - The e...
+--->

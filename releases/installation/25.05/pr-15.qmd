@@ -1,0 +1,22 @@
+---
+title: "Add `25.04` and `25.04.01` releases (#15)"
+categories: [installation, 25.05, release]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
+# PR URL: https://github.com/validmind/installation/pull/15
+---
+
+Also fix support windows to be 6 months
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:23:22
+Result: The edited content is clear and concise, effectively communicating the addition of the specified releases. The use of backticks around the version numbers enhances readability by distinguishing them as code or specific terms. The removal of "chore:" is appropriate if the context does not require spe...
+Reedit Available: Yes
+Reedit Message: The edited content is clear and concise, effectively communicating the addition of the specified releases. The use of backticks around the version numbers enhances readability by distinguishing them a...
+--->

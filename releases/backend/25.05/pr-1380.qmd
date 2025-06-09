@@ -1,22 +1,30 @@
 ---
-title: "Fix document download issue by updating `authorization` logic for report generation (#1380)"
+title: "Refine `authorization` logic to resolve document download issues (#1380)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content provides a clearer and more actionable description of the issue. It specifies the problem (document download issue) and suggests a potential solution (updating `authorization` logic for report generation). This makes it more useful for someone trying to address the problem. The original content was vague and did not offer any guidance on how to resolve the issue. Overall, the edited content is a significant improvement in terms of clarity and utility.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/backend/pull/1380
 ---
 
-# PR Summary
+This update enhances the UI reporting endpoint by refining the authorization logic for report generation.
 
-This PR updates the UI reporting endpoint related to report generation. The key functional change is in the authorization logic for generating different types of reports. Previously, the endpoint applied a generic authorization check for downloading reports. With these changes:
+- Top-level authorization now uses the generic action `read`.
+  
+- Fine-grained authorization depends on document type. "Documentation-report" and "monitoring-report" require the `download_doc` permission, while "validation-report" needs the `download_vr` permission.
 
-- The top-level authorization decorator is now set to the generic action "read" rather than "download_report".
+- An invalid document type triggers a `BadRequestError`.
 
-- Fine-grained authorization is enforced inside the method based on the specific document type. For document types "documentation-report" and "monitoring-report", the endpoint explicitly checks for the "download_doc" permission. For document type "validation-report", it checks for the "download_vr" permission.
+- Exception handling is improved to specifically catch `BadRequestError` and manage other exceptions effectively.
 
-- If the document type provided does not match any of the expected values, the system raises a BadRequestError, ensuring only valid report types are processed.
-
-- The exception handling is updated to catch and pass-through the BadRequestError separately, while still handling other exceptions appropriately.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:17:47
+Result: The edited content effectively refines the original message by specifying a potential solution to the problem. By focusing on refining the "authorization" logic, it suggests a clear area to investigate and address, which is more actionable than the vague statement in the original content. The edited...
+Reedit Available: Yes
+Reedit Message: The edited content effectively refines the original message by specifying a potential solution to the problem. By focusing on refining the "authorization" logic, it suggests a clear area to investigat...
+--->

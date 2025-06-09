@@ -4,10 +4,11 @@ date: "April 28, 2025"
 categories: [cmvm, 25.05, release]
 sidebar: release-notes
 toc-expand: true
-# Content overwritten from an earlier version - 2025-06-06 09:33
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 ---
 
-This release includes date localization support with the `FormattedDate` component and locale-based formatting throughout the app. It also adds sorting options for `Updated Date` and `Documentation Updated Date` in the model inventory, among other enhancements.
+This release includes sorting options for 'Updated Date' and 'Documentation Updated Date' in the model inventory, as well as date localization using the `FormattedDate` component and the `useFormattedDateAndTime` hook.
 
 <!-- WARNING: Summary may not mention an enhancement PR -->
 
@@ -18,271 +19,216 @@ This release includes date localization support with the `FormattedDate` compone
 <!-- ### Changes with no label -->
 
 
-<!--- PR #1399: https://github.com/validmind/backend/pull/1399 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.30.7) (#1399) --->
-<!-- No release notes or summary provided. -->
-
-
 <!--- PR #1409: https://github.com/validmind/backend/pull/1409 --->
 <!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.30.7) (#1409) --->
-<!-- No release notes or summary provided. -->
+<!--- ### Merge `main` into `staging` for version `1.30.7` (#1409) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- PR #1374: https://github.com/validmind/backend/pull/1374 --->
 <!--- Labels: none --->
-<!--- ### Merge Prod hotfixes into Staging (prod-1.30.5-to-staging) (#1374) --->
-<!-- No release notes or summary provided. -->
+<!--- ### Merge production hotfixes into `staging` branch (#1374) --->
+<!-- Merge PR - not included in release notes. -->
+
+
+<!--- PR #1393: https://github.com/validmind/backend/pull/1393 --->
+<!--- Labels: none --->
+### Enhance metadata filtering in `Figure` model to support timestamp values (#1393)
+
+This update improves metadata filtering in the `get_latest_figures` function by handling timestamp values. It checks if the metadata value is a `datetime` or `date` object. If it is, the JSON string value is cast to a datetime type using SQLAlchemy's `func.cast` for comparison. Otherwise, it is converted to a string. This ensures accurate filtering of records based on timestamp metadata, allowing date and time values to be correctly interpreted within the query.
+
+
+<!--- PR #1370: https://github.com/validmind/backend/pull/1370 --->
+<!--- Labels: none --->
+### Add file to `docker/build-push-action` in AWS deployment workflow (#1370)
+
+This update enhances the AWS secondary deployment workflow by introducing a dynamic Dockerfile specification. The `file: ${{ matrix.file }}` parameter in the `docker/build-push-action` step enables the workflow to select the appropriate Dockerfile based on the matrix configuration. This change increases build process flexibility by supporting multiple Dockerfiles without needing workflow modifications for each scenario.
+
+
+<!--- PR #1381: https://github.com/validmind/backend/pull/1381 --->
+<!--- Labels: none --->
+### Enhance authorization for `report_generation` endpoint in UI reporting route (#1381)
+
+This update enhances authorization for the report generation endpoint in the UI reporting route. Key changes include:
+
+- The authorization decorator on the GET endpoint now uses a generic `read` action instead of `download_report`.
+- Permission checks within the method depend on the document type in the request:
+  - `download_doc` authorization is needed for `documentation-report` or `monitoring-report`.
+  - `download_vr` authorization is needed for `validation-report`.
+  - A `BadRequestError` is raised for unsupported document types.
+
+
+<!--- PR #1398: https://github.com/validmind/backend/pull/1398 --->
+<!--- Labels: none --->
+<!--- ### Merge `main` into `staging` for version 1.30.7 (#1398) --->
+<!-- Merge PR - not included in release notes. -->
+
+
+<!--- PR #1337: https://github.com/validmind/backend/pull/1337 --->
+<!--- Labels: none --->
+### Add date localization support in `user` settings (#1337)
+
+This update enhances user settings by adding a locale configuration field. Key changes include:
+
+- A new Alembic migration sets the default value of the `ui_settings` column in the `users` table to `{"locale": "en"}` for future inserts and updates existing records to include the locale setting if missing.
+- The `ui_settings` column in the User model now defaults to `{"locale": "en"}`.
+- The JSON schema for `ui_settings` is updated to include a `locale` property of type string.
+
+
+<!--- PR #1399: https://github.com/validmind/backend/pull/1399 --->
+<!--- Labels: none --->
+<!--- ### Merge `staging` into `prod` for version `1.30.7` (#1399) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- PR #1410: https://github.com/validmind/backend/pull/1410 --->
 <!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.30.7) (#1410) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1383: https://github.com/validmind/backend/pull/1383 --->
-<!--- Labels: none --->
-### Improve template swap-merge experience for `inventory models` (#1383)
-
-# PR Summary
-
-This PR introduces new functionality to allow users to create and swap documentation templates for inventory models. The major changes include:
-
-1. A new method, create_template_version_from_json, added to the inventory model code. This method accepts a document type and sections data to update the current template version, then saves a new template version via an internal helper method.
-
-2. Three new HTTP POST endpoints added to the UI routing layer for the following document types:
-   - model_documentation
-   - validation_report
-   - monitoring
-
-   Each endpoint maps to a common helper function (_create_and_swap_template) that performs several key actions:
-   - Validates the provided document type against allowed values.
-   - Retrieves and verifies the inventory model based on the current user's organization and membership (with an authorization override for model admins).
-   - Checks for the presence of required fields (to_template_cuid, to_template_version, and new_template_json) in the JSON payload.
-   - Retrieves the target template and its version, performs the swap by calling the swap_template method on the inventory model, and finally, calls create_template_version_from_json to update the template.
-   - Appropriately handles errors by logging and raising a BadRequestError with relevant messages.
-
-The functional changes focus on enhancing the templatization process and ensuring that proper validations and error handling are in place for swapping templates based on a provided JSON structure.
-
-
-<!--- PR #1414: https://github.com/validmind/backend/pull/1414 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.30.7) (#1414) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1389: https://github.com/validmind/backend/pull/1389 --->
-<!--- Labels: none --->
-### Increase `db` connections to prevent pool exhaustion (#1389)
-
-# PR Summary
-
-This PR enhances the backend API configuration by introducing environment-based settings for SQLAlchemy's connection pooling. The Flask app now retrieves the values for SQLALCHEMY_POOL_SIZE and SQLALCHEMY_MAX_OVERFLOW from environment variables, defaulting to 25 and 15 respectively when the variables are not set. This improvement enables dynamic tuning of database connection pooling, which can optimize performance and resource usage in different deployment scenarios.
-
-
-<!--- PR #1413: https://github.com/validmind/backend/pull/1413 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.30.7) (#1413) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1376: https://github.com/validmind/backend/pull/1376 --->
-<!--- Labels: none --->
-### Enable sorting of model inventory by `documentation_updated_at` field (#1376)
-
-# PR Summary
-
-This PR introduces functional enhancements to the inventory model API. The changes include:
-
-1. Adding two new fields, `updated_at` and `documentation_updated_at`, to the inventory model schema. This enables tracking of when the models and their associated documentation are updated.
-
-2. Updating the GET endpoint for inventory models to allow sorting by the `documentation_updated_at` field. When this sort parameter is used, the query joins the `Event` table and uses a correlated subquery to determine the most recent update time for model documentation (i.e., events with `target_type` set to "ModelDocument").
-
-These changes enhance usability by allowing clients to more precisely order models based on documentation updates.
+<!--- ### Merge `staging` into `prod` for version `1.30.7` (#1410) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- PR #1391: https://github.com/validmind/backend/pull/1391 --->
 <!--- Labels: none --->
 ### Remove production logging for `/api/v1/health` endpoint (#1391)
 
-# PR Summary
+This update enhances API initialization and logging configuration for improved maintainability and reduced log noise. In `src/backend/api.py`, imports are refined by removing duplicates and reordering modules. New route registrations are added for various admin and UI endpoints. Error handler registration and context setup are streamlined. A lambda filter on the `werkzeug` logger now filters out health check requests. In `src/backend/utils/logging/structlog.py`, request logging for the `/api/v1/health` endpoint is set to debug level, reducing log clutter. These changes improve code clarity and logging efficiency without affecting API functionality.
 
-This PR refactors the API initialization and logging configuration to improve maintainability and reduce log noise. Major changes include:
 
-- In src/backend/api.py:
-  - Improved import organization by removing duplicates and reordering modules for clarity.
-  - Added new route registrations for several admin and UI endpoints (e.g., diagnostics, organizations, RBAC, scrubbers, settings, users, approvals, assessment options, assets proxy, attestations, block library, guidelines, model page layouts, etc.), ensuring a more structured configuration of the API.
-  - Adjusted error handler registration and context setup to streamline the initialization sequence.
-  - Introduced a lambda filter on the werkzeug logger to filter out health check requests from noisy logging.
+<!--- PR #1371: https://github.com/validmind/backend/pull/1371 --->
+<!--- Labels: none --->
+### Enhance metadata filtering in figure queries by casting JSON timestamps to `DateTime` (#1371)
 
-- In src/backend/utils/logging/structlog.py:
-  - Modified the request logging behavior to log the '/api/v1/health' endpoint at debug level while keeping info level logging for other endpoints. This helps reduce clutter in the logs from frequent health check pings.
+This update enhances metadata filtering in database queries for figures by accurately comparing timestamp metadata. JSON timestamp values are now cast to `DateTime` using the database's functionality. Additionally, there is a minor version bump in the `pyproject.toml` file.
 
-Overall, the changes aim to enhance code clarity, maintainability, and logging efficiency without impacting the core functionality of the API.
+
+<!--- PR #1395: https://github.com/validmind/backend/pull/1395 --->
+<!--- Labels: none --->
+<!--- ### Merge staging hotfixes into `main` for version `1.30.7` (#1395) --->
+<!-- Merge PR - not included in release notes. -->
+
+
+<!--- PR #1392: https://github.com/validmind/backend/pull/1392 --->
+<!--- Labels: none --->
+<!--- ### Merge production hotfixes into `staging` for version 1.30.7 (#1392) --->
+<!-- Merge PR - not included in release notes. -->
+
+
+<!--- PR #1383: https://github.com/validmind/backend/pull/1383 --->
+<!--- Labels: none --->
+### Improve template swap and merge experience in `inventory models` (#1383)
+
+This update enhances the creation and swapping of documentation templates in inventory models. Key changes include:
+
+- The `create_template_version_from_json` method now updates the current template version using document type and sections data, then saves a new version.
+
+- Three new HTTP POST endpoints for `model_documentation`, `validation_report`, and `monitoring` use a common helper function, `_create_and_swap_template`, which:
+  - Validates the document type.
+  - Verifies the inventory model based on the user's organization and membership, with an authorization override for model admins.
+  - Checks for required fields (`to_template_cuid`, `to_template_version`, and `new_template_json`) in the JSON payload.
+  - Retrieves the target template and version, performs the swap using `swap_template`, and updates the template with `create_template_version_from_json`.
+  - Logs and raises a `BadRequestError` for errors with relevant messages.
+
+These changes improve template management by ensuring validation and error handling when swapping templates based on a JSON structure.
+
+
+<!--- PR #1372: https://github.com/validmind/backend/pull/1372 --->
+<!--- Labels: none --->
+### Add `is_disabled` column to `users` table for account management (#1372)
+
+An `is_disabled` column has been added to the users table through an Alembic migration, enabling user accounts to be disabled. The migration supports both upgrade and downgrade paths.
+
+The authentication process now verifies the `is_disabled` flag after token validation. If a user is disabled, an authentication error is raised, blocking access. This check also applies to client users at a specific endpoint, ensuring disabled users cannot perform protected actions.
+
+
+<!--- PR #1378: https://github.com/validmind/backend/pull/1378 --->
+<!--- Labels: none --->
+### Update `readme` to include Docker swap configuration settings (#1378)
+
+The `README.md` file now includes instructions for configuring Docker Desktop. Users should set the swap memory to `2 GB` in the Docker Desktop settings under the Resources tab. This ensures optimal performance by applying the correct swap settings before starting the project.
+
+
+<!--- PR #1377: https://github.com/validmind/backend/pull/1377 --->
+<!--- Labels: none --->
+### Fix typo in `healthcheck` endpoint response key (#1377)
+
+The health check API endpoint response has been corrected to return the key as `status` instead of the misspelled `stauts`, ensuring the expected response format.
+
+
+<!--- PR #1375: https://github.com/validmind/backend/pull/1375 --->
+<!--- Labels: none --->
+<!--- ### Merge `staging` hotfixes into `main` for version 1.30.5 (#1375) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- PR #1406: https://github.com/validmind/backend/pull/1406 --->
 <!--- Labels: none --->
-### Update `h11` to version 0.16.0 for security enhancement (#1406)
+### Upgrade `h11` to 0.16.0 to address `CVE-2025-43859` (#1406)
 
-# PR Summary
+This update enhances dependency management and consistency in container builds. The Dockerfile now uses base image v1.67.4 and upgrades `h11` to version 0.16.0, improving HTTP/1.1 implementation for customer-managed deployments. The `poetry.lock` file reflects the upgrade of `h11` from 0.14.0 to 0.16.0 and `httpcore` from 1.0.7 to 1.0.9. The `pyproject.toml` file now enforces `h11` (>=0.16.0) for consistent builds and dependency resolution.
 
-This PR primarily focuses on upgrading key dependencies and ensuring consistency in container builds. The main changes are:
 
-- Updated the Dockerfile to use a newer base image (v1.67.4 instead of v1.63.14) and added a command to upgrade h11 to version 0.16.0. This ensures that the HTTP/1.1 implementation is up-to-date and compatible with current requirements.
+<!--- PR #1389: https://github.com/validmind/backend/pull/1389 --->
+<!--- Labels: none --->
+### Increase `db` connections to prevent pool exhaustion (#1389)
 
-- In the Dockerfile for customer-managed deployments, the h11 upgrade to 0.16.0 is added, ensuring both Docker configurations are aligned.
+The backend API configuration now supports environment-based settings for SQLAlchemy's connection pooling. The Flask app uses environment variables `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW`, defaulting to 25 and 15 if unspecified. This enables dynamic adjustment of database connection pooling, enhancing performance and resource management across different deployment scenarios.
 
-- The poetry.lock file has been updated to reflect the upgrade of the h11 package from version 0.14.0 to 0.16.0. Additionally, httpcore has been updated from version 1.0.7 to 1.0.9, along with corresponding changes to the dependency specifications.
 
-- The pyproject.toml file now includes a dependency constraint for h11 (>=0.16.0) to enforce consistency across builds and dependency resolution.
+<!--- PR #1376: https://github.com/validmind/backend/pull/1376 --->
+<!--- Labels: none --->
+### Add sorting by `documentation_updated_at` to the model inventory API (#1376)
 
-Overall, these changes streamline library dependency management and improve consistency in both the Docker environments and Python package management, ensuring that the system operates with more recent and secure versions of key libraries.
+The inventory model API now includes `updated_at` and `documentation_updated_at` fields to track updates. The GET endpoint supports sorting by `documentation_updated_at`, allowing clients to order models by their most recent documentation updates.
+
+
+<!--- PR #1413: https://github.com/validmind/backend/pull/1413 --->
+<!--- Labels: none --->
+<!--- ### Merge `main` into `staging` for version `1.30.7` (#1413) --->
+<!-- Merge PR - not included in release notes. -->
+
+
+<!--- PR #1380: https://github.com/validmind/backend/pull/1380 --->
+<!--- Labels: none --->
+### Refine `authorization` logic to resolve document download issues (#1380)
+
+This update enhances the UI reporting endpoint by refining the authorization logic for report generation.
+
+- Top-level authorization now uses the generic action `read`.
+  
+- Fine-grained authorization depends on document type. "Documentation-report" and "monitoring-report" require the `download_doc` permission, while "validation-report" needs the `download_vr` permission.
+
+- An invalid document type triggers a `BadRequestError`.
+
+- Exception handling is improved to specifically catch `BadRequestError` and manage other exceptions effectively.
+
+
+<!--- PR #1401: https://github.com/validmind/backend/pull/1401 --->
+<!--- Labels: none --->
+### Update dev deployments to use new `values` format (#1401)
+
+The GitHub Actions deployment workflow now uses the `values-new.yaml` template to generate `values.yaml`, integrating updated configuration values and aligning with new deployment parameters. The `sed` substitutions for tokens such as site, environment, vault ID, repository, and API SHA remain unchanged.
 
 
 <!--- PR #1412: https://github.com/validmind/backend/pull/1412 --->
 <!--- Labels: none --->
 ### Fixed a bug where `document_type` was not set correctly (#1412)
 
-# PR Summary
-
-This PR introduces a functional enhancement to the `_add_library_block` function by passing an additional `content_type` parameter derived from `document_type` to the function call. Previously, the function was relying solely on the internal `data["content"]["content_type"]`, but now it also incorporates the externally provided `document_type` value, potentially giving a more accurate or context-specific content type when adding blocks to a template.
-
-The change ensures that the block created incorporates both the original content information and the explicit document type, which might be used for rendering or processing the block differently based on its type.
+The `_add_library_block` function has been updated to include a `content_type` parameter. This parameter is derived from `document_type` to ensure accurate content type specification for block rendering or processing.
 
 
-<!--- PR #1377: https://github.com/validmind/backend/pull/1377 --->
+<!--- PR #1414: https://github.com/validmind/backend/pull/1414 --->
 <!--- Labels: none --->
-### Fix typo in `healthcheck` API response (#1377)
-
-# PR Summary
-
-This pull request fixes a typo in the health check API endpoint response. The endpoint previously returned a JSON object with a misspelled key ('stauts') and now correctly returns the key as 'status'. This change ensures that consumers of the API receive the expected response format for health checks.
-
-
-<!--- PR #1375: https://github.com/validmind/backend/pull/1375 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging hotfixes into Main (staging-1.30.5-to-main) (#1375) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1398: https://github.com/validmind/backend/pull/1398 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.30.7) (#1398) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1337: https://github.com/validmind/backend/pull/1337 --->
-<!--- Labels: none --->
-### Add date localization support to `user` settings (#1337)
-
-# PR Summary
-
-This pull request introduces enhancements to the user settings by adding a new locale configuration field. Key changes include:
-
-1. Database Migration:
-   - A new Alembic migration is added to update the default value of the `ui_settings` column in the `users` table, setting it to `{"locale": "en"}` for future inserts.
-   - The migration updates existing records to include the locale setting if it is missing, ensuring that all users have a default locale value.
-   - A downgrade path is provided to revert the default back to an empty JSON object if needed.
-
-2. Application Code Update:
-   - The `ui_settings` column in the User model is modified to use `{"locale": "en"}` as its default value.
-   - The JSON schema used for validating `ui_settings` is updated to include a new property `locale` of type string, ensuring that the field conforms to the expected format.
-
-These changes ensure a consistent handling of locale configurations throughout the system and improve the robustness of user settings management.
-
-
-<!--- PR #1371: https://github.com/validmind/backend/pull/1371 --->
-<!--- Labels: none --->
-### Enhance metadata filtering in `figure` queries for better timestamp handling (#1371)
-
-# PR Summary
-
-This pull request enhances the metadata filtering mechanism in the database query for figures. The primary functional change is an update to the condition that constructs filters from metadata keys. When the metadata value is a timestamp (either a datetime or a date object), the code now casts the JSON value (extracted as a string) to a DateTime type using the database's casting functionality. This ensures that comparisons between timestamp values in the metadata and the provided datetime/date objects are performed correctly.
-
-Other changes include a minor version bump in the project configuration file (pyproject.toml), but the focus of this PR is on the improved handling of timestamp metadata.
-
-
-<!--- PR #1395: https://github.com/validmind/backend/pull/1395 --->
-<!--- Labels: none --->
-<!--- ### Merge Staging hotfixes into Main (staging-1.30.7-to-main) (#1395) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1393: https://github.com/validmind/backend/pull/1393 --->
-<!--- Labels: none --->
-### Enhance metadata filtering in `Figure` model to handle timestamp values (#1393)
-
-# PR Summary
-
-This pull request enhances the metadata filtering in the `get_latest_figures` function by adding special handling for timestamp values. The changes introduce a check to determine if the metadata value is a `datetime` or `date` object. If it is, the code casts the JSON string value to a datetime type using SQLAlchemy's `func.cast` and compares it with the provided value. If not, the value is converted to a string for comparison. This improvement allows for accurate filtering of records based on timestamp metadata, ensuring that date and time values are correctly interpreted and compared within the query.
-
-
-<!--- PR #1378: https://github.com/validmind/backend/pull/1378 --->
-<!--- Labels: none --->
-### Update `readme` to include Docker swap configuration (#1378)
-
-# PR Summary
-
-This PR updates the README.md file by adding a new section that provides instructions for configuring Docker Desktop. The added content guides users through setting the swap memory to 2GB via the Docker Desktop settings under the Resources tab. This change aims to help users optimize Docker's performance by ensuring appropriate swap settings are in place before starting the project.
-
-
-<!--- PR #1392: https://github.com/validmind/backend/pull/1392 --->
-<!--- Labels: none --->
-<!--- ### Merge Prod hotfixes into Staging (prod-1.30.7-to-staging) (#1392) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #1401: https://github.com/validmind/backend/pull/1401 --->
-<!--- Labels: none --->
-### Update dev deployments to use new `values-new.yaml` format (#1401)
-
-# PR Summary
-
-This PR updates the GitHub Actions deployment workflow by modifying the file templating process for Kubernetes manifests. The change involves replacing the source file for generating the values.yaml file from the old template (values.yaml) to a new template file (values-new.yaml). This adjustment is expected to incorporate updated configuration values and align with new deployment parameters.
-
-The rest of the substitutions performed using sed remain unchanged, ensuring that tokens such as the site, environment, vault ID, repository, and API SHA are correctly replaced in the templated file.
-
-
-<!--- PR #1380: https://github.com/validmind/backend/pull/1380 --->
-<!--- Labels: none --->
-### Fix document download issue by updating `authorization` logic for report generation (#1380)
-
-# PR Summary
-
-This PR updates the UI reporting endpoint related to report generation. The key functional change is in the authorization logic for generating different types of reports. Previously, the endpoint applied a generic authorization check for downloading reports. With these changes:
-
-- The top-level authorization decorator is now set to the generic action "read" rather than "download_report".
-
-- Fine-grained authorization is enforced inside the method based on the specific document type. For document types "documentation-report" and "monitoring-report", the endpoint explicitly checks for the "download_doc" permission. For document type "validation-report", it checks for the "download_vr" permission.
-
-- If the document type provided does not match any of the expected values, the system raises a BadRequestError, ensuring only valid report types are processed.
-
-- The exception handling is updated to catch and pass-through the BadRequestError separately, while still handling other exceptions appropriately.
+<!--- ### Merge `staging` into `prod` for version `1.30.7` (#1414) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- PR #1388: https://github.com/validmind/backend/pull/1388 --->
 <!--- Labels: none --->
-### Add configurable `SQLAlchemy` connection pool settings to prevent exhaustion (#1388)
+### Increase database connections to prevent pool exhaustion (#1388)
 
-#### What
-Increases database connection pool default size and upper limit
+The default size and upper limit of the database connection pool have been increased. Two new environment variables for the API server, `SQLALCHEMY_MAX_OVERFLOW` and `SQLALCHEMY_POOL_SIZE`, are introduced with default values of 25 and 15, respectively. These variables are used by Flask-SQLAlchemy through `app.config`.
 
-#### Release Notes
-Two new environment variables are available to the API server:
-
-SQLALCHEMY_MAX_OVERFLOW
-SQLALCHEMY_POOL_SIZE
-
-Defaults to 25, 15 respectively. These are passed directly to `app.config` and used by flask-sqlalchemy.
-
-# PR Summary
-
-This PR introduces configurable settings for the SQLAlchemy connection pool in the Flask backend API. Two new configuration parameters, SQLALCHEMY_POOL_SIZE and SQLALCHEMY_MAX_OVERFLOW, are set via environment variables with default values of 25 and 15 respectively. This allows operators to dynamically adjust the connection pool settings based on deployment needs without modifying the source code.
-
-By leveraging environment variables, the implementation enhances flexibility for managing database connections, particularly under varied load conditions. If the environment variables are not present, the system uses the provided defaults, ensuring continuity in functionality.
+Configurable settings for the SQLAlchemy connection pool in the Flask backend API are now available. The parameters `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW` can be set via environment variables, with default values of 25 and 15. This allows operators to adjust connection pool settings dynamically based on deployment needs without modifying the source code. Using environment variables enhances flexibility in managing database connections under varied load conditions. If not set, the system defaults to the provided values, ensuring continuity in functionality.
 
 
 # Frontend
@@ -292,78 +238,54 @@ By leveraging environment variables, the implementation enhances flexibility for
 ## Enhancements
 
 
-<!--- PR #1312: https://github.com/validmind/frontend/pull/1312 --->
-<!--- Labels: enhancement --->
-### Add date localization support with `FormattedDate` component and locale-based formatting across the app (#1312)
-
-#### External Release Notes
-Enhance date formatting functionality by adding locale support. Updated date display functions to accept locale as a parameter, ensuring consistent formatting across various components. Adjusted user interface to reflect user-specific locale settings in date displays throughout the application.
-
-<img width="1096" alt="Screenshot 2025-04-01 at 11 50 45 AM" src="https://github.com/user-attachments/assets/4e36ffcb-b3ea-4541-aaf6-c44d7145cb81" />
-<img width="1055" alt="Screenshot 2025-04-01 at 11 49 47 AM" src="https://github.com/user-attachments/assets/2b4d2ac2-90e7-4a1a-a03d-2a2c236eb657" />
-<img width="922" alt="Screenshot 2025-04-01 at 11 50 09 AM" src="https://github.com/user-attachments/assets/6341f3c7-7b3e-4beb-97e2-93dd0094be5a" />
-<img width="1234" alt="Screenshot 2025-04-01 at 11 49 29 AM" src="https://github.com/user-attachments/assets/ce43bd66-fc7e-4587-95c3-17ca9c0f6cb1" />
-
-# PR Summary
-
-This PR introduces significant improvements in how dates are formatted and displayed across various parts of the application. The changes include the creation and adoption of a new reusable component, FormattedDate, and a custom hook, useFormattedDateAndTime. These are used to replace direct calls to old formatting utilities (like displayFormattedDateAndTime) throughout the codebase. Functional updates include:
-
-- In the main app, current UI localization settings are uploaded to localStorage on user change.
-- New reusable admin components (OrganizationRow, RoleRow, and UserRow) are added for displaying organization, role, and user information respectively. These components simplify the table row implementations within admin pages.
-- The date formatting across admin pages, user views, activity feed, and various modals (such as block metrics, test driven modals, and document blocks) now use the FormattedDate component to support localization.
-- Update of the custom date picker in the custom fields to load locale dynamically and use FormattedDate for value display.
-- Improvements in the template, workflow execution, and profile pages to support localized date displays and user-selected locale options.
-
-These changes provide better code modularity and consistency in date handling, ensuring that date and time values reflect the user’s locale preferences throughout the application.
-
-
 <!--- PR #1326: https://github.com/validmind/frontend/pull/1326 --->
 <!--- Labels: enhancement --->
-### Add sorting options for `Updated Date` and `Documentation Updated Date` in model inventory (#1326)
+### Add sorting by `Updated Date` and `Documentation Updated Date` to model inventory (#1326)
 
-#### External Release Notes
-Adds new Sort columns to Inventory Model List `Updated Date` and `Documentation Updated Date`
+The Inventory Model List now features new sort columns: `Updated Date` and `Documentation Updated Date`.
 
-# PR Summary
+New sorting options, `Updated Date` and `Documentation Updated Date`, are now available on the Model Inventory page. Users can sort these in descending (latest first) or ascending (oldest first) order. These enhancements are integrated into the existing sorting mechanism for consistency with other options. The changes are implemented in the UI component at `src/pages/ModelInventory/index.tsx`, offering users greater flexibility in managing model-related data.
 
-This PR introduces two new sorting criteria in the Model Inventory page. Specifically, it adds sorting options for both the "Updated Date" and the "Documentation Updated Date" fields. Each new sorting option allows data to be arranged in two possible orders: 
 
-- Latest first (descending order)
-- Oldest first (ascending order)
+<!--- PR #1312: https://github.com/validmind/frontend/pull/1312 --->
+<!--- Labels: enhancement --->
+### Add date localization using `FormattedDate` component and `useFormattedDateAndTime` hook (#1312)
 
-These enhancements integrate seamlessly with the existing sorting mechanism by following the same structure and format used for other available sorts. The changes are confined to the addition of sorting options within the UI component located in `src/pages/ModelInventory/index.tsx`, ensuring that users have more flexibility in how they view and manage model-related data.
+Enhanced date formatting by adding `locale` support. Date display functions now accept `locale` as a parameter, ensuring consistent formatting across components. The user interface reflects user-specific `locale` settings in date displays throughout the application.
+
+This update enhances date formatting and display by introducing the `FormattedDate` component and `useFormattedDateAndTime` hook, replacing older utilities. UI localization settings are now stored in `localStorage` when changed. New admin components (`OrganizationRow`, `RoleRow`, `UserRow`) simplify table row implementations. `FormattedDate` is used for date localization across admin pages, user views, activity feeds, and modals. The custom date picker dynamically loads locales and uses `FormattedDate` for display. Template, workflow execution, and profile pages now support localized date displays and user-selected locale options. These changes enhance code modularity and ensure date and time values reflect user locale preferences throughout the application.
 
 <!-- ### Changes with no label -->
 
 
-<!--- PR #1342: https://github.com/validmind/frontend/pull/1342 --->
-<!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.33.3) (#1342) --->
-<!-- No release notes or summary provided. -->
-
-
 <!--- PR #1338: https://github.com/validmind/frontend/pull/1338 --->
 <!--- Labels: none --->
-<!--- ### Merge Main into Staging (staging-1.33.3) (#1338) --->
-<!-- No release notes or summary provided. -->
+<!--- ### Merge `main` into `staging-1.33.3` (#1338) --->
+<!-- Merge PR - not included in release notes. -->
+
+
+<!--- PR #1342: https://github.com/validmind/frontend/pull/1342 --->
+<!--- Labels: none --->
+<!--- ### Merge `main` into `staging` for version `1.33.3` (#1342) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- PR #1343: https://github.com/validmind/frontend/pull/1343 --->
 <!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.33.3) (#1343) --->
-<!-- No release notes or summary provided. -->
+<!--- ### Merge `staging` into `prod` for version 1.33.3 (#1343) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- PR #1333: https://github.com/validmind/frontend/pull/1333 --->
 <!--- Labels: none --->
-<!--- ### Merge pull request #1330 from validmind/nateshim/sc-9861/risk-area-du… (#1333) --->
-<!-- No release notes or summary provided. -->
+<!--- ### Enhance `risk_area` functionality for improved performance (#1333) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- PR #1340: https://github.com/validmind/frontend/pull/1340 --->
 <!--- Labels: none --->
-<!--- ### Merge Staging into Prod (prod-1.33.3) (#1340) --->
-<!-- No release notes or summary provided. -->
+<!--- ### Merge `staging` into `prod` version 1.33.3 (#1340) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 # Agents
@@ -373,22 +295,37 @@ These enhancements integrate seamlessly with the existing sorting mechanism by f
 <!-- ### Changes with no label -->
 
 
+<!--- PR #15: https://github.com/validmind/agents/pull/15 --->
+<!--- Labels: none --->
+<!--- ### Merge `main` into `prod` (#15) --->
+<!-- Merge PR - not included in release notes. -->
+
+
+<!--- PR #5: https://github.com/validmind/agents/pull/5 --->
+<!--- Labels: none --->
+<!--- ### "" (#5) --->
+<!-- No release notes or summary provided. -->
+
+
 <!--- PR #11: https://github.com/validmind/agents/pull/11 --->
 <!--- Labels: none --->
 <!--- ### Add `prod-release` button (#11) --->
 <!-- No release notes or summary provided. -->
 
 
-<!--- PR #15: https://github.com/validmind/agents/pull/15 --->
+<!--- PR #9: https://github.com/validmind/agents/pull/9 --->
 <!--- Labels: none --->
-<!--- ### Merge Main into Prod (prod-13917) (#15) --->
+<!--- ### Use `litellm` when available (#9) --->
 <!-- No release notes or summary provided. -->
 
 
-<!--- PR #14: https://github.com/validmind/agents/pull/14 --->
+<!--- PR #10: https://github.com/validmind/agents/pull/10 --->
 <!--- Labels: none --->
-<!--- ### Use `main` instead of `staging` for `agents` as `staging` does not exist (#14) --->
-<!-- No release notes or summary provided. -->
+### Local dev displays test message in `UI` (#10)
+
+![image](https://github.com/user-attachments/assets/433e6e73-dd0e-4714-a514-e226375669ad)
+
+When running locally, we have logic that checks if litellm is running by sending a single "hello" to the llm. This is a great way to be able to fall back to the bare openai api if the developer doesn't want to run litellm locally. However the problem is that this invoke to the langchain llm client happens within the task node of the langgraph workflow. Meaning that the "Hello" back from the LLM is streamed to the UI. The solution is simply to remove the callbacks array when running `client.invoke()`.
 
 
 <!--- PR #13: https://github.com/validmind/agents/pull/13 --->
@@ -397,19 +334,81 @@ These enhancements integrate seamlessly with the existing sorting mechanism by f
 <!-- No release notes or summary provided. -->
 
 
+<!--- PR #14: https://github.com/validmind/agents/pull/14 --->
+<!--- Labels: none --->
+<!--- ### Use `main` instead of `staging` as agents have no `staging` branch (#14) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #8: https://github.com/validmind/agents/pull/8 --->
+<!--- Labels: none --->
+<!--- ### Release `0.1.2` (#8) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #7: https://github.com/validmind/agents/pull/7 --->
+<!--- Labels: none --->
+### Fix `risk_assessment` function (#7)
+
+Example problematic object:
+
+```
+{
+    "cuid": "cly3m8o8c000sae78zeppz73f",
+    "ref_id": "47b0bdaa-1b75-4c13-9f14-8d7adc239e92",
+    "test_name": "my_custom_tests.ConfusionMatrix",
+    "title": None,
+    "passed": None,
+    "params": None,
+    "summary": [],
+    "metadata": None,
+    "content_type": "validation_report",
+    "updated_at": None,
+    "user": {
+        "cuid": "cln9z5yws00003q8h9x11uv27",
+        "email": "andres+local+jane@validmind.ai",
+        "name": "Jane Validator",
+        "first_name": "Jane Validator",
+        "last_name": None,
+        "job_title": None,
+        "picture": "https://vmai.s3.us-west-1.amazonaws.com/test-avatar.png",
+        "inputs": [],
+    },
+}
+```
+
+---
+
+```
+  File "/Users/andres/code/backend/src/backend/events/handlers.py", line 130, in generate_risk_assessment_handler
+    raise e
+  File "/Users/andres/code/backend/src/backend/events/handlers.py", line 115, in generate_risk_assessment_handler
+    for message, _ in risk_assessment_generation.stream(
+  File "/Users/andres/code/backend/.venv/lib/python3.11/site-packages/langgraph/pregel/__init__.py", line 2324, in stream
+    for _ in runner.tick(
+  File "/Users/andres/code/agents/agents/task.py", line 318, in __call__
+    rendered = message.render(state["inputs"])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andres/code/agents/agents/task.py", line 229, in render
+    output += component.render(inputs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andres/code/agents/agents/task.py", line 190, in render
+    return str(module.render(**args))
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andres/code/agents/agents/prompt_components/risk_assessment/user/__init__.py", line 29, in render
+    evidence_object["figures"] = __context__.get_figures(model_cuid, evidence["test_result"])  # noqa: F821
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andres/code/agents/agents/context.py", line 134, in get_figures
+    metadata_key = frozenset(metadata_query.items()) if metadata_query else None
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unhashable type: 'list'
+```
+
+
 <!--- PR #12: https://github.com/validmind/agents/pull/12 --->
 <!--- Labels: none --->
 <!--- ### Use `.yaml` suffix (#12) --->
 <!-- No release notes or summary provided. -->
-
-
-<!--- PR #10: https://github.com/validmind/agents/pull/10 --->
-<!--- Labels: none --->
-### Local dev responds with test message in `UI` (#10)
-
-![image](https://github.com/user-attachments/assets/433e6e73-dd0e-4714-a514-e226375669ad)
-
-When running locally, we have logic that checks if litellm is running by sending a single "hello" to the llm. This is a great way to be able to fall back to the bare openai api if the developer doesn't want to run litellm locally. However the problem is that this invoke to the langchain llm client happens within the task node of the langgraph workflow. Meaning that the "Hello" back from the LLM is streamed to the UI. The solution is simply to remove the callbacks array when running `client.invoke()`.
 
 
 # Installation
@@ -421,7 +420,7 @@ When running locally, we have logic that checks if litellm is running by sending
 
 <!--- PR #24: https://github.com/validmind/installation/pull/24 --->
 <!--- Labels: documentation --->
-### Release notes for `25.05` (#24)
+### Release notes for version `25.05` (#24)
 
 This PR cherry picks 93be9adfee9122135d699e6fcf6448e5b3966d00 from my release notes script branch to unblock the release today. 
 
@@ -434,15 +433,17 @@ Edits:
 <!-- ### Changes with no label -->
 
 
-<!--- PR #17: https://github.com/validmind/installation/pull/17 --->
+<!--- PR #23: https://github.com/validmind/installation/pull/23 --->
 <!--- Labels: none --->
-<!--- ### Remove unnecessary `docs` workflows and `Makefile` (#17) --->
-<!-- No release notes or summary provided. -->
+### Fix `helm` workflows (#23)
+
+* Helm chart testing will now run on pushes to main
+* Fix helm release workflow
 
 
 <!--- PR #26: https://github.com/validmind/installation/pull/26 --->
 <!--- Labels: none --->
-<!--- ### Add version `25.05` to `cmvm` releases (#26) --->
+<!--- ### Add version 25.05 to `cmvm` releases (#26) --->
 <!-- No release notes or summary provided. -->
 
 
@@ -453,24 +454,29 @@ Edits:
 This is only used in SaaS environments.
 
 
-<!--- PR #23: https://github.com/validmind/installation/pull/23 --->
-<!--- Labels: none --->
-### Fix `helm` workflows (#23)
-
-* Helm chart testing will now run on pushes to main
-* Fix helm release workflow
-
-
 <!--- PR #22: https://github.com/validmind/installation/pull/22 --->
 <!--- Labels: none --->
 <!--- ### Clean up `README` file (#22) --->
 <!-- No release notes or summary provided. -->
 
 
-<!--- PR #18: https://github.com/validmind/installation/pull/18 --->
+<!--- PR #16: https://github.com/validmind/installation/pull/16 --->
 <!--- Labels: none --->
-<!--- ### Update `Customer-managed-releases.qmd` file (#18) --->
+<!--- ### Update `Customer-managed-releases.qmd` file (#16) --->
 <!-- No release notes or summary provided. -->
+
+
+<!--- PR #17: https://github.com/validmind/installation/pull/17 --->
+<!--- Labels: none --->
+<!--- ### Remove unneeded `docs` workflows and `Makefile` (#17) --->
+<!-- No release notes or summary provided. -->
+
+
+<!--- PR #20: https://github.com/validmind/installation/pull/20 --->
+<!--- Labels: none --->
+### Fix various `port` issues (#20)
+
+This will fix some erroneous copy pasting.
 
 
 <!--- PR #19: https://github.com/validmind/installation/pull/19 --->
@@ -480,11 +486,10 @@ This is only used in SaaS environments.
 This will fix some CreateContainerConfigErrors when using the merged helm chart when keycloak is disabled.
 
 
-<!--- PR #20: https://github.com/validmind/installation/pull/20 --->
+<!--- PR #18: https://github.com/validmind/installation/pull/18 --->
 <!--- Labels: none --->
-### Fix various `port` issues (#20)
-
-This will fix some erroneous copy pasting.
+<!--- ### Update `Customer-managed-releases.qmd` file (#18) --->
+<!-- No release notes or summary provided. -->
 
 
 <!--- PR #12: https://github.com/validmind/installation/pull/12 --->
@@ -507,6 +512,13 @@ TODO (move above this as they are done):
 * Test on dev cluster
 
 
+<!--- PR #15: https://github.com/validmind/installation/pull/15 --->
+<!--- Labels: none --->
+### Add `25.04` and `25.04.01` releases (#15)
+
+Also fix support windows to be 6 months
+
+
 # Documentation
 <!--- Tag: [cmvm/25.05](https://github.com/validmind/documentation/releases/tag/cmvm/25.05) --->
 <!--- Compare API call: gh api repos/validmind/documentation/compare/a43dbe7f31d943df0b8d187060983bbdc89c8ac9...a43dbe7f31d943df0b8d187060983bbdc89c8ac9 --->
@@ -515,181 +527,77 @@ TODO (move above this as they are done):
 
 <!--- PR #687: https://github.com/validmind/documentation/pull/687 --->
 <!--- Labels: documentation, highlight --->
-### Update user guide for `attestation` (#687)
+### Update user guide for `attestation` process management (#687)
 
-#### External Release Notes
-Model attestation is now available.
-
-Attestation allows model owners and validators to formally review and certify key details about a model at a specific point in time. This helps support internal governance and compliance with external requirements. Progress for the attestation process is tracked through clear status updates and role-specific tasks. 
+Model attestation is now available, enabling model owners and validators to formally review and certify key details about a model at a specific point in time. This feature supports internal governance and compliance with external requirements. The attestation process includes status updates and role-specific tasks to track progress.
 
 [Working with attestations](/guide/attestation/working-with-attestations.qmd)
 
-# PR Summary
-This pull request introduces a new feature for managing attestations within the platform. The changes include the addition of new documentation files and updates to existing ones to support the attestation process. Key functional changes include:
+This update introduces a feature for managing attestations, enhancing compliance and governance capabilities with new documentation and updates.
 
-- **Attestation Documentation**: New guides and glossary entries have been added to explain the attestation process, including setting up attestations, completing questionnaires, and reviewing them. This includes detailed steps for model owners and validators to follow during the attestation process.
-- **Glossary Update**: A new glossary entry for 'Attestation' has been added to provide definitions and context for terms related to the attestation process.
-- **Mermaid Diagram Styling**: Updates to the theme styling for Mermaid diagrams, including changes to node and edge colors, and the addition of rounded corners for nodes.
-- **Guide Organization**: The guides have been reorganized to include a new section specifically for attestation, making it easier for users to find relevant information.
+- **Attestation Documentation**: New guides and glossary entries explain the attestation process, including setup, completion, and review instructions. Detailed steps are provided for model owners and validators.
 
-These changes aim to enhance the platform's compliance and governance capabilities by providing a structured process for model attestation.
+- **Mermaid Diagram Styling**: Updates include changes to node and edge colors and the addition of rounded corners for nodes.
+
+- **Guide Organization**: Guides now have a dedicated section for attestation, making it easier to find relevant information.
 
 
 <!--- PR #686: https://github.com/validmind/documentation/pull/686 --->
 <!--- Labels: documentation --->
-### Manage `model stakeholder types` documentation (#686)
+### Update documentation for managing `model` stakeholder types (#686)
 
-#### # Manage model stakeholder types
-Net-new page under "Managing users":
+New content has been added to the "Managing users" section, explaining how to manage model stakeholder types. This page is now included in the "Managing users" landing page tiles.
 
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-9319/documentation-as-a-admin-i-am-able-to-manage/guide/configuration/manage-model-stakeholder-types.html)
+The model inventory fields documentation now includes a section on editing model stakeholders, focusing on model stakeholder types instead of outdated role permissions.
 
-<img width="1258" alt="Screenshot 2025-04-03 at 2 45 21 PM" src="https://github.com/user-attachments/assets/7427833b-1c86-46f2-a034-811a7c3b0f52" />
-<img width="1258" alt="Screenshot 2025-04-03 at 2 45 30 PM" src="https://github.com/user-attachments/assets/9e1b7657-dd11-44da-97c5-668dd37dccda" />
-<img width="1221" alt="Screenshot 2025-04-03 at 2 45 35 PM" src="https://github.com/user-attachments/assets/19bb32e9-ec1d-40a5-bb4e-4a941a5382f8" />
-
-Added it to the "Managing users" landing page tiles as well: 
-
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-9319/documentation-as-a-admin-i-am-able-to-manage/guide/configuration/managing-users.html)
-
-<img width="1412" alt="Screenshot 2025-04-03 at 2 45 09 PM" src="https://github.com/user-attachments/assets/bf858771-c1dd-4319-9bd8-43fb6486521a" />
-
-#### # Edit model inventory fields
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-9319/documentation-as-a-admin-i-am-able-to-manage/guide/model-inventory/edit-model-inventory-fields.html)
-
-Added a section on editing model stakeholders:
-
-<img width="745" alt="Screenshot 2025-04-03 at 2 47 03 PM" src="https://github.com/user-attachments/assets/c72629ac-3221-47c4-bc47-e363533b1a0f" />
-
-#### # Manage model inventory fields
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-9319/documentation-as-a-admin-i-am-able-to-manage/guide/model-inventory/manage-model-inventory-fields.html)
-
-Updated this to refer to model stakeholder types instead of the outdated role permissions:
-
-<img width="763" alt="Screenshot 2025-04-03 at 2 47 43 PM" src="https://github.com/user-attachments/assets/b3a71c8d-0c66-49d9-8fda-40769d6e0e8d" />
-
-# PR Summary
-
-This pull request introduces several enhancements to the documentation related to role and stakeholder type management within the platform. The key changes include:
-
-1. **Addition of New Documentation for Model Stakeholder Types**: A new guide, `manage-model-stakeholder-types.qmd`, has been added. This document provides detailed instructions on managing model stakeholder types, including adding or editing stakeholder types, managing permissions, and applying stakeholder types to models.
-
-2. **Enhancements to Role Management Documentation**: The `manage-roles.qmd` file has been updated to provide clearer instructions on managing roles, including adding new roles, managing role permissions, and managing users associated with roles. The documentation now includes more detailed steps and clarifications on the uniqueness of role names and stakeholder type names.
-
-3. **Integration of Stakeholder Types in Existing Documentation**: References to model stakeholder types have been integrated into existing documentation, such as `edit-model-inventory-fields.qmd` and `manage-model-inventory-fields.qmd`. These updates ensure that stakeholder types are considered in the context of managing model inventory fields and permissions.
-
-4. **Structural and Content Updates**: Minor structural changes, such as adjusting grid columns in `managing-users.qmd`, and content updates to improve clarity and consistency across the documentation.
-
-These changes aim to improve the usability and clarity of the documentation related to user roles and stakeholder types, providing users with comprehensive guidance on managing access and permissions within the platform.
+This update enhances documentation for managing roles and stakeholder types on the platform. A new guide, `manage-model-stakeholder-types.qmd`, explains how to add, edit, manage permissions, and apply stakeholder types to models. Updates to `manage-roles.qmd` clarify role management, including adding roles, managing permissions, associating users with roles, and ensuring unique names for roles and stakeholder types. Model stakeholder types are now included in `edit-model-inventory-fields.qmd` and `manage-model-inventory-fields.qmd` to ensure they are considered in managing model inventory fields and permissions. Minor structural changes, such as adjusting grid columns in `managing-users.qmd`, enhance clarity and consistency across the documentation.
 
 
 <!--- PR #689: https://github.com/validmind/documentation/pull/689 --->
 <!--- Labels: documentation --->
-### Add new introductory `validation` notebooks (#689)
+### Added new introductory `validation` notebooks for `ValidMind` (#689)
 
-#### # ValidMind for model validation notebooks
-These were added to the "developer" (now library) portal:
+ValidMind for model validation and development notebooks are now available in the library portal. The updated numbering structure is reflected in the side navigation and listing tiles.
 
-| Sidenav | Listing tiles |
-|---|---|
-|<img width="363" alt="Screenshot 2025-04-09 at 2 36 33 PM" src="https://github.com/user-attachments/assets/f286ee8d-3936-4d3d-bb74-2c13a6f44f4b" /> | <img width="795" alt="Screenshot 2025-04-09 at 2 36 29 PM" src="https://github.com/user-attachments/assets/61e23af0-3602-4534-b807-4086a71021af" />|
+The Developers > ValidMind Library portal now uses universal language and links, broadening its purpose beyond a developer portal. Consistent styling from the API documentation has been applied, resolving issues with side navigation and long notebook titles. The sidebar for this section is now in its own `_sidebar.yaml` file.
 
-#### # ValidMind for model development notebooks
-These have the updated numbering structure:
+The link to validmind.com has been removed from the main top navigation, as it is already in the footer.
 
-| Sidenav | Listing tiles |
-|---|---|
-|<img width="361" alt="Screenshot 2025-04-09 at 2 36 23 PM" src="https://github.com/user-attachments/assets/dfeb49d8-62de-4e8f-91ea-604306421f74" /> | <img width="819" alt="Screenshot 2025-04-09 at 2 36 19 PM" src="https://github.com/user-attachments/assets/9c8f0a36-43b8-4198-89d6-4006b311be08" />|
-
-#### # Developers > ValidMind Library
-- Since this portal is much more than a developer portal, I've made the language and links surrounding the portal more universal:
-
-| Main drop-down | Collapsed drop-down |
-|---|---|
-| <img width="453" alt="Screenshot 2025-04-09 at 2 35 39 PM" src="https://github.com/user-attachments/assets/a7b9c0da-e793-40d4-9479-063d0623e16d" /> | <img width="292" alt="Screenshot 2025-04-09 at 2 34 21 PM" src="https://github.com/user-attachments/assets/d7071541-64fb-4f78-8455-fec350781843" />|
-
-- You may notice that I also applied the styling that the API docs have to this and the notebooks/test descriptions, since it's jarring for the two sections to have different side navigations (BONUS: This also takes care of the really squished long-titles we have for notebooks!):
-
-<img width="1706" alt="Screenshot 2025-04-09 at 2 37 38 PM" src="https://github.com/user-attachments/assets/c662fb02-32e8-4d0b-b8bf-83d606671b6c" />
-
-
-- I also moved the sidebar for this landing section to its own `_sidebar.yaml`:
-
-https://github.com/validmind/documentation/blob/a89901c1e08dd3320d989474289e0cc03b652c64/site/developer/_sidebar.yaml#L3
-
-https://github.com/validmind/documentation/blob/a89901c1e08dd3320d989474289e0cc03b652c64/site/_quarto.yml#L5
-
-#### # validmind.com
-I removed this link from the main top navigation as it doesn't need to feature so heavily when it's also in the footer, based on discussions we had during the homepage redesign. 
-
-| Main nav | Collapsed nav |
-|---|---|
-| <img width="1710" alt="Screenshot 2025-04-09 at 2 34 16 PM" src="https://github.com/user-attachments/assets/9b7ffe00-0134-4e7f-9b27-13a2c56143b0" /> | <img width="292" alt="Screenshot 2025-04-09 at 2 34 21 PM" src="https://github.com/user-attachments/assets/b0b03b47-9665-45d4-8ff3-7af55636d483" />|
-
-# PR Summary
-
-This pull request introduces several enhancements and bug fixes to the ValidMind documentation and testing framework. The key changes include:
-
-1. **Documentation Updates**:
-   - Updated various documentation files to improve clarity and consistency, particularly in the ValidMind Library and its usage.
-   - Added new sections and examples to the documentation, including detailed guides on setting up and using the ValidMind Library for model validation and development.
-   - Enhanced the documentation for custom tests and external test providers, providing clearer instructions and examples.
-
-2. **Testing Enhancements**:
-   - Introduced new tests and updated existing ones to cover more scenarios, particularly in the areas of model validation and data quality.
-   - Improved the test descriptions and added more detailed explanations for test parameters and expected outcomes.
-   - Added new test files and updated existing ones to ensure comprehensive coverage of the ValidMind functionalities.
-
-3. **Code Improvements**:
-   - Refactored code to improve readability and maintainability, including better organization of test files and documentation.
-   - Fixed minor bugs and inconsistencies in the codebase, particularly in the test execution and logging mechanisms.
-
-4. **Security and Compliance**:
-   - Updated security-related documentation to ensure compliance with best practices and standards.
-   - Improved the handling of sensitive data in test results and logging, ensuring that sensitive information is not exposed inadvertently.
-
-Overall, these changes aim to enhance the usability, clarity, and security of the ValidMind framework, making it easier for users to implement and document their models effectively.
+This update enhances the ValidMind documentation and testing framework. Documentation now includes clearer instructions, new sections, and examples for setting up and using the library for model validation and development, including custom tests and external test providers. New tests have been added, and existing ones updated to cover more scenarios in model validation and data quality. Test descriptions now detail parameters and expected outcomes. Code refactoring improves readability and maintainability, and minor bugs in test execution and logging have been fixed. Security documentation has been updated to align with best practices for handling sensitive data.
 
 <!-- ### Changes with no label -->
 
 
-<!--- PR #688: https://github.com/validmind/documentation/pull/688 --->
-<!--- Labels: none --->
-<!--- ### Merge main into staging (#688) --->
-<!-- No release notes or summary provided. -->
-
-
 <!--- PR #691: https://github.com/validmind/documentation/pull/691 --->
 <!--- Labels: none --->
-<!--- ### Merge main into staging (#691) --->
-<!-- No release notes or summary provided. -->
+<!--- ### Merge `main` branch into `staging` branch (#691) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- PR #697: https://github.com/validmind/documentation/pull/697 --->
 <!--- Labels: none --->
-<!--- ### Merge main into staging (#697) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #702: https://github.com/validmind/documentation/pull/702 --->
-<!--- Labels: none --->
-<!--- ### Merge `staging` into `prod` (#702) --->
-<!-- No release notes or summary provided. -->
-
-
-<!--- PR #699: https://github.com/validmind/documentation/pull/699 --->
-<!--- Labels: none --->
-<!--- ### Fix merge conflicts for prod push #698 (#699) --->
-<!-- No release notes or summary provided. -->
+<!--- ### Merge `main` branch into `staging` branch (#697) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- PR #690: https://github.com/validmind/documentation/pull/690 --->
 <!--- Labels: none --->
-<!--- ### Merge main into staging (#690) --->
-<!-- No release notes or summary provided. -->
+<!--- ### Merge `main` into `staging` (#690) --->
+<!-- Merge PR - not included in release notes. -->
+
+
+<!--- PR #688: https://github.com/validmind/documentation/pull/688 --->
+<!--- Labels: none --->
+<!--- ### Merge `main` into `staging` (#688) --->
+<!-- Merge PR - not included in release notes. -->
+
+
+<!--- PR #702: https://github.com/validmind/documentation/pull/702 --->
+<!--- Labels: none --->
+<!--- ### Merge `staging` into `prod` environment (#702) --->
+<!-- Merge PR - not included in release notes. -->
 
 
 <!--- # Validmind-library --->
-<!--- Tag: [cmvm/25.05](https://github.com/validmind/validmind-library/releases/tag/cmvm/25.05) --->
-<!--- Compare API call: gh api repos/validmind/validmind-library/compare/cmvm/25.05...cmvm/25.05 --->
-<!-- No public PRs found for this release -->
+<!--- Tag cmvm/25.05 not found in validmind-library repository --->
+<!-- No tag found in this repository -->

@@ -1,34 +1,41 @@
 ---
-title: "Enable sourcemap uploads to `Datadog` and `Sentry` without deploying (#1434)"
+title: "Upload `sourcemaps` to Datadog and Sentry without deployment (#1434)"
 categories: [frontend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "June 05, 2025"
-# Content edited by AI - 2025-06-08 18:17
-# Content overwritten from an earlier version - 2025-06-08 18:17
+date: "June 06, 2025"
+# Content edited by AI - 2025-06-09 16:40
+# Content overwritten from an earlier version - 2025-06-09 16:40
 # PR URL: https://github.com/validmind/frontend/pull/1434
 ---
 
-This update enhances debugging by incorporating an `npm` command to upload sourcemaps to Datadog and Sentry during the `prod` Docker image build. Sourcemaps are removed from the final build to protect proprietary information. For more details, refer to the documentation for [Datadog sourcemap](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/), [Sentry sourcemap](https://docs.sentry.io/platforms/javascript/sourcemaps/uploading/cli/), and [Sentry release](https://docs.sentry.io/cli/releases/). A related GitHub Actions update is required for new build variables, as detailed in https://github.com/validmind/backend/pull/1539.
+This update enhances sourcemap management:
 
-- Adds the ability to upload sourcemaps to Datadog and/or Sentry.
+- An `npm` command uploads sourcemaps to Datadog and Sentry for debugging during the `prod` Docker image build.
+- Sourcemaps are removed from the final build to protect proprietary information.
 
-This update introduces a multi-stage Docker build to enhance error tracking and debugging in production by managing sourcemap uploads. A new build stage, `sourcemaps-upload`, securely handles API keys for Datadog and Sentry using build secrets. A custom NPM script, `sourcemaps-upload`, checks environment variables and uploads sourcemaps. The production stage now copies build output from this stage and removes sourcemap files to protect source details. Sentry initialization is updated to include the release version.
+For more details, see the documentation for [Datadog sourcemap](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/), [Sentry sourcemap](https://docs.sentry.io/platforms/javascript/sourcemaps/uploading/cli/), and [Sentry release](https://docs.sentry.io/cli/releases/).
 
-Functional changes include:
+Note: GitHub Actions have been updated to include new variables needed during the build process.
 
-- A new Docker build stage for sourcemap uploads.
-- Automated sourcemap uploads via Datadog and Sentry APIs.
-- Updated package scripts and added development dependencies.
-- Sentry initialization now includes the release version.
+The update introduces a multi-stage Docker build process to manage sourcemap uploads, enhancing error tracking and debugging. A new `sourcemaps-upload` build stage securely handles API keys for Datadog and Sentry using build secrets. This stage uses a custom NPM script (`sourcemaps-upload`) defined in the package configuration and executed via the `scripts/sourcemaps-upload.sh` file. The script checks for necessary environment variables and conditionally uploads sourcemaps to Datadog and Sentry.
+
+Key changes include:
+
+- A Docker build stage for sourcemap uploads.
+- Integration with Datadog and Sentry APIs for automated uploads.
+- Updates to package scripts and addition of necessary development dependencies.
+- Modifications to Sentry initialization in the frontend application to include the current release version, aiding in correlating sourcemap data with application versions.
+
+The production stage now copies the build output from the sourcemaps upload stage and removes sourcemap files from the final container to prevent exposure of source details.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-08 18:16:46
-Result: The edited content is a clear and concise improvement over the original. It effectively communicates the action of enabling sourcemap uploads to Datadog and Sentry without the need for deployment. The use of backticks around "Datadog" and "Sentry" is a nice touch for emphasis, assuming this is a tec...
-Failure Patterns: {'formatting': 3}
+Last Validation: 2025-06-09 16:40:01
+Result: The edited content effectively clarifies the original message by removing the ticket number "[SC-10091]" and replacing the word "deploying" with "deployment," which is more concise. Additionally, the use of backticks around "sourcemaps" helps to emphasize the term, making it stand out as a technical...
+Failure Patterns: {'formatting': 1}
 Reedit Available: Yes
-Reedit Message: The edited content is a clear and concise improvement over the original. It effectively communicates the action of enabling sourcemap uploads to Datadog and Sentry without the need for deployment. The...
+Reedit Message: The edited content effectively clarifies the original message by removing the ticket number "[SC-10091]" and replacing the word "deploying" with "deployment," which is more concise. Additionally, the ...
 --->

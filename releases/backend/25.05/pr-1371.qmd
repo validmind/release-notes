@@ -1,16 +1,22 @@
 ---
-title: "Enhance metadata filtering in `figure` queries for better timestamp handling (#1371)"
+title: "Enhance metadata filtering in figure queries by casting JSON timestamps to `DateTime` (#1371)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content is a clear improvement over the original. It provides a more specific and descriptive explanation of the task, indicating that the enhancement involves improving the filtering of metadata specifically related to `figure` queries, with an emphasis on better handling of timestamps. This makes the purpose and scope of the task more understandable. The use of the word "enhance" suggests a positive improvement, which is more engaging than the vague "fix" in the original. Overall, the edited content effectively communicates the intended action
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/backend/pull/1371
 ---
 
-# PR Summary
+This update enhances metadata filtering in database queries for figures by accurately comparing timestamp metadata. JSON timestamp values are now cast to `DateTime` using the database's functionality. Additionally, there is a minor version bump in the `pyproject.toml` file.
 
-This pull request enhances the metadata filtering mechanism in the database query for figures. The primary functional change is an update to the condition that constructs filters from metadata keys. When the metadata value is a timestamp (either a datetime or a date object), the code now casts the JSON value (extracted as a string) to a DateTime type using the database's casting functionality. This ensures that comparisons between timestamp values in the metadata and the provided datetime/date objects are performed correctly.
-
-Other changes include a minor version bump in the project configuration file (pyproject.toml), but the focus of this PR is on the improved handling of timestamp metadata.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:16:11
+Result: The edited content provides a clearer and more specific description of the task. It not only mentions the action to be taken ("Enhance metadata filtering") but also specifies the method to achieve it ("by casting JSON timestamps to `DateTime`"). This makes the task more understandable and actionable...
+Reedit Available: Yes
+Reedit Message: The edited content provides a clearer and more specific description of the task. It not only mentions the action to be taken ("Enhance metadata filtering") but also specifies the method to achieve it ...
+--->

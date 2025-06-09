@@ -1,0 +1,74 @@
+---
+title: "Fix `risk_assessment` function (#7)"
+categories: [agents, 25.05, release]
+sidebar: release-notes
+toc-expand: true
+date: "April 28, 2025"
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
+# PR URL: https://github.com/validmind/agents/pull/7
+---
+
+Example problematic object:
+
+```
+{
+    "cuid": "cly3m8o8c000sae78zeppz73f",
+    "ref_id": "47b0bdaa-1b75-4c13-9f14-8d7adc239e92",
+    "test_name": "my_custom_tests.ConfusionMatrix",
+    "title": None,
+    "passed": None,
+    "params": None,
+    "summary": [],
+    "metadata": None,
+    "content_type": "validation_report",
+    "updated_at": None,
+    "user": {
+        "cuid": "cln9z5yws00003q8h9x11uv27",
+        "email": "andres+local+jane@validmind.ai",
+        "name": "Jane Validator",
+        "first_name": "Jane Validator",
+        "last_name": None,
+        "job_title": None,
+        "picture": "https://vmai.s3.us-west-1.amazonaws.com/test-avatar.png",
+        "inputs": [],
+    },
+}
+```
+
+---
+
+```
+  File "/Users/andres/code/backend/src/backend/events/handlers.py", line 130, in generate_risk_assessment_handler
+    raise e
+  File "/Users/andres/code/backend/src/backend/events/handlers.py", line 115, in generate_risk_assessment_handler
+    for message, _ in risk_assessment_generation.stream(
+  File "/Users/andres/code/backend/.venv/lib/python3.11/site-packages/langgraph/pregel/__init__.py", line 2324, in stream
+    for _ in runner.tick(
+  File "/Users/andres/code/agents/agents/task.py", line 318, in __call__
+    rendered = message.render(state["inputs"])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andres/code/agents/agents/task.py", line 229, in render
+    output += component.render(inputs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andres/code/agents/agents/task.py", line 190, in render
+    return str(module.render(**args))
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andres/code/agents/agents/prompt_components/risk_assessment/user/__init__.py", line 29, in render
+    evidence_object["figures"] = __context__.get_figures(model_cuid, evidence["test_result"])  # noqa: F821
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/andres/code/agents/agents/context.py", line 134, in get_figures
+    metadata_key = frozenset(metadata_query.items()) if metadata_query else None
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unhashable type: 'list'
+```
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:22:53
+Result: The edited content provides a clearer and more specific reference by indicating that "risk assessment" is a function, likely in a programming or technical context. By using backticks, it suggests that "risk_assessment" is a code element, which helps in distinguishing it from a general concept or tas...
+Reedit Available: Yes
+Reedit Message: The edited content provides a clearer and more specific reference by indicating that "risk assessment" is a function, likely in a programming or technical context. By using backticks, it suggests that...
+--->

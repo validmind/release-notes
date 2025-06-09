@@ -4,17 +4,19 @@ categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content improves upon the original by making a few key changes:
-
-1. **Clarity and Conciseness**: The edited version removes unnecessary words, making the sentence more concise. The phrase "was not being set correctly when" is simplified to "was not set correctly," which is clearer and more direct.
-
-2. **Code Formatting**: The edited version uses backticks around `document_type`, which is a common convention to indicate code or specific variables. This enhances readability and makes it
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/backend/pull/1412
 ---
 
-# PR Summary
+The `_add_library_block` function has been updated to include a `content_type` parameter. This parameter is derived from `document_type` to ensure accurate content type specification for block rendering or processing.
 
-This PR introduces a functional enhancement to the `_add_library_block` function by passing an additional `content_type` parameter derived from `document_type` to the function call. Previously, the function was relying solely on the internal `data["content"]["content_type"]`, but now it also incorporates the externally provided `document_type` value, potentially giving a more accurate or context-specific content type when adding blocks to a template.
-
-The change ensures that the block created incorporates both the original content information and the explicit document type, which might be used for rendering or processing the block differently based on its type.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:18:11
+Result: The edited content is a clear and concise improvement over the original. It removes unnecessary words, making the sentence more direct. Additionally, the use of backticks around `document_type` helps to emphasize it as a specific term or variable, which is a common convention in technical writing. O...
+Reedit Available: Yes
+Reedit Message: The edited content is a clear and concise improvement over the original. It removes unnecessary words, making the sentence more direct. Additionally, the use of backticks around `document_type` helps ...
+--->

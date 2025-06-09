@@ -4,8 +4,8 @@ categories: [installation, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content is a clear and concise improvement over the original. It removes the informal "feat:" prefix, which is typically used in commit messages, and presents the information in a straightforward manner. The use of backticks around "helm" indicates that it is a specific term or command, which can be helpful for clarity. Overall, the edited content effectively communicates the intended updates without unnecessary jargon.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/installation/pull/12
 ---
 
@@ -23,3 +23,13 @@ TODO (move above this as they are done):
 
 * Fix symlink issues with quarto
 * Test on dev cluster
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:23:21
+Result: The edited content is clear and concise, effectively conveying the same information as the original. The use of backticks around "helm" is a nice touch, as it indicates that "helm" is a specific term or command, which can be helpful for readers familiar with technical documentation. The removal of "...
+Reedit Available: Yes
+Reedit Message: The edited content is clear and concise, effectively conveying the same information as the original. The use of backticks around "helm" is a nice touch, as it indicates that "helm" is a specific term ...
+--->

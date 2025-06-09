@@ -1,25 +1,26 @@
 ---
-title: "Add date localization support to `user` settings (#1337)"
+title: "Add date localization support in `user` settings (#1337)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content provides a more specific and actionable description compared to the original. By specifying that date localization support should be added to the `user` settings, it clarifies the scope and target of the task. This makes it easier for developers or team members to understand what needs to be done. Overall, the edited content is a clear and concise improvement over the original.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/backend/pull/1337
 ---
 
-# PR Summary
+This update enhances user settings by adding a locale configuration field. Key changes include:
 
-This pull request introduces enhancements to the user settings by adding a new locale configuration field. Key changes include:
+- A new Alembic migration sets the default value of the `ui_settings` column in the `users` table to `{"locale": "en"}` for future inserts and updates existing records to include the locale setting if missing.
+- The `ui_settings` column in the User model now defaults to `{"locale": "en"}`.
+- The JSON schema for `ui_settings` is updated to include a `locale` property of type string.
 
-1. Database Migration:
-   - A new Alembic migration is added to update the default value of the `ui_settings` column in the `users` table, setting it to `{"locale": "en"}` for future inserts.
-   - The migration updates existing records to include the locale setting if it is missing, ensuring that all users have a default locale value.
-   - A downgrade path is provided to revert the default back to an empty JSON object if needed.
-
-2. Application Code Update:
-   - The `ui_settings` column in the User model is modified to use `{"locale": "en"}` as its default value.
-   - The JSON schema used for validating `ui_settings` is updated to include a new property `locale` of type string, ensuring that the field conforms to the expected format.
-
-These changes ensure a consistent handling of locale configurations throughout the system and improve the robustness of user settings management.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:16:41
+Result: The edited content provides a more specific and actionable description compared to the original. By specifying that date localization support should be added in the `user` settings, it clarifies where the feature should be implemented, making it more useful for developers or team members who need to...
+Reedit Available: Yes
+Reedit Message: The edited content provides a more specific and actionable description compared to the original. By specifying that date localization support should be added in the `user` settings, it clarifies where...
+--->

@@ -1,14 +1,23 @@
 ---
-title: "Update `readme` to include Docker swap configuration (#1378)"
+title: "Update `readme` to include Docker swap configuration settings (#1378)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content improves the original by adding backticks around "readme," which is a common convention to indicate code or file names in documentation. Additionally, capitalizing "Docker" aligns with the proper noun usage for the software. Overall, the edits enhance clarity and professionalism.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/backend/pull/1378
 ---
 
-# PR Summary
+The `README.md` file now includes instructions for configuring Docker Desktop. Users should set the swap memory to `2 GB` in the Docker Desktop settings under the Resources tab. This ensures optimal performance by applying the correct swap settings before starting the project.
 
-This PR updates the README.md file by adding a new section that provides instructions for configuring Docker Desktop. The added content guides users through setting the swap memory to 2GB via the Docker Desktop settings under the Resources tab. This change aims to help users optimize Docker's performance by ensuring appropriate swap settings are in place before starting the project.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:16:37
+Result: The edited content improves the original by adding clarity and specificity. By enclosing "readme" in backticks, it indicates that "readme" is a file or a specific term, which is a common convention in technical documentation. Additionally, the phrase "Docker swap configuration settings" is more prec...
+Failure Patterns: {'formatting': 2}
+Reedit Available: Yes
+Reedit Message: The edited content improves the original by adding clarity and specificity. By enclosing "readme" in backticks, it indicates that "readme" is a file or a specific term, which is a common convention in...
+--->

@@ -1,53 +1,26 @@
 ---
-title: "Manage `model stakeholder types` documentation (#686)"
+title: "Update documentation for managing `model` stakeholder types (#686)"
 categories: [documentation, 25.05, release, documentation]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# CHECK: Title validation failed - The edited content is concise and maintains the original meaning. However, it slightly changes the focus by emphasizing the action ("Manage") over the subject ("Documentation"). If the intent is to highlight the documentation itself, the original phrasing might be more appropriate. If the goal is to emphasize the management aspect, the edited version works well. Consider the context and purpose to determine which version better suits your needs.
-# Content overwritten from an earlier version - 2025-06-06 09:34
+# Content edited by AI - 2025-06-09 16:27
+# Content overwritten from an earlier version - 2025-06-09 16:27
 # PR URL: https://github.com/validmind/documentation/pull/686
 ---
 
-#### # Manage model stakeholder types
-Net-new page under "Managing users":
+New content has been added to the "Managing users" section, explaining how to manage model stakeholder types. This page is now included in the "Managing users" landing page tiles.
 
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-9319/documentation-as-a-admin-i-am-able-to-manage/guide/configuration/manage-model-stakeholder-types.html)
+The model inventory fields documentation now includes a section on editing model stakeholders, focusing on model stakeholder types instead of outdated role permissions.
 
-<img width="1258" alt="Screenshot 2025-04-03 at 2 45 21 PM" src="https://github.com/user-attachments/assets/7427833b-1c86-46f2-a034-811a7c3b0f52" />
-<img width="1258" alt="Screenshot 2025-04-03 at 2 45 30 PM" src="https://github.com/user-attachments/assets/9e1b7657-dd11-44da-97c5-668dd37dccda" />
-<img width="1221" alt="Screenshot 2025-04-03 at 2 45 35 PM" src="https://github.com/user-attachments/assets/19bb32e9-ec1d-40a5-bb4e-4a941a5382f8" />
+This update enhances documentation for managing roles and stakeholder types on the platform. A new guide, `manage-model-stakeholder-types.qmd`, explains how to add, edit, manage permissions, and apply stakeholder types to models. Updates to `manage-roles.qmd` clarify role management, including adding roles, managing permissions, associating users with roles, and ensuring unique names for roles and stakeholder types. Model stakeholder types are now included in `edit-model-inventory-fields.qmd` and `manage-model-inventory-fields.qmd` to ensure they are considered in managing model inventory fields and permissions. Minor structural changes, such as adjusting grid columns in `managing-users.qmd`, enhance clarity and consistency across the documentation.
 
-Added it to the "Managing users" landing page tiles as well: 
-
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-9319/documentation-as-a-admin-i-am-able-to-manage/guide/configuration/managing-users.html)
-
-<img width="1412" alt="Screenshot 2025-04-03 at 2 45 09 PM" src="https://github.com/user-attachments/assets/bf858771-c1dd-4319-9bd8-43fb6486521a" />
-
-#### # Edit model inventory fields
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-9319/documentation-as-a-admin-i-am-able-to-manage/guide/model-inventory/edit-model-inventory-fields.html)
-
-Added a section on editing model stakeholders:
-
-<img width="745" alt="Screenshot 2025-04-03 at 2 47 03 PM" src="https://github.com/user-attachments/assets/c72629ac-3221-47c4-bc47-e363533b1a0f" />
-
-#### # Manage model inventory fields
-[**LIVE PREVIEW**](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-9319/documentation-as-a-admin-i-am-able-to-manage/guide/model-inventory/manage-model-inventory-fields.html)
-
-Updated this to refer to model stakeholder types instead of the outdated role permissions:
-
-<img width="763" alt="Screenshot 2025-04-03 at 2 47 43 PM" src="https://github.com/user-attachments/assets/b3a71c8d-0c66-49d9-8fda-40769d6e0e8d" />
-
-# PR Summary
-
-This pull request introduces several enhancements to the documentation related to role and stakeholder type management within the platform. The key changes include:
-
-1. **Addition of New Documentation for Model Stakeholder Types**: A new guide, `manage-model-stakeholder-types.qmd`, has been added. This document provides detailed instructions on managing model stakeholder types, including adding or editing stakeholder types, managing permissions, and applying stakeholder types to models.
-
-2. **Enhancements to Role Management Documentation**: The `manage-roles.qmd` file has been updated to provide clearer instructions on managing roles, including adding new roles, managing role permissions, and managing users associated with roles. The documentation now includes more detailed steps and clarifications on the uniqueness of role names and stakeholder type names.
-
-3. **Integration of Stakeholder Types in Existing Documentation**: References to model stakeholder types have been integrated into existing documentation, such as `edit-model-inventory-fields.qmd` and `manage-model-inventory-fields.qmd`. These updates ensure that stakeholder types are considered in the context of managing model inventory fields and permissions.
-
-4. **Structural and Content Updates**: Minor structural changes, such as adjusting grid columns in `managing-users.qmd`, and content updates to improve clarity and consistency across the documentation.
-
-These changes aim to improve the usability and clarity of the documentation related to user roles and stakeholder types, providing users with comprehensive guidance on managing access and permissions within the platform.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-09 16:26:43
+Result: The edited content provides a clearer and more direct instruction by using the verb "Update" at the beginning, which implies an action to be taken. It also uses backticks around the word "model," which suggests that "model" is a specific term or category, enhancing clarity for the reader. Overall, t...
+Reedit Available: Yes
+Reedit Message: The edited content provides a clearer and more direct instruction by using the verb "Update" at the beginning, which implies an action to be taken. It also uses backticks around the word "model," whic...
+--->
