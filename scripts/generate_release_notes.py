@@ -115,24 +115,34 @@ EDIT_PASS_1_INSTRUCTIONS = (
     "- Remove ALL Markdown headings (#, ##, ###, ####, etc.) including '# PR Summary'\n"
     "- Combine related or similar content into cohesive blocks\n"
     "- Preserve paragraph breaks and list formatting\n"
+    "- If there are breaking changes, be sure to highlight them in the text "
     "Output only the grouped and flattened text."
 )
 
 EDIT_PASS_2_INSTRUCTIONS = (
     "Pass 2 — Deduplicate:\n"
-    "- Remove duplicate or near-duplicate sentences and ideas\n"
-    "- Retain only the clearest version of each unique point\n"
-    "- Avoid shortening or rephrasing at this stage\n"
+    "- Remove VERBATIM duplicates: if multiple sentences or paragraphs start with identical phrases, consolidate them\n"
+    "- Perform SEMANTIC deduplication: if two sentences convey the same meaning, keep only one\n"
+    "- Aggressively remove duplicate or near-duplicate sentences and ideas, even if worded differently\n"
+    "- Identify and consolidate conceptual duplicates (e.g., multiple ways of describing the same feature)\n"
+    "- Remove redundant explanations where the same functionality is described multiple times\n"
+    "- Consolidate overlapping bullet points and descriptions into single, clear statements\n"
+    "- If high-level and detailed descriptions repeat the same information, keep only the most informative version\n"
+    "- Remove repetitive phrases like 'This update...' or 'This introduces...' when they appear multiple times\n"
+    "- Look for repeated sentence patterns (e.g., multiple paragraphs starting with the same words) and merge them\n"
+    "- Eliminate sentences that merely restate what was already explained in different words\n"
+    "- If a bullet point restates information from a paragraph, remove the bullet point\n"
     "- If there are no breaking changes associated with this update, remove any reference to breaking changes\n"
+    "- Prioritize clarity and conciseness over preserving all original phrasing\n"
+    "- AIM FOR MAXIMUM BREVITY: if the same concept appears twice, remove one instance entirely\n"
     "Input: grouped text from Pass 1. Output only the deduplicated text."
 )
 
 EDIT_PASS_3_INSTRUCTIONS = (
     "Pass 3 — Streamline and Summarise:\n"
     "- Improve clarity and flow\n"
-    "- Ensure a summary paragraph at the top (≤ 500 characters)\n"
     "- Trim filler words or overly verbose phrasing\n"
-    "- Remove concluding or summary statements at appear at the end of the text."
+    "- Aggressively remove concluding or summary statements at appear at the end of the text."
     "Input: deduplicated text from Pass 2. Output only the final edited text."
 )
 
@@ -148,10 +158,13 @@ VALIDATION_PROMPT = (
     "3. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.).\n"
     "4. Does not add any new sections, images, or headings that are not present in the original content.\n"
     "5. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content.\n"
+    "6. Does not contain verbatim duplicate sentences or paragraphs (e.g., multiple sentences starting with identical phrases).\n"
+    "7. Does not contain semantic duplicates (multiple sentences conveying the same meaning in different words).\n"
     "\n"
     "Minor clarifications, rewording, or formatting improvements are allowed as long as the general meaning is preserved.\n"
     "If the edit only clarifies, rewords, or improves formatting, respond with 'PASS'.\n"
     "If the edit adds substantial new information not present in the original, respond with 'CHECK: Edits may add unsupported information'.\n"
+    "If the edit contains verbatim or semantic duplicates, respond with 'FAIL: Contains duplicate content'.\n"
     "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
 )
 
@@ -170,7 +183,10 @@ VALIDATION_CRITERIA = {
         "Uses consistent formatting",
         "Is user-focused",
         "Does not contain internal notes and unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.)",
-        "Does not include any Markdown headings like '# PR summary' or '## External Release Notes'"
+        "Does not include any Markdown headings like '# PR summary' or '## External Release Notes'",
+        "Does not contain verbatim duplicate sentences or paragraphs",
+        "Does not contain semantic duplicates (same concepts expressed multiple times)",
+        "Does not have multiple paragraphs starting with identical phrases (e.g., 'This update...')"
     ],
     'summary': [
         "Maintains core meaning and facts",
@@ -225,7 +241,7 @@ MERGE_PR_CLASSIFICATION_PROMPT = (
     "Respond with only 'MERGE' if this is an automatic merge PR, or 'NOT_MERGE' if it contains actual changes."
 )
 
-# --- Summary proofreading prompt ---
+# --- Summary proofreading prompt for generate_highlevel_summary output ---
 MODEL_PROOFREADING_SYSTEM = "You are a professional technical writer."
 
 PROOFREAD_SUMMARY_PROMPT = (
