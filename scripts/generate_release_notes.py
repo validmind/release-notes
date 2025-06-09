@@ -2389,13 +2389,6 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         ]
         
         # Add metadata about editing status
-        if commit.get('edited', False):
-            yaml_header.append(f'ai_edited: true')
-            yaml_header.append(f'ai_edited_date: "{current_time}"')
-        if commit.get('validated', False):
-            yaml_header.append(f'ai_validated: true')
-        # Remove validation warnings from YAML headers - they'll be added as HTML comments later
-        # Add informational comments
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         if commit.get('edited', False):
             yaml_header.append(f'# Content edited by AI - {current_time}')

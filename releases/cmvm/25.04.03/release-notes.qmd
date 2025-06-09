@@ -1,14 +1,14 @@
 ---
 title: "25.04.03 Hotfix release notes"
-date: "April 14, 2025"
+date: "April 10, 2025"
 categories: [cmvm, 25.04.03, hotfix]
 sidebar: release-notes
 toc-expand: true
-# Content edited by AI - 2025-06-07 13:23
-# Content overwritten from an earlier version - 2025-06-07 13:23
+# Content edited by AI - 2025-06-08 17:58
+# Content overwritten from an earlier version - 2025-06-08 17:58
 ---
 
-This release includes enhanced authorization for the `report_generation` endpoint in UI reporting.
+This release includes refined authorization for the `report_generation` endpoint in the UI reporting route.
 
 # Backend
 <!--- Tag: [cmvm/25.04.03](https://github.com/validmind/backend/releases/tag/cmvm/25.04.03) --->
@@ -19,15 +19,17 @@ This release includes enhanced authorization for the `report_generation` endpoin
 
 <!--- PR #1381: https://github.com/validmind/backend/pull/1381 --->
 <!--- Labels: none --->
-### Enhance authorization for `report_generation` endpoint in UI reporting (#1381)
+### Refine authorization for `report_generation` endpoint in UI reporting route (#1381)
 
-This update enhances authorization for the report generation endpoint in the UI reporting route. The authorization decorator on the GET endpoint now uses a generic `read` action instead of `download_report`. In-method permission checks are added based on the document type in the request:
+This update refines authorization for the report generation endpoint in the UI reporting route. Key changes include:
 
-- For `documentation-report` or `monitoring-report`, it checks `download_doc` authorization.
-- For `validation-report`, it checks `download_vr` authorization.
-- If the document type is unsupported, a `BadRequestError` is raised.
+- The authorization decorator on the GET endpoint now uses a generic `read` action instead of the specific `download_report` action.
+- In-method permission checks are added based on the document type in the request. The endpoint performs:
+  - `download_doc` authorization for `documentation-report` or `monitoring-report`.
+  - `download_vr` authorization for `validation-report`.
+  - A `BadRequestError` is raised for unsupported document types.
 
-These changes ensure users have the correct permissions for the report type they access.
+These changes ensure users have the correct permissions for the specific report type they access.
 
 
 <!--- # Frontend --->
