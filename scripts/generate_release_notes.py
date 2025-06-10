@@ -115,7 +115,7 @@ EDIT_PASS_1_INSTRUCTIONS = (
     "- Remove ALL Markdown headings (#, ##, ###, ####, etc.) including '# PR Summary'\n"
     "- Combine related or similar content into cohesive blocks\n"
     "- Preserve paragraph breaks and list formatting\n"
-    "- If there are breaking changes, be sure to highlight them in the text "
+    "- If there are breaking changes, be sure to highlight them in the text\n"
     "Output only the grouped and flattened text."
 )
 

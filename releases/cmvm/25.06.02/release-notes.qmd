@@ -1,0 +1,36 @@
+---
+title: "25.06.02 Hotfix release notes"
+date: "June 05, 2025"
+categories: [cmvm, 25.06.02, hotfix]
+sidebar: release-notes
+toc-expand: true
+# Content edited by AI - 2025-06-09 17:08
+# Content overwritten from an earlier version - 2025-06-09 17:08
+---
+
+This release includes no user-facing changes.
+
+<!--- # Backend --->
+<!--- Tag: [cmvm/25.06.02](https://github.com/validmind/backend/releases/tag/cmvm/25.06.02) --->
+<!--- Compare API call: gh api repos/validmind/backend/compare/22537a3aeb40e042029f9968b13f52292f2f9144...22537a3aeb40e042029f9968b13f52292f2f9144 --->
+<!-- No public PRs found for this release -->
+
+<!--- # Frontend --->
+<!--- Tag cmvm/25.06.02 not found in frontend repository --->
+<!-- No tag found in this repository -->
+
+<!--- # Agents --->
+<!--- Tag cmvm/25.06.02 not found in agents repository --->
+<!-- No tag found in this repository -->
+
+<!--- # Installation --->
+<!--- Tag cmvm/25.06.02 not found in installation repository --->
+<!-- No tag found in this repository -->
+
+<!--- # Documentation --->
+<!--- Tag cmvm/25.06.02 not found in documentation repository --->
+<!-- No tag found in this repository -->
+
+<!--- # Validmind-library --->
+<!--- Tag cmvm/25.06.02 not found in validmind-library repository --->
+<!-- No tag found in this repository -->
