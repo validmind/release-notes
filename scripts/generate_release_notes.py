@@ -219,7 +219,7 @@ MERGE_PR_CLASSIFICATION_SYSTEM = "You are a PR classifier. Your job is to determ
 
 # Keywords that indicate a PR is an automatic merge
 MERGE_KEYWORDS = [
-    "main branch", "branch merged", "merged into", "merge main", "merge staging",
+    "merge main into staging", "merge staging into prod", "main branch", "branch merged", "merged into", "merge main", "merge staging",
     "merge branch", "merge pull request", "merge into", "release", "deploy", "sync", "auto-merge",
     "merge production", "merge develop", "merge hotfix", "merge feature", "merge bugfix",
     "merge master", "merge to", "merge from", "merge changes", "merge update", "merge upstream",
@@ -236,7 +236,7 @@ MERGE_PR_CLASSIFICATION_PROMPT = (
     "- Syncs code between branches\n"
     "- Deploys code to different environments\n"
     "- Updates release candidates or hotfixes\n"
-    f"- Contains keywords like: {', '.join(MERGE_KEYWORDS)}\n\n"
+    f"- Contains keywords like (case-insensitive): {', '.join(MERGE_KEYWORDS)}\n\n"
     "PR Title: {title}\n\n"
     "Respond with only 'MERGE' if this is an automatic merge PR, or 'NOT_MERGE' if it contains actual changes."
 )
