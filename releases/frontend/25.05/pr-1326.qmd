@@ -1,26 +1,22 @@
 ---
-title: "Add sorting by `Updated Date` and `Documentation Updated Date` to model inventory (#1326)"
+title: "Sort the model inventory by `Updated Date` or `Documentation Updated Date` (#1326)"
 categories: [frontend, 25.05, release, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-09 16:27
-# Content overwritten from an earlier version - 2025-06-09 16:27
+# Content edited by AI - 2025-06-11 16:27
+# Content overwritten from an earlier version - 2025-06-11 16:27
 # PR URL: https://github.com/validmind/frontend/pull/1326
 ---
 
-The Inventory Model List now features new sort columns: `Updated Date` and `Documentation Updated Date`.
+You can sort the Inventory Model list by `Updated Date` and `Documentation Updated Date`.
 
-New sorting options, `Updated Date` and `Documentation Updated Date`, are now available on the Model Inventory page. Users can sort these in descending (latest first) or ascending (oldest first) order. These enhancements are integrated into the existing sorting mechanism for consistency with other options. The changes are implemented in the UI component at `src/pages/ModelInventory/index.tsx`, offering users greater flexibility in managing model-related data.
+You can now sort the Model Inventory page by `Updated Date` or `Documentation Updated Date` in ascending or descending order using the existing sorting logic in `src/pages/ModelInventory/index.tsx`.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:21:56
-Result: The edited content effectively conveys the main idea of the original content, which is to introduce sorting functionality in the model inventory. However, it could be slightly improved for clarity and completeness. Here's a refined version:
-
-"Implement sorting options in the model inventory by `Upda...
+Last Validation: 2025-06-11 16:18:27
 Reedit Available: Yes
-Reedit Message: The edited content effectively conveys the main idea of the original content, which is to introduce sorting functionality in the model inventory. However, it could be slightly improved for clarity and...
 --->

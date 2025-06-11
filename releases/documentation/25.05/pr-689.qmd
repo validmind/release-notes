@@ -1,29 +1,30 @@
 ---
-title: "Added new introductory `validation` notebooks for `ValidMind` (#689)"
+title: "Add new introductory `validation` notebooks with updated security sections and clearer instructions (#689)"
 categories: [documentation, 25.05, release, documentation]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-09 16:27
-# Content overwritten from an earlier version - 2025-06-09 16:27
+# Content edited by AI - 2025-06-11 16:27
+# Content overwritten from an earlier version - 2025-06-11 16:27
 # PR URL: https://github.com/validmind/documentation/pull/689
 ---
 
-ValidMind for model validation and development notebooks are now available in the library portal. The updated numbering structure is reflected in the side navigation and listing tiles.
+You can now access model-validation and development notebooks directly from the library portal. Notebook numbering has been updated.
 
-The Developers > ValidMind Library portal now uses universal language and links, broadening its purpose beyond a developer portal. Consistent styling from the API documentation has been applied, resolving issues with side navigation and long notebook titles. The sidebar for this section is now in its own `_sidebar.yaml` file.
+Language, links, and styling are consistent with the `API` documentation, and notebook titles are shortened.
 
-The link to validmind.com has been removed from the main top navigation, as it is already in the footer.
+The landing section uses a dedicated `_sidebar.yaml` for easier navigation.
 
-This update enhances the ValidMind documentation and testing framework. Documentation now includes clearer instructions, new sections, and examples for setting up and using the library for model validation and development, including custom tests and external test providers. New tests have been added, and existing ones updated to cover more scenarios in model validation and data quality. Test descriptions now detail parameters and expected outcomes. Code refactoring improves readability and maintainability, and minor bugs in test execution and logging have been fixed. Security documentation has been updated to align with best practices for handling sensitive data.
+The validmind.com link has been removed from the top navigation but remains in the footer.
+
+The documentation now includes updated security sections with clearer instructions, setup guides, and examples.
+
+You can run additional tests with broader coverage for model validation and data quality. The refactored code and reorganized test files improve readability, resolve minor execution and logging issues, and ensure that results and logs handle sensitive data more securely.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:26:49
-Result: The edited content provides additional context by specifying that the validation notebooks are for "ValidMind." This clarification can be helpful for readers who are familiar with or are looking for resources related to ValidMind. Additionally, the use of backticks around "validation" and "ValidMind...
-Failure Patterns: {'formatting': 1, 'meaning': 4}
+Last Validation: 2025-06-11 16:26:11
 Reedit Available: Yes
-Reedit Message: The edited content provides additional context by specifying that the validation notebooks are for "ValidMind." This clarification can be helpful for readers who are familiar with or are looking for r...
 --->

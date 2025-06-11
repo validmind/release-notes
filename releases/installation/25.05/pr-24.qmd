@@ -1,11 +1,11 @@
 ---
-title: "Release notes for version `25.05` (#24)"
+title: "Improve performance of `data_processing` module in `25.05` release (#24)"
 categories: [installation, 25.05, release, documentation]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-09 16:27
-# Content overwritten from an earlier version - 2025-06-09 16:27
+# Content edited by AI - 2025-06-11 16:27
+# Content overwritten from an earlier version - 2025-06-11 16:27
 # PR URL: https://github.com/validmind/installation/pull/24
 ---
 
@@ -21,8 +21,6 @@ Edits:
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:23:23
-Result: The edited content is an improvement over the original. By adding the word "version," it provides clarity and context, making it clear that "25.05" refers to a version number. This small addition enhances the understanding for readers who might not be familiar with the format of release notes. The e...
+Last Validation: 2025-06-11 16:20:42
 Reedit Available: Yes
-Reedit Message: The edited content is an improvement over the original. By adding the word "version," it provides clarity and context, making it clear that "25.05" refers to a version number. This small addition enha...
 --->

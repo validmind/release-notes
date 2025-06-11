@@ -1,24 +1,26 @@
 ---
-title: "Add date localization using `FormattedDate` component and `useFormattedDateAndTime` hook (#1312)"
+title: "Add date localization support with `FormattedDate` and `useFormattedDateAndTime` utilities (#1312)"
 categories: [frontend, 25.05, release, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-09 16:27
-# Content overwritten from an earlier version - 2025-06-09 16:27
+# Content edited by AI - 2025-06-11 16:27
+# Content overwritten from an earlier version - 2025-06-11 16:27
 # PR URL: https://github.com/validmind/frontend/pull/1312
 ---
 
-Enhanced date formatting by adding `locale` support. Date display functions now accept `locale` as a parameter, ensuring consistent formatting across components. The user interface reflects user-specific `locale` settings in date displays throughout the application.
+Date display functions now accept a `locale` parameter, allowing you to format dates based on your preferences.
 
-This update enhances date formatting and display by introducing the `FormattedDate` component and `useFormattedDateAndTime` hook, replacing older utilities. UI localization settings are now stored in `localStorage` when changed. New admin components (`OrganizationRow`, `RoleRow`, `UserRow`) simplify table row implementations. `FormattedDate` is used for date localization across admin pages, user views, activity feeds, and modals. The custom date picker dynamically loads locales and uses `FormattedDate` for display. Template, workflow execution, and profile pages now support localized date displays and user-selected locale options. These changes enhance code modularity and ensure date and time values reflect user locale preferences throughout the application.
+`FormattedDate` and `useFormattedDateAndTime` have replaced previous date utilities. All date displays, including admin pages, user views, templates, workflow executions, profile pages, activity feed, related modals, and the custom date picker, now align with your selected locale.
+
+Your UI locale preference is saved to `localStorage` when changed.
+
+New `OrganizationRow`, `RoleRow`, and `UserRow` components enhance the efficiency of admin tables.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:22:25
-Result: The edited content provides a more specific and actionable description of the task by mentioning the use of the `FormattedDate` component and the `useFormattedDateAndTime` hook. This makes it clear what tools or methods should be used to achieve date localization, which can be helpful for developers...
+Last Validation: 2025-06-11 16:19:52
 Reedit Available: Yes
-Reedit Message: The edited content provides a more specific and actionable description of the task by mentioning the use of the `FormattedDate` component and the `useFormattedDateAndTime` hook. This makes it clear wh...
 --->

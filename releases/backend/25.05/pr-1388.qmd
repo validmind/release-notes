@@ -1,30 +1,22 @@
 ---
-title: "Increase database connections to prevent pool exhaustion (#1388)"
+title: "Increase `db` connections to prevent pool exhaustion using `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW` settings (#1388)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-09 16:27
-# Content overwritten from an earlier version - 2025-06-09 16:27
+# Content edited by AI - 2025-06-11 16:27
+# Content overwritten from an earlier version - 2025-06-11 16:27
 # PR URL: https://github.com/validmind/backend/pull/1388
 ---
 
-The default size and upper limit of the database connection pool have been increased. Two new environment variables for the API server, `SQLALCHEMY_MAX_OVERFLOW` and `SQLALCHEMY_POOL_SIZE`, are introduced with default values of 25 and 15, respectively. These variables are used by Flask-SQLAlchemy through `app.config`.
+The connection pool defaults to 15 connections with a maximum of 25 overflow. You can override these limits using the `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW` environment variables. These values are applied to `app.config` for `Flask-SQLAlchemy`.
 
-Configurable settings for the SQLAlchemy connection pool in the Flask backend API are now available. The parameters `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW` can be set via environment variables, with default values of 25 and 15. This allows operators to adjust connection pool settings dynamically based on deployment needs without modifying the source code. Using environment variables enhances flexibility in managing database connections under varied load conditions. If not set, the system defaults to the provided values, ensuring continuity in functionality.
+Configure the Flask API SQLAlchemy connection pool using the `SQLALCHEMY_POOL_SIZE` and `SQLALCHEMY_MAX_OVERFLOW` environment variables. If these are not set, the pool defaults to 25 connections with up to 15 overflow connections.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:19:20
-Result: Both versions of the content convey the same essential information, but the edited content is more polished and formal. Here are some points of evaluation:
-
-1. **Clarity and Conciseness**: 
-   - The edited content is clear and concise. It removes the technical jargon "hotfix" and directly states the...
+Last Validation: 2025-06-11 16:14:54
 Reedit Available: Yes
-Reedit Message: Both versions of the content convey the same essential information, but the edited content is more polished and formal. Here are some points of evaluation:
-
-1. **Clarity and Conciseness**: 
-   - The e...
 --->

@@ -1,22 +1,20 @@
 ---
-title: "Add sorting by `documentation_updated_at` to the model inventory API (#1376)"
+title: "Sort model inventory by `documentation_updated_at` in the `GET /models` endpoint (#1376)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-09 16:27
-# Content overwritten from an earlier version - 2025-06-09 16:27
+# Content edited by AI - 2025-06-11 16:27
+# Content overwritten from an earlier version - 2025-06-11 16:27
 # PR URL: https://github.com/validmind/backend/pull/1376
 ---
 
-The inventory model API now includes `updated_at` and `documentation_updated_at` fields to track updates. The GET endpoint supports sorting by `documentation_updated_at`, allowing clients to order models by their most recent documentation updates.
+The `inventory` schema now includes the `updated_at` and `documentation_updated_at` columns. You can sort the `GET /models` endpoint by `documentation_updated_at`.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:17:31
-Result: The edited content effectively clarifies the original request by specifying the addition of a sorting feature to the model inventory API. It uses precise language to indicate the specific field (`documentation_updated_at`) by which the sorting should occur. This makes the requirement clear and actio...
+Last Validation: 2025-06-11 16:11:12
 Reedit Available: Yes
-Reedit Message: The edited content effectively clarifies the original request by specifying the addition of a sorting feature to the model inventory API. It uses precise language to indicate the specific field (`docu...
 --->

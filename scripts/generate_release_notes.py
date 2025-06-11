@@ -45,9 +45,14 @@ EXCLUDED_SECTIONS = [
 # --- LLM settings ---
 # Model settings
 MODEL_CLASSIFYING = "gpt-4o-mini"  # For quick section classification
-MODEL_EDITING = "gpt-4o"           # For content editing
+MODEL_EDITING = "gpt-4o"           # For content editing (single-pass and default multi-pass)
 MODEL_VALIDATION = "o3"            # For edit validation
 MODEL_PROOFREADING = "gpt-4o"      # For proofreading tasks
+
+# Multi-pass editing model settings
+MODEL_PASS_1 = "gpt-4o"            # Pass 1: Group and flatten (structural)
+MODEL_PASS_2 = "o3"                # Pass 2: Deduplicate (complex reasoning)
+MODEL_PASS_3 = "gpt-4o"            # Pass 3: Streamline (style polish)
 
 # Temperature settings
 BASE_TEMPERATURE = 0.0
@@ -68,9 +73,9 @@ MAX_TOKENS_PROOFREADING = 200
 
 # Retry and delay settings
 DEFAULT_MAX_RETRIES = 7
-DEFAULT_INITIAL_DELAY = 0.5
+DEFAULT_INITIAL_DELAY = 0.25
 DEFAULT_MAX_DELAY = 1
-MIN_SLEEP_TIME = 0.5
+MIN_SLEEP_TIME = 0.25
 JITTER_RANGE = (0, 0.1)
 JITTER_RANGE_WIDE = (-0.2, 0.2)
 
@@ -94,10 +99,10 @@ EDIT_TITLE_PROMPT = (
 
 EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and user-facing release notes."
 
-EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and user-facing release notes."
+EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and user-facing release notes. Ensure they begin with a text summary before any images or lists, and address readers directly."
 
 # --- Content editing instructions ---
-EDIT_CONTENT_SYSTEM = "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes while maintaining the original PR's scope. Follow the instructions exactly."
+EDIT_CONTENT_SYSTEM = "You are a professional technical writer editing release notes."
 
 EDIT_CONTENT_PROMPT = (
     "When editing content:\n"
@@ -111,18 +116,22 @@ EDIT_CONTENT_PROMPT = (
     "- Use a space after list markers and start each item with a capital letter.\n"
     "- Don't refer to the 'PR body' or 'PR summary'.\n"
     "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
-    "- Don't add concluding or summary statements."
+    "- Don't add concluding or summary statements.\n"
+    "- Address readers directly using 'you' instead of 'users' (e.g., 'you can now...' not 'users can now...').\n"
+    "- If content contains images, ensure the content begins with a text summary before any image embeds."
 )
 
 # --- Content editing instructions for multi-pass editing ---
 
 EDIT_PASS_1_INSTRUCTIONS = (
-    "Pass 1 — Group and Flatten:\n"
+    "Pass 1 — Group and flatten:\n"
     "- Remove ALL Markdown headings (#, ##, ###, ####, etc.) including '# PR Summary'\n"
     "- Combine related or similar content into cohesive blocks\n"
     "- Preserve paragraph breaks and list formatting\n"
     "- If there are breaking changes, be sure to highlight them in the text\n"
     "- Put all summary content (e.g. content that starts with 'This update ...' or 'The update ...') into a single paragraph at the top\n"
+    "- If the content consists only of bulleted lists without explanatory text, add a brief summary statement at the beginning that explains what the changes accomplish\n"
+    "- Ensure content begins with explanatory text, not images or bullet points\n"
     "Output only the grouped and flattened text."
 )
 
@@ -130,6 +139,7 @@ EDIT_PASS_2_INSTRUCTIONS = (
     "Pass 2 — Deduplicate:\n"
     "- Remove VERBATIM duplicates: if multiple sentences or paragraphs start with identical phrases, consolidate them\n"
     "- Perform SEMANTIC deduplication: if two sentences or paragraphs convey the same meaning, keep only one\n"
+    "- CRITICAL: If multiple paragraphs explain the same feature, functionality, or change, consolidate into ONE paragraph\n"
     "- Aggressively remove duplicate or near-duplicate sentences and ideas, even if worded differently\n"
     "- Identify and consolidate conceptual duplicates (e.g., multiple ways of describing the same feature)\n"
     "- Remove redundant explanations where the same functionality is described multiple times\n"
@@ -142,14 +152,15 @@ EDIT_PASS_2_INSTRUCTIONS = (
     "- If there are no breaking changes associated with this update, remove any reference to breaking changes\n"
     "- Prioritize clarity and conciseness over preserving all original phrasing\n"
     "- AIM FOR MAXIMUM BREVITY: if the same concept appears twice, remove one instance entirely\n"
+    "- STRICT RULE: No two paragraphs should describe the same feature, process, or change\n"
     "Input: grouped text from Pass 1. Output only the deduplicated text."
 )
 
 EDIT_PASS_3_INSTRUCTIONS = (
-    "Pass 3 — Streamline and Summarise:\n"
+    "Pass 3 — Streamline and summarise:\n"
     "- Improve clarity and flow\n"
     "- Trim filler words or overly verbose phrasing\n"
-    "- Aggressively remove concluding or summary statements at appear at the end of the text."
+    "- If concluding or summary statements appear at the end, remove them."
     "Input: deduplicated text from Pass 2. Output only the final edited text."
 )
 
@@ -167,11 +178,16 @@ VALIDATION_PROMPT = (
     "5. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content.\n"
     "6. Does not contain verbatim duplicate sentences or paragraphs (e.g., multiple sentences starting with identical phrases).\n"
     "7. Does not contain semantic duplicates (multiple sentences conveying the same meaning in different words).\n"
+    "8. CRITICAL: Does not repeat the same concepts, features, or explanations multiple times in different paragraphs.\n"
+    "9. If images are present, ensures the content begins with explanatory text, not an image embed.\n"
+    "10. Does not have multiple paragraphs that describe the same functionality or change.\n"
     "\n"
+    "For semantic duplicates, be especially strict: if two different paragraphs explain the same feature, process, or change, this is a FAIL.\n"
     "Minor clarifications, rewording, or formatting improvements are allowed as long as the general meaning is preserved.\n"
     "If the edit only clarifies, rewords, or improves formatting, respond with 'PASS'.\n"
     "If the edit adds substantial new information not present in the original, respond with 'CHECK: Edits may add unsupported information'.\n"
     "If the edit contains verbatim or semantic duplicates, respond with 'FAIL: Contains duplicate content'.\n"
+    "If content starts with an image instead of text, respond with 'FAIL: Content must begin with text summary'.\n"
     "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
 )
 
@@ -193,7 +209,10 @@ VALIDATION_CRITERIA = {
         "Does not include any Markdown headings like '# PR summary' or '## External Release Notes'",
         "Does not contain verbatim duplicate sentences or paragraphs",
         "Does not contain semantic duplicates (same concepts expressed multiple times)",
-        "Does not have multiple paragraphs starting with identical phrases (e.g., 'This update...')"
+        "Does not have multiple paragraphs starting with identical phrases (e.g., 'This update...')",
+        "Does not have multiple paragraphs that describe the same feature, functionality, or change",
+        "If images are present, content begins with explanatory text, not an image embed",
+        "No redundant explanations of the same functionality across different paragraphs"
     ],
     'summary': [
         "Maintains core meaning and facts",
@@ -715,7 +734,17 @@ class PR:
                 else:
                     content_to_edit = content
 
-                # Make API call
+                # Make API call with model-specific parameters
+                api_params = {}
+                if MODEL_EDITING == "o3":
+                    api_params["max_completion_tokens"] = MAX_TOKENS_EDITING
+                    # o3 only supports default temperature (1), no frequency/presence penalty
+                else:
+                    api_params["max_tokens"] = MAX_TOKENS_EDITING
+                    api_params["temperature"] = temperature
+                    api_params["frequency_penalty"] = FREQUENCY_PENALTY
+                    api_params["presence_penalty"] = PRESENCE_PENALTY
+                
                 response = client.chat.completions.create(
                     model=MODEL_EDITING,
                     messages=[
@@ -728,10 +757,7 @@ class PR:
                             "content": f"Instructions:\n{full_instructions_with_dedup}\n\nContent to edit:\n{content_to_edit}"
                         }
                     ],
-                    max_tokens=MAX_TOKENS_EDITING,
-                    temperature=BASE_TEMPERATURE,
-                    frequency_penalty=FREQUENCY_PENALTY,
-                    presence_penalty=PRESENCE_PENALTY
+                    **api_params
                 )
                 
                 current_edit = response.choices[0].message.content.strip()
@@ -841,6 +867,23 @@ class PR:
         """Helper for a single editing pass with retry/validation, storing output in self.attr_name."""
         if self.debug:
             print(f"DEBUG: [edit_content] {attr_name} pass for PR #{self.pr_number} in {self.repo_name}")
+        
+        # Select model based on the editing pass
+        if attr_name == "grouped_text":
+            model = MODEL_PASS_1
+            pass_name = "Pass 1 (Group and Flatten)"
+        elif attr_name == "deduplicated_text":
+            model = MODEL_PASS_2
+            pass_name = "Pass 2 (Deduplicate)"
+        elif attr_name == "edited_text":
+            model = MODEL_PASS_3
+            pass_name = "Pass 3 (Streamline)"
+        else:
+            model = MODEL_EDITING  # Fallback to default
+            pass_name = "Single Pass"
+        
+        if self.debug:
+            print(f"DEBUG: [_edit_pass] Using model {model} for {pass_name}")
         full_instructions = f"{pass_instructions}\n\n{EDIT_CONTENT_PROMPT}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
         max_attempts = DEFAULT_MAX_RETRIES
         initial_delay = DEFAULT_INITIAL_DELAY
@@ -873,16 +916,24 @@ class PR:
                 content_to_edit = content_for_reedit['edited']
             else:
                 content_to_edit = content
+            # Use appropriate parameters based on model
+            api_params = {}
+            if model == "o3":
+                api_params["max_completion_tokens"] = MAX_TOKENS_EDITING
+                # o3 only supports default temperature (1), no frequency/presence penalty
+            else:
+                api_params["max_tokens"] = MAX_TOKENS_EDITING
+                api_params["temperature"] = temperature
+                api_params["frequency_penalty"] = FREQUENCY_PENALTY
+                api_params["presence_penalty"] = PRESENCE_PENALTY
+            
             response = client.chat.completions.create(
-                model=MODEL_EDITING,
+                model=model,
                 messages=[
                     {"role": "system", "content": EDIT_CONTENT_SYSTEM},
                     {"role": "user", "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content_to_edit}"}
                 ],
-                max_tokens=MAX_TOKENS_EDITING,
-                temperature=BASE_TEMPERATURE,
-                frequency_penalty=FREQUENCY_PENALTY,
-                presence_penalty=PRESENCE_PENALTY
+                **api_params
             )
             current_edit = response.choices[0].message.content.strip()
             if self.debug:
@@ -894,6 +945,21 @@ class PR:
                 setattr(self, attr_name, current_edit)
                 return current_edit
             last_validation_result = validation_result
+            
+            # For critical failures (duplicates, image positioning), force complete re-edit
+            critical_failures = ['duplicate content', 'begin with text summary', 'same feature', 'same functionality']
+            is_critical_failure = any(failure in validation_result.lower() for failure in critical_failures)
+            
+            if is_critical_failure and attempt < max_attempts - 1:
+                print(f"CRITICAL validation failure detected: {validation_result}")
+                # For critical failures, we need more aggressive re-editing
+                if 'duplicate' in validation_result.lower():
+                    # Add strong anti-duplication guidance
+                    full_instructions += f"\n\nCRITICAL: Previous attempt failed due to duplicate content. You MUST consolidate all information about the same feature into a single paragraph. Do not repeat any concepts or explanations."
+                elif 'text summary' in validation_result.lower():
+                    # Add image positioning guidance
+                    full_instructions += f"\n\nCRITICAL: Previous attempt failed because content started with an image. You MUST begin with explanatory text before any images."
+            
             if attempt < max_attempts - 1:
                 jitter = random.uniform(0, 0.1 * delay)
                 sleep_time = min(max_delay, delay + jitter)
@@ -967,6 +1033,15 @@ class PR:
 
         for attempt in range(max_retries):
             try:
+                # Use appropriate parameters based on model
+                api_params = {}
+                if MODEL_VALIDATION == "o3":
+                    api_params["max_completion_tokens"] = MAX_TOKENS_VALIDATION
+                    # o3 only supports default temperature (1)
+                else:
+                    api_params["max_tokens"] = MAX_TOKENS_VALIDATION
+                    api_params["temperature"] = BASE_TEMPERATURE
+                
                 response = client.chat.completions.create(
                     model=MODEL_VALIDATION,
                     messages=[
@@ -979,8 +1054,7 @@ class PR:
                             "content": f"Original content: {original_content}\n\nEdited content: {edited_content}"
                         }
                     ],
-                    max_tokens=MAX_TOKENS_VALIDATION,
-                    temperature=BASE_TEMPERATURE
+                    **api_params
                 )
                 result = response.choices[0].message.content.strip()
                 
@@ -1962,7 +2036,7 @@ def get_commits_for_tag(repo, tag, debug=False):
             print(f"DEBUG: Error getting commits for tag {tag} in {repo}: {e}")
         return []
 
-def generate_changelog_content(repo, tag, commits, has_release):
+def generate_changelog_content(repo, tag, commits, has_release, download_assets=True):
     """Generate changelog content for a repository and tag.
 
     Args:
@@ -2066,18 +2140,18 @@ def generate_changelog_content(repo, tag, commits, has_release):
                 section_content += f"### {title} (#{pr_number})\n\n"
                 # Embed images as markdown using local paths
                 for url in commit.get('image_urls', []):
-                    local_path = download_image(url, tag, debug=False)
+                    local_path = download_image(url, tag, debug=False, download_assets=download_assets)
                     if local_path:
                         rel_path = os.path.relpath(local_path, os.getcwd())
                         section_content += f'![Image]({rel_path})\n'
                 if commit['external_notes']:
-                    section_content += f"{update_image_links(commit['external_notes'], tag, False)}\n\n"
+                    section_content += f"{update_image_links(commit['external_notes'], tag, False, download_assets)}\n\n"
                 if commit['pr_summary']:
-                    section_content += f"{update_image_links(commit['pr_summary'], tag, False)}\n\n"
+                    section_content += f"{update_image_links(commit['pr_summary'], tag, False, download_assets)}\n\n"
                 # If no notes or summary, use PR body as fallback
                 if not commit['external_notes'] and not commit['pr_summary']:
                     if commit.get('pr_body'):
-                        section_content += f"{update_image_links(commit['pr_body'], tag, False)}\n\n"
+                        section_content += f"{update_image_links(commit['pr_body'], tag, False, download_assets)}\n\n"
             
             pr_sections.append(section_content)
     
@@ -2124,7 +2198,7 @@ def check_github_release(repo, version):
         print(f"  WARN: Error checking release {version} in {repo}: {e}")
         return False
 
-def create_release_file(release, overwrite=False, debug=False, edit=False, single=False, internal=False):
+def create_release_file(release, overwrite=False, debug=False, edit=False, single=False, internal=False, download_assets=True):
     """Create release note files for a specific version: one per PR, and a new release-notes.qmd, or legacy single file if single=True."""
     import glob
     version = release['version']
@@ -2207,11 +2281,11 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             commit['external_notes'] = commit.get('external_notes', '')
 
         if commit.get('pr_body'):
-            commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
+            commit['pr_body'] = update_image_links(commit['pr_body'], version, debug, download_assets)
         if commit.get('external_notes'):
-            commit['external_notes'] = update_image_links(commit['external_notes'], version, debug)
+            commit['external_notes'] = update_image_links(commit['external_notes'], version, debug, download_assets)
         if commit.get('pr_body'):
-            commit['pr_body'] = update_image_links(commit['pr_body'], version, debug)
+            commit['pr_body'] = update_image_links(commit['pr_body'], version, debug, download_assets)
         # Store validation and editing status in the commit object
         commit['validated'] = validated
         commit['edited'] = edited
@@ -2236,7 +2310,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                 commit['repo'] = repo
             all_commits.extend(commits)
             has_release = check_github_release(repo, version)
-            repo_content = generate_changelog_content(repo, version, commits, has_release)
+            repo_content = generate_changelog_content(repo, version, commits, has_release, download_assets)
             repo_contents.append(repo_content)
             if repo_content:
                 filtered_content = []
@@ -2462,14 +2536,14 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         content_parts = []
         # Use edited content (stored back in external_notes after editing)
         if commit.get('external_notes'):
-            content_parts.append(update_image_links(commit['external_notes'], version, debug))
+            content_parts.append(update_image_links(commit['external_notes'], version, debug, download_assets))
         # Use edited summary content (stored in pr_summary after editing, with fallback to pr_interpreted_summary)
         if commit.get('pr_summary'):
-            content_parts.append(update_image_links(commit['pr_summary'], version, debug))
+            content_parts.append(update_image_links(commit['pr_summary'], version, debug, download_assets))
         elif commit.get('pr_interpreted_summary'):
-            content_parts.append(update_image_links(commit['pr_interpreted_summary'], version, debug))
+            content_parts.append(update_image_links(commit['pr_interpreted_summary'], version, debug, download_assets))
         if not content_parts and commit.get('pr_body'):
-            content_parts.append(update_image_links(commit['pr_body'], version, debug))
+            content_parts.append(update_image_links(commit['pr_body'], version, debug, download_assets))
         content = '\n\n'.join([c for c in content_parts if c])
         
         # Add validation summary at the end if available
@@ -2655,7 +2729,7 @@ def parse_release_tables(qmd_file_path, version=None, debug=False):
     
     return releases, seen_versions
 
-def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False, single=False, internal=False):
+def process_releases(releases, overwrite, seen_versions, debug=False, version=None, edit=False, single=False, internal=False, download_assets=True):
     """Process all releases and create release note files.
     
     Args:
@@ -2722,7 +2796,7 @@ def process_releases(releases, overwrite, seen_versions, debug=False, version=No
             
         print("Creating release file ...")
         # Create the release file once per version
-        create_release_file(version_releases[0], overwrite, debug, edit, single, internal)
+        create_release_file(version_releases[0], overwrite, debug, edit, single, internal, download_assets)
         print(f"✓ Completed processing version {version_key}")
         
         # If a specific tag was requested by the user, we're done after processing it
@@ -3413,10 +3487,17 @@ def download_with_playwright(url, output_path, browser_profile_dir=None, headles
             context.close()
             browser.close()
 
-def download_image(url, tag, debug=False):
+def download_image(url, tag, debug=False, download_assets=True):
     """Download an image or video from a URL and save it to a tag-specific folder."""
     import subprocess
     import imghdr
+    
+    # If asset downloading is disabled, return None
+    if not download_assets:
+        if debug:
+            print(f"DEBUG: [download_image] Asset downloading not specified with --download-assets, skipping {url}")
+        return None
+        
     try:
         # Determine if this is a cmvm tag or not
         tag_str = tag.split('/')[-1]
@@ -3492,54 +3573,61 @@ def download_image(url, tag, debug=False):
             except Exception as e:
                 if debug:
                     print(f"DEBUG: [download_image] GitHub API download failed: {e}")
-            # Playwright fallback (temporarily commented out)
-            # try:
-            #     if debug:
-            #         print(f"DEBUG: [download_image] Trying Playwright fallback for {url}")
-            #     output_path = local_path
-            #     # NOTE: To use an authenticated session, you must first log in manually with Playwright and save auth.json.
-            #     success = download_with_playwright(
-            #         url, output_path,
-            #         browser_profile_dir=None,
-            #         headless=True
-            #     )
-            #     if debug:
-            #         print(f"DEBUG: [download_image] Playwright download result: {success}")
-            #         print(f"DEBUG: [download_image] File exists after Playwright: {os.path.exists(output_path)}")
-            #     if success and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-            #         img_type = imghdr.what(output_path)
-            #         if img_type is not None:
-            #             if debug:
-            #                 print(f"DEBUG: [download_image] Playwright successfully downloaded file to {output_path} (type: {img_type})")
-            #             return output_path
-            #         else:
-            #             if debug:
-            #                 print(f"DEBUG: [download_image] File at {output_path} is not a valid image, deleting.")
-            #             os.remove(output_path)
-            #     else:
-            #         if debug:
-            #             print(f"DEBUG: [download_image] Playwright failed for {url}")
-            # except Exception as e:
-            #     if debug:
-            #         print(f"DEBUG: [download_image] Playwright fallback failed: {e}")
+            # Playwright fallback for other URLs
+            try:
+                if debug:
+                    print(f"DEBUG: [download_image] Trying Playwright fallback for {url}")
+                output_path = local_path
+                # NOTE: To use an authenticated session, you must first log in manually with Playwright and save auth.json.
+                success = download_with_playwright(
+                    url, output_path,
+                    browser_profile_dir=None,
+                    headless=True
+                )
+                if debug:
+                    print(f"DEBUG: [download_image] Playwright download result: {success}")
+                    print(f"DEBUG: [download_image] File exists after Playwright: {os.path.exists(output_path)}")
+                if success and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                    img_type = imghdr.what(output_path)
+                    if img_type is not None:
+                        if debug:
+                            print(f"DEBUG: [download_image] Playwright successfully downloaded file to {output_path} (type: {img_type})")
+                        return output_path
+                    else:
+                        if debug:
+                            print(f"DEBUG: [download_image] File at {output_path} is not a valid image, deleting.")
+                        os.remove(output_path)
+                else:
+                    if debug:
+                        print(f"DEBUG: [download_image] Playwright failed for {url}")
+            except Exception as e:
+                if debug:
+                    print(f"DEBUG: [download_image] Playwright fallback failed: {e}")
         return None
     except Exception as e:
         if debug:
             print(f"DEBUG: [download_image] Failed to download image/video from {url}: {e}")
         return None
 
-def update_image_links(content, tag, debug=False):
+def update_image_links(content, tag, debug=False, download_assets=True):
     """Update image links in markdown content to use local paths.
     
     Args:
         content (str): Markdown content containing image links
         tag (str): Tag name to use for folder organization
         debug (bool): Whether to show debug output
+        download_assets (bool): Whether to download assets or leave URLs unchanged
         
     Returns:
-        str: Updated markdown content with local image paths
+        str: Updated markdown content with local image paths (if download_assets=True)
     """
     if not content:
+        return content
+    
+    # If asset downloading is disabled, return content unchanged
+    if not download_assets:
+        if debug:
+            print(f"DEBUG: [update_image_links] Asset downloading disabled, leaving URLs unchanged")
         return content
 
     def replace_image_link(match):
@@ -3547,7 +3635,7 @@ def update_image_links(content, tag, debug=False):
         if match.group(1) is not None and match.group(2) is not None:
             alt_text = match.group(1)
             url = match.group(2)
-            local_path = download_image(url, tag, debug)
+            local_path = download_image(url, tag, debug, download_assets)
             if local_path:
                 rel_path = os.path.relpath(local_path, os.getcwd())
                 return f'![{alt_text}]({rel_path})'
@@ -3558,7 +3646,7 @@ def update_image_links(content, tag, debug=False):
             before_src = match.group(3)
             url = match.group(4)
             after_src = match.group(5)
-            local_path = download_image(url, tag, debug)
+            local_path = download_image(url, tag, debug, download_assets)
             if local_path:
                 rel_path = os.path.relpath(local_path, os.getcwd())
                 return f'<img {before_src}src="{rel_path}"{after_src}>'
@@ -3593,6 +3681,8 @@ def main():
                       help='Edit content using OpenAI')
     parser.add_argument('--internal', action='store_true',
                       help='Include all PR labels, not just category labels')
+    parser.add_argument('--download-assets', action='store_true',
+                      help='Download images and videos from URLs to local files')
     args = parser.parse_args()
 
     try:
@@ -3623,7 +3713,7 @@ def main():
         # Process releases (check tags and create files)
         # Create a new empty set for seen_versions
         seen_versions = set()
-        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=False, internal=args.internal)
+        process_releases(releases, args.overwrite, seen_versions, debug=args.debug, version=args.tag, edit=args.edit, single=False, internal=args.internal, download_assets=args.download_assets)
             
         sys.exit(0)
         

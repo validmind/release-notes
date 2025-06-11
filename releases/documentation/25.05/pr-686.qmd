@@ -1,26 +1,28 @@
 ---
-title: "Update documentation for managing `model` stakeholder types (#686)"
+title: "Manage model stakeholder types in `documentation` for easier configuration and permissions management (#686)"
 categories: [documentation, 25.05, release, documentation]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-09 16:27
-# Content overwritten from an earlier version - 2025-06-09 16:27
+# Content edited by AI - 2025-06-11 16:27
+# Content overwritten from an earlier version - 2025-06-11 16:27
 # PR URL: https://github.com/validmind/documentation/pull/686
 ---
 
-New content has been added to the "Managing users" section, explaining how to manage model stakeholder types. This page is now included in the "Managing users" landing page tiles.
+You can now manage model stakeholders more easily. A new `Model stakeholder types` page under `Managing users`, accessible from the landing page, replaces role-based references in `Model inventory fields`, allowing you to edit model stakeholders.
 
-The model inventory fields documentation now includes a section on editing model stakeholders, focusing on model stakeholder types instead of outdated role permissions.
+`manage-model-stakeholder-types.qmd`: Manage stakeholder types, assign them to models, and configure permissions.
 
-This update enhances documentation for managing roles and stakeholder types on the platform. A new guide, `manage-model-stakeholder-types.qmd`, explains how to add, edit, manage permissions, and apply stakeholder types to models. Updates to `manage-roles.qmd` clarify role management, including adding roles, managing permissions, associating users with roles, and ensuring unique names for roles and stakeholder types. Model stakeholder types are now included in `edit-model-inventory-fields.qmd` and `manage-model-inventory-fields.qmd` to ensure they are considered in managing model inventory fields and permissions. Minor structural changes, such as adjusting grid columns in `managing-users.qmd`, enhance clarity and consistency across the documentation.
+`manage-roles.qmd`: Manage roles, set permissions, link users, and ensure unique names.
+
+`edit-model-inventory-fields.qmd` and `manage-model-inventory-fields.qmd`: Use stakeholder types to configure inventory field permissions.
+
+`managing-users.qmd`: Align grid columns and update wording.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:26:43
-Result: The edited content provides a clearer and more direct instruction by using the verb "Update" at the beginning, which implies an action to be taken. It also uses backticks around the word "model," which suggests that "model" is a specific term or category, enhancing clarity for the reader. Overall, t...
+Last Validation: 2025-06-11 16:26:44
 Reedit Available: Yes
-Reedit Message: The edited content provides a clearer and more direct instruction by using the verb "Update" at the beginning, which implies an action to be taken. It also uses backticks around the word "model," whic...
 --->

@@ -1,40 +1,21 @@
 ---
-title: "Enable configuration of finding statuses via the `API` (#1499)"
+title: "Configure finding statuses via the `API` (#1499)"
 categories: [backend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "June 05, 2025"
-# Content edited by AI - 2025-06-10 17:18
-# Content overwritten from an earlier version - 2025-06-10 17:18
+date: "June 06, 2025"
+# Content edited by AI - 2025-06-11 14:17
+# Content validated by AI - 2025-06-11 14:17
+# Content overwritten from an earlier version - 2025-06-11 14:17
 # PR URL: https://github.com/validmind/backend/pull/1499
 ---
 
-Users can now customize status settings on the Settings page, enabling them to define their own status values for enhanced platform interaction.
+You can now customize finding statuses on the Settings page.
 
-This update introduces a feature for managing finding statuses, allowing organizations to define custom statuses like open, closed, or deleted.
+This update introduces a feature for managing the status of findings, allowing you to define custom statuses such as open, closed, and deleted. It enhances data integrity by implementing a relational approach and extends API interfaces for improved UI interaction.
 
-- A migration script creates a `finding_statuses` table and adds a `status_id` column to the existing findings table. It backfills existing findings with old status values and removes the deprecated column.
+The changes include a migration script that creates a new `finding_statuses` table and adds a `status_id` column to the `findings` table. This script backfills existing findings with old status values and removes the deprecated column. The `Finding` model is updated to replace the string-based status field with a foreign key relationship to the `FindingStatus` model, affecting serialization, creation, updating, and deletion processes to ensure proper status management.
 
-- The `Finding` model now uses a foreign key relationship to the `FindingStatus` model, replacing the string-based status field. This change affects serialization, creation, updating, and deletion processes for proper status management.
+A new `FindingStatus` model is added, featuring methods for creating, updating, deleting, and loading default statuses for an organization. It includes helper methods like serialization and `mark_as_deleted`. API changes introduce new endpoints within a dedicated namespace for managing finding statuses, enforcing validations such as duplicate status names and permissions through the `requires_auth` decorator.
 
-- A new `FindingStatus` model is introduced, including methods for creating, updating, deleting, and loading default statuses for an organization. It also provides helper methods like serialization and `mark_as_deleted`.
-
-- API changes include new endpoints for retrieving, creating, updating, and deleting finding statuses. These endpoints validate duplicate status names and enforce permissions using the `requires_auth` decorator.
-
-- Related routes, including UI, reporting, and SQL views, are updated to join and filter using the `FindingStatus` table.
-
-- Organization templates and platform configurations are modified to incorporate finding statuses.
-
-- Unit tests are adjusted to cover the new functionality for creating, updating, and deleting finding statuses as part of finding CRUD operations.
-
-This integration enhances data integrity by adopting a relational approach and extends API interfaces for improved UI interaction.
-
-<!--- VALIDATION SUMMARY
-Content Type: title
-Validation Status: CHECK
-Attempts: 7
-Last Validation: 2025-06-10 17:12:33
-Result: The edited content effectively condenses the original statement while maintaining its core message. It uses the imperative form "Enable" to directly convey the action, which can be more engaging. The phrase "finding statuses" is retained, ensuring clarity about what is being configured. The use of b...
-Reedit Available: Yes
-Reedit Message: The edited content effectively condenses the original statement while maintaining its core message. It uses the imperative form "Enable" to directly convey the action, which can be more engaging. The ...
---->
+Related routes, including UI, reporting, and SQL views, are updated to join and filter against the new `FindingStatus` table. Organization templates and platform configurations are also updated to incorporate finding statuses. Unit tests are modified to test the new functionality for creating, updating, and deleting finding statuses as part of finding CRUD operations.

@@ -1,34 +1,15 @@
 ---
-title: "Enhance `PYTHONPATH` handling for API and worker processes (#1546)"
+title: "Automatically set `PYTHONPATH` for improved module resolution and error handling (#1546)"
 categories: [backend, 25.06.01, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "June 05, 2025"
-# Content edited by AI - 2025-06-10 17:18
-# Content overwritten from an earlier version - 2025-06-10 17:18
+date: "June 06, 2025"
+# Content edited by AI - 2025-06-11 14:17
+# Content validated by AI - 2025-06-11 14:17
+# Content overwritten from an earlier version - 2025-06-11 14:17
 # PR URL: https://github.com/validmind/backend/pull/1546
 ---
 
-`PYTHONPATH` ensures scripts run with the application's original base path, allowing code dependencies to load correctly, especially with relative imports.
+This update allows scripts to be spawned with the application's original base path by setting the `PYTHONPATH`. It uses module calling syntax to correctly load code dependencies that rely on relative imports. Error message handling is improved for better visibility on the console and in HTTP responses. When an error occurs, detailed information is provided, including an error code, message, and guidance for your response. These errors are also logged for further analysis.
 
-Error messages now display correctly on the console and in the HTTP response, including the error code, message, and user guidance. The status code is 500, with details specifying the issue, such as a `ModuleNotFoundError`.
-
-Logs show detailed error messages when generating monitoring reports, including a timestamp and error description.
-
-This update enhances the API and worker processes:
-
-- The `Makefile` command for running the API now includes the current backend source directory in the `PYTHONPATH`, ensuring explicit module resolution and avoiding path issues.
-
-- The UI reporting route now uses module syntax with the `-m` flag to invoke the report worker, simplifying command line use and preventing path resolution issues. Error handling is improved by checking for detailed error information before logging and propagating errors.
-
-- Import statements in the report worker file have been refactored to import directly from the `db` package, streamlining dependencies and improving maintainability.
-
-<!--- VALIDATION SUMMARY
-Content Type: title
-Validation Status: CHECK
-Attempts: 7
-Last Validation: 2025-06-10 17:11:17
-Result: The edited content provides a more specific and actionable description compared to the original. While the original simply states "Automatic PYTHONPATH," the edited version clarifies that the enhancement is related to handling `PYTHONPATH` specifically for API and worker processes. This makes the pu...
-Reedit Available: Yes
-Reedit Message: The edited content provides a more specific and actionable description compared to the original. While the original simply states "Automatic PYTHONPATH," the edited version clarifies that the enhancem...
---->
+The update improves the robustness and maintainability of the API and worker processes. In the `Makefile`, the command for running the API now includes the current backend source directory in the `PYTHONPATH`, ensuring explicit module resolution and avoiding path issues. The UI reporting route has been enhanced by invoking the report worker using module syntax with the `-m` flag, simplifying command line invocation and reducing path resolution issues. Error handling is improved by checking for detailed error information before logging and propagating errors. Import statements in the report worker file have been refactored to import directly from the `db` package, streamlining module dependencies and improving maintainability.

@@ -1,29 +1,15 @@
 ---
-title: "UI allows users to customize `finding` statuses (#1407)"
+title: "UI allows you to customize finding statuses (#1407)"
 categories: [frontend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "June 05, 2025"
-# Content edited by AI - 2025-06-10 17:18
-# Content overwritten from an earlier version - 2025-06-10 17:18
+date: "June 06, 2025"
+# Content edited by AI - 2025-06-11 14:17
+# Content validated by AI - 2025-06-11 14:17
+# Content overwritten from an earlier version - 2025-06-11 14:17
 # PR URL: https://github.com/validmind/frontend/pull/1407
 ---
 
-Users can now create custom finding statuses and soft-delete existing ones. When a status is deleted, all associated findings revert to `Open`.
+You can now customize finding statuses by creating new ones and 'soft-deleting' existing ones. If a finding status is deleted, all findings using that status will default to `Open`.
 
-This update adds a feature for managing finding statuses, including API endpoints for fetching, creating, updating, and deleting these statuses. The data model now includes a type for finding status with a unique identifier, color scheme, name, and default flag.
-
-New UI components support this functionality, such as a modal (`AddFindingStatusModal`) with a shared color grid selector for choosing color schemes. The modal manages default statuses by disabling edits on their names. The main application and settings pages now integrate the new finding statuses, with a sidebar link for users with appropriate permissions. Existing components that display finding statuses now use these new statuses and display them with the updated design, employing a `VMTag` component with colors derived from the status data.
-
-Several settings pages have been refactored to use a new `SettingsSection` layout, ensuring a consistent look and feel across the application.
-
-<!--- VALIDATION SUMMARY
-Content Type: title
-Validation Status: CHECK
-Attempts: 7
-Last Validation: 2025-06-10 17:15:46
-Result: The edited content is a concise and clear revision of the original. It effectively communicates the same idea with fewer words. However, it slightly changes the meaning by stating that the UI already allows customization, rather than suggesting it should. If the intention is to describe a current fe...
-Failure Patterns: {'meaning': 6}
-Reedit Available: Yes
-Reedit Message: The edited content is a concise and clear revision of the original. It effectively communicates the same idea with fewer words. However, it slightly changes the meaning by stating that the UI already ...
---->
+This update introduces a feature for managing finding statuses within the application. It adds new API endpoints for fetching, creating, updating, and deleting finding statuses. The data model now includes a type for finding status with a unique identifier, color scheme, name, and default flag. New UI components support this functionality, including a modal (`AddFindingStatusModal`) with a shared color grid selector for choosing color schemes. The modal disables edits on default status names. The main application and settings pages integrate the new finding statuses, adding a sidebar link for you if you have the appropriate permissions. Existing components that display finding statuses, such as findings lists and detailed views, now use these new statuses and display them with the updated design, using a `VMTag` component with colors derived from the status data. Several settings pages were refactored to use a new `SettingsSection` layout for a consistent look and feel. This update integrates the new finding statuses feature on the backend through API enhancements and on the frontend through component and layout updates.

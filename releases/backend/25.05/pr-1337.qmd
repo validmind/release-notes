@@ -1,26 +1,20 @@
 ---
-title: "Add date localization support in `user` settings (#1337)"
+title: "Add date localization support with `locale` field in `ui_settings` and `User` records (#1337)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-09 16:27
-# Content overwritten from an earlier version - 2025-06-09 16:27
+# Content edited by AI - 2025-06-11 16:27
+# Content overwritten from an earlier version - 2025-06-11 16:27
 # PR URL: https://github.com/validmind/backend/pull/1337
 ---
 
-This update enhances user settings by adding a locale configuration field. Key changes include:
-
-- A new Alembic migration sets the default value of the `ui_settings` column in the `users` table to `{"locale": "en"}` for future inserts and updates existing records to include the locale setting if missing.
-- The `ui_settings` column in the User model now defaults to `{"locale": "en"}`.
-- The JSON schema for `ui_settings` is updated to include a `locale` property of type string.
+The `ui_settings` and `User` now include a `locale` field, which defaults to `en`. The migration sets this value for both existing and new records, offers a downgrade option to remove the column, and updates the JSON schema.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:16:41
-Result: The edited content provides a more specific and actionable description compared to the original. By specifying that date localization support should be added in the `user` settings, it clarifies where the feature should be implemented, making it more useful for developers or team members who need to...
+Last Validation: 2025-06-11 16:11:54
 Reedit Available: Yes
-Reedit Message: The edited content provides a more specific and actionable description compared to the original. By specifying that date localization support should be added in the `user` settings, it clarifies where...
 --->

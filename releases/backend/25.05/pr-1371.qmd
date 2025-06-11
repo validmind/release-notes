@@ -1,22 +1,22 @@
 ---
-title: "Enhance metadata filtering in figure queries by casting JSON timestamps to `DateTime` (#1371)"
+title: "Convert timestamp strings to `DateTime` for metadata figure queries (#1371)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-09 16:27
-# Content overwritten from an earlier version - 2025-06-09 16:27
+# Content edited by AI - 2025-06-11 16:27
+# Content overwritten from an earlier version - 2025-06-11 16:27
 # PR URL: https://github.com/validmind/backend/pull/1371
 ---
 
-This update enhances metadata filtering in database queries for figures by accurately comparing timestamp metadata. JSON timestamp values are now cast to `DateTime` using the database's functionality. Additionally, there is a minor version bump in the `pyproject.toml` file.
+Metadata filtering for figures now converts stored timestamp strings to `DateTime`, allowing comparison with `datetime` or `date` values.
+
+The version in `pyproject.toml` has been updated.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:16:11
-Result: The edited content provides a clearer and more specific description of the task. It not only mentions the action to be taken ("Enhance metadata filtering") but also specifies the method to achieve it ("by casting JSON timestamps to `DateTime`"). This makes the task more understandable and actionable...
+Last Validation: 2025-06-11 16:10:43
 Reedit Available: Yes
-Reedit Message: The edited content provides a clearer and more specific description of the task. It not only mentions the action to be taken ("Enhance metadata filtering") but also specifies the method to achieve it ...
 --->

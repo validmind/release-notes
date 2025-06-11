@@ -1,24 +1,20 @@
 ---
-title: "Add `is_disabled` column to `users` table for account management (#1372)"
+title: "Add `is_disabled` to `users` table for account management, enabling you to disable accounts (#1372)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-09 16:27
-# Content overwritten from an earlier version - 2025-06-09 16:27
+# Content edited by AI - 2025-06-11 16:27
+# Content overwritten from an earlier version - 2025-06-11 16:27
 # PR URL: https://github.com/validmind/backend/pull/1372
 ---
 
-An `is_disabled` column has been added to the users table through an Alembic migration, enabling user accounts to be disabled. The migration supports both upgrade and downgrade paths.
-
-The authentication process now verifies the `is_disabled` flag after token validation. If a user is disabled, an authentication error is raised, blocking access. This check also applies to client users at a specific endpoint, ensuring disabled users cannot perform protected actions.
+You can now disable accounts. A migration adds an `is_disabled` column to the `users` table. After token verification, the authentication layer and the `client-users` endpoint deny access when `is_disabled` is `true`.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:17:24
-Result: The edited content provides a clearer and more detailed description of the task. It specifies that "is_disabled" is a column and that it is being added to the "users" table, which is important for understanding the context. Additionally, it mentions the purpose of this addition, which is for account...
+Last Validation: 2025-06-11 16:10:58
 Reedit Available: Yes
-Reedit Message: The edited content provides a clearer and more detailed description of the task. It specifies that "is_disabled" is a column and that it is being added to the "users" table, which is important for und...
 --->
