@@ -1,0 +1,62 @@
+---
+title: "Updated `Validator Fundamentals` courses for clarity and comprehensiveness (#713)"
+categories: [documentation, 25.06, release, documentation, highlight]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/documentation/pull/713
+---
+
+[Registration Page Preview](https://docs-demo.vm.validmind.ai/pr_previews/beck/sc-8468/update-validator-fundamentals-course/training/validator-fundamentals/validator-fundamentals-register.html) — See course module preview disclaimer below!
+
+The Validator Fundamentals course has been updated for clarity and comprehensiveness, similar to the Developer Fundamentals. Updates include revised login instructions, individual module learning outcomes, module summaries, and additional slides for previously omitted topics. The courses have been tested and timed for accuracy.
+
+The course is divided into four modules with clear learning outcomes:
+
+1. Module 1 — Using ValidMind for Model Validation
+2. Module 2 — Running Data Quality Tests
+3. Module 3 — Developing Challenger Models
+4. Module 4 — Finalizing Validation Reports
+
+This training series covers the basics of using ValidMind to validate datasets and models. It includes running and logging tests with the ValidMind Library and finalizing your model's validation report in the ValidMind Platform. You'll learn to automate testing, populate evidence in your validation report, and track finding resolution. Register to take the course now!
+
+The Makefile has been adjusted to copy the `notebooks/tutorials/` folder into a `notebooks/EXECUTED/` directory, including the `model_validation` courses. The `make execute` command now prompts for the profile, the set of notebooks to execute (or a custom path), and credentials to create a temporary `.env` file. This ensures separate developer/validator credentials are used to execute each set of notebooks without errors.
+
+```bash
+❯ make execute
+Select PROFILE:
+1) exe-demo
+2) exe-staging
+3) exe-prod
+Enter choice [1-3] (default: 1): 1
+Select FILE_PATH:
+1) notebooks/EXECUTED/model_development
+2) notebooks/EXECUTED/model_validation
+3) Enter custom filepath
+Enter choice [1-3]: 1
+Enter VM_API_HOST (default: https://api.prod.validmind.ai/api/v1/tracking): 
+Enter VM_API_KEY: ***
+Enter VM_API_SECRET: ***
+Enter VM_API_MODEL: ***
+```
+
+> [!WARNING]
+> When testing this script, you may encounter the following Lua warning:
+> 
+> ```bash
+> WARNING (/Applications/quarto/share/filters/main.lua:9521) Unable to parse table from raw html block: skipping.
+> ```
+> 
+> This warning does not affect the rendering of the executed notebooks. You might see an error in the `.ipynb` file, but not in the live `.html` output.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:53:02
+Result: The edited content improves upon the original by adding specificity and context. By enclosing "Validator Fundamentals" in backticks, it highlights the course title, making it stand out. Additionally, the phrase "for clarity and comprehensiveness" provides a clear rationale for the update, indicating...
+Reedit Available: Yes
+Reedit Message: The edited content improves upon the original by adding specificity and context. By enclosing "Validator Fundamentals" in backticks, it highlights the course title, making it stand out. Additionally, ...
+--->

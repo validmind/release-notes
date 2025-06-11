@@ -1,0 +1,35 @@
+---
+title: "Re-enable `sentry`, `datadog`, `heapIdentify`, `Sprig`, and `ldIdentify` integrations (#48)"
+categories: [installation, 25.06, release, bug]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/installation/pull/48
+---
+
+Analytics data in Datadog was missing around April 30, 2025, because the `ENABLE_FRONTEND_DEPENDENCIES` environment variable was omitted from the Helm chart managing the frontend deployment. This happened when the Helm chart was moved from the infra repository to the installation repository, and the variable was accidentally excluded. This update restores the missing environment variable in the Helm chart.
+
+To implement this change, apply `https://github.com/validmind/manifests/pull/25` to the infrastructure.
+
+A new configuration flag, `enableFrontendDependencies`, has been added to manage frontend dependencies like Sentry, Datadog, Heap, Sprig, and LaunchDarkly.
+
+In `cmvm-test-values.yaml`, the flag is set under global settings with a default value of `false`. The deployment template (`app-deployment.yaml`) now includes an environment variable, `ENABLE_FRONTEND_DEPENDENCIES`, which takes its value from Helm values. This allows runtime configuration to control frontend dependencies per deployment. The main `values.yaml` includes the flag within the global configuration to ensure default behavior and documentation align with managing frontend dependency integrations.
+
+These changes improve control over feature toggling for frontend integrations without altering core application logic.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:49:35
+Result: The edited content improves clarity and readability by making several changes:
+
+1. **Formatting**: The use of backticks (`) around the names of the integrations (`sentry`, `datadog`, `heapIdentify`, `Sprig`, and `ldIdentify`) helps to distinguish them as specific terms or code elements, which is par...
+Failure Patterns: {'formatting': 6, 'meaning': 2}
+Reedit Available: Yes
+Reedit Message: The edited content improves clarity and readability by making several changes:
+
+1. **Formatting**: The use of backticks (`) around the names of the integrations (`sentry`, `datadog`, `heapIdentify`, `...
+--->

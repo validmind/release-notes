@@ -1,0 +1,29 @@
+---
+title: "Handle workflow validation errors with detailed `toast` notifications (#1408)"
+categories: [frontend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1408
+---
+
+The update changes the user interface as shown in the screenshot. There are no breaking changes.
+
+This update enhances error handling in workflow components:
+
+- The `UserActionButtons` component now uses an `Alert` to display error messages for failed API calls.
+- The `StateSetNode` and `StatusSetNode` components use `NodeBox` to show error messages when API errors occur during data fetching.
+- The `WorkflowsPage` provides detailed error responses for API calls. The `onError` callback distinguishes between basic API errors and validation errors. Validation errors trigger individual toast notifications with contextual information, while a general error toast is shown for other errors.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:43:50
+Result: The edited content improves clarity by specifying that "toasts" refer to "toast notifications," which is a more widely recognized term in user interface design. The use of backticks around "toast" is a stylistic choice that can help emphasize the term, especially if it is a technical term or code-re...
+Failure Patterns: {'meaning': 6}
+Reedit Available: Yes
+Reedit Message: The edited content improves clarity by specifying that "toasts" refer to "toast notifications," which is a more widely recognized term in user interface design. The use of backticks around "toast" is ...
+--->

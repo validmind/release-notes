@@ -1,0 +1,40 @@
+---
+title: "Sanitize files before uploading in `text-editor` to enhance security (#1508)"
+categories: [backend, 25.06, release, bug]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1508
+---
+
+Security controls are now in place for file uploads at the `/api/v1/text-editor/upload` endpoint. The update enforces a maximum file size of 5 MB and restricts MIME types to:
+
+- `image/jpeg`
+- `image/png`
+- `image/gif`
+- `image/svg+xml`
+- `application/pdf`
+- `text/plain`
+- `text/csv`
+
+The backend now uses lazy initialization for object storage. The `init_object_storage` function and `get_object_storage` replace direct imports of the object storage adapter to ensure proper setup.
+
+Database modules, including attestation, comment, entity attachments, figure, finding, knowledge_document, metadata, model_inventory, organization, and settings, now use `get_object_storage`. This ensures consistent generation of pre-signed URLs, file uploads, and deletions.
+
+The file upload logic in the text editor endpoint within the UI routes is improved. File size checks are enabled, comparing against a configurable maximum (defaulting to 5MB) from the settings. Allowed MIME types are validated, and disallowed file types, such as executable files and improperly sanitized HTML content, are rejected. An input sanitizer cleanses file names and, for text-based files, the content itself of potential XSS payloads before uploading to object storage.
+
+Tests across both integration and unit test suites are updated to reflect these changes. They now use a `BaseTestCase` for consistent initialization, including mocking the object storage adapter via patching of the adapter creation. This verifies that file uploads behave as expected in various scenarios, such as oversized files, disallowed MIME types, and sanitization of content and filenames.
+
+An SQLAlchemy debug configuration (`SQLALCHEMY_ECHO = True`) is enabled in the API for improved query logging during development and debugging.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:37:00
+Result: The edited content is a clear and concise improvement over the original. It effectively communicates the action of sanitizing files before uploading them to a text editor, emphasizing the purpose of enhancing security. The use of the imperative form "Sanitize" makes the instruction direct and action...
+Reedit Available: Yes
+Reedit Message: The edited content is a clear and concise improvement over the original. It effectively communicates the action of sanitizing files before uploading them to a text editor, emphasizing the purpose of e...
+--->

@@ -1,0 +1,26 @@
+---
+title: "Upgrade `tornado` from 6.4.2 to 6.5.1 (#1512)"
+categories: [backend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1512
+---
+
+The `poetry.lock` file has been updated to improve metadata and available artifacts for several packages. Key changes include:
+
+- Adjusting Python version markers to target specific versions, such as `~= "3.12.0"` or `~= "3.11.0"`.
+- Expanding available binary artifacts for packages like `lxml` and `tornado`, adding new wheel files for architectures including `aarch64` and `musllinux`.
+- Upgrading the `tornado` package to a newer version, with updated wheel files and a minimum required Python version change from 3.8 to 3.9.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:35:44
+Result: The edited content is clear and concise, effectively communicating the purpose of the change. It removes the technical jargon "chore(deps): bump" and replaces it with more straightforward language, "Upgrade," which is easier to understand for a broader audience. The use of backticks around `tornado`...
+Reedit Available: Yes
+Reedit Message: The edited content is clear and concise, effectively communicating the purpose of the change. It removes the technical jargon "chore(deps): bump" and replaces it with more straightforward language, "U...
+--->

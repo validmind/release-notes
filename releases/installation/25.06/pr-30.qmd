@@ -1,0 +1,22 @@
+---
+title: "Update `helm` install instructions (#30)"
+categories: [installation, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/installation/pull/30
+---
+
+Adds docs for using the helm chart hidden in the documentation site.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:47:08
+Result: The edited content is an improvement over the original. It provides a clearer and more concise description of the update. By capitalizing "Update" and enclosing "helm" in backticks, it follows a more formal and consistent style, which is often preferred in documentation or commit messages. The remov...
+Reedit Available: Yes
+Reedit Message: The edited content is an improvement over the original. It provides a clearer and more concise description of the update. By capitalizing "Update" and enclosing "helm" in backticks, it follows a more ...
+--->

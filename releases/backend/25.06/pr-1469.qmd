@@ -1,0 +1,39 @@
+---
+title: "Sanitize custom fields to enhance security (#1469)"
+categories: [backend, 25.06, release, bug]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1469
+---
+
+Input validation for custom fields is improved by removing potentially harmful tags like `javascript`, preventing browsers from executing these inputs. This change enforces limitations on entries in custom inventory fields to enhance security.
+
+This update enhances the backend with a new input sanitation utility.
+
+- **Dependency Updates**:
+  - Updated Poetry to version 2.1.2.
+  - Added `bleach`, `tinycss2`, and `webencodings` for HTML sanitization and CSS parsing.
+  - Adjusted package compatibility markers.
+
+- **Input Sanitization Implementation**:
+  - Introduced the `InputSanitation` class in `src/backend/utils/input_sanitation.py` to sanitize HTML by removing disallowed script tags, stripping malicious URL protocols, and cleaning harmful attributes using `bleach`.
+  - Integrated the sanitizer into `src/backend/routes/ui_inventory_models.py` to sanitize content before updating inventory models.
+
+- **Testing Enhancements**:
+  - Added unit tests in `tests/unit/test_input_sanitation.py` for input sanitation, covering allowed tags, attribute handling, script tag removal, URL protocol sanitization, nested protocols, and real-world HTML examples, including CKEditor-specific markup.
+
+These changes improve application security by preventing unsafe HTML content and potential XSS vectors while ensuring data consistency through rigorous sanitization and robust unit testing.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:36:48
+Result: The edited content improves the original by providing a clear rationale for the action. By adding "to enhance security," it explains the purpose of sanitizing custom fields, making the statement more informative and meaningful. This addition helps the reader understand the importance of the action, ...
+Failure Patterns: {'meaning': 1}
+Reedit Available: Yes
+Reedit Message: The edited content improves the original by providing a clear rationale for the action. By adding "to enhance security," it explains the purpose of sanitizing custom fields, making the statement more ...
+--->

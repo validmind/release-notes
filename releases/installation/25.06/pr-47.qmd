@@ -1,0 +1,38 @@
+---
+title: "Enable sticky sessions on `nginx` ingress controllers (#47)"
+categories: [installation, 25.06, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/installation/pull/47
+---
+
+Customers using an ingress controller or load balancer other than `ingress-nginx` must enable sticky sessions to use version `v0.0.4` of the ValidMind Helm chart. Not enabling sticky sessions may cause session-related issues.
+
+The update modifies the Helm chart configuration by changing the ingress annotations in the `helm/values.yaml` file. Key changes include:
+
+- Removal of previous CORS-related annotations.
+- Addition of an annotation to set the maximum proxy body size to 200 MB.
+- Introduction of an annotation to hash upstream connections based on the client IP for better session affinity.
+- Insertion of a configuration snippet to capture the client IP from the `X-Forwarded-For` header, with a fallback to the remote address.
+
+These changes improve the performance and reliability of the ingress controller by optimizing proxy settings and accurately determining the client's IP address, which is crucial for load balancing and security logging.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:49:08
+Result: The edited content is a clear and concise improvement over the original. Here are some specific points:
+
+1. **Clarity and Readability**: The edited version removes the technical jargon "feat:" and uses a more straightforward phrase, "Enable sticky sessions," which is easier to understand.
+
+2. **Spec...
+Failure Patterns: {'formatting': 6}
+Reedit Available: Yes
+Reedit Message: The edited content is a clear and concise improvement over the original. Here are some specific points:
+
+1. **Clarity and Readability**: The edited version removes the technical jargon "feat:" and use...
+--->

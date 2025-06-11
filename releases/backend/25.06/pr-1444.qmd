@@ -1,0 +1,29 @@
+---
+title: "Support `qualitative_text_generation` API for `VM-lib` (#1444)"
+categories: [backend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1444
+---
+
+The `vm.experimental.agents.run_task` interface in the ValidMind library now supports a new task type: `qualitative_text_generation`. This update introduces an API endpoint for generating qualitative text, enabling users to create qualitative sections for specific document parts using the LLM. The generated content appears in the `model_overview` text block section.
+
+The new API endpoint `/ai/generate/qualitative_text_generation` is available for qualitative text generation. The `generate_qualitative_text` function:
+
+- Validates the JSON request body, ensuring the `content_id` field is present.
+- Uses global context (`g`) information such as `model_cuid` and `document_type`, and maps optional `user_instructions` to a `content` field.
+- Processes the request with `qualitative_text_generation.invoke` and returns the result in a JSON response.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:39:01
+Result: The edited content effectively clarifies and modernizes the original statement by using code formatting for the API name and library, which is a common convention in technical documentation. This helps to distinguish these elements from the rest of the text, making it easier for readers to identify ...
+Failure Patterns: {'formatting': 6}
+Reedit Available: Yes
+Reedit Message: The edited content effectively clarifies and modernizes the original statement by using code formatting for the API name and library, which is a common convention in technical documentation. This help...
+--->

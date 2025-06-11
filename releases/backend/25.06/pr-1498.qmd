@@ -1,0 +1,24 @@
+---
+title: "Update `flask-cors` to version 6.0.0 (#1498)"
+categories: [backend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1498
+---
+
+The `Flask-Cors` dependency is updated to version 6.0.0 in both the lock file and `pyproject.toml`. The `langchain-community` package entry for Python versions below 3.13 is removed to streamline dependencies.
+
+Dependency markers for `langchain-core` and `RestrictedPython` are adjusted to better reflect supported Python versions and support more platforms. New `lxml` wheels are added for additional architectures.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:35:43
+Result: The edited content effectively communicates the main action of the original content, which is updating the `flask-cors` dependency to version 6.0.0. However, it omits some details present in the original content, such as the specific nature of the update being a "chore" related to dependencies and t...
+Reedit Available: Yes
+Reedit Message: The edited content effectively communicates the main action of the original content, which is updating the `flask-cors` dependency to version 6.0.0. However, it omits some details present in the origi...
+--->

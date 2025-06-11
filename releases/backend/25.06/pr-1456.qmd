@@ -1,0 +1,46 @@
+---
+title: "Convert user policy to `g` type and update Casbin check to use resource organization (#1456)"
+categories: [backend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1456
+---
+
+Updates to Casbin:
+
+- User policies now use group-based (`g`) policies instead of `p` type.
+- Permission verification in `auth.py` retrieves the organization from the specified resource rather than the connected user.
+
+This update improves RBAC policy generation and permission verification.
+
+The SQL query for user role policies now separates policies for user update roles and group assignments, introducing `UserUpdateRole` for consistent policy capture.
+
+In the backend, the authentication module's permission verification logic has been refactored:
+
+- `get_base_resource_type` determines a resource's base type, simplifying sub-resource handling.
+- `get_resource_id` derives the resource ID from request arguments and uses the new base resource check for Organization resources.
+- `get_resource_organization` retrieves the organization associated with a resource using model-specific class methods.
+
+Model classes (`Group`, `InventoryModel`, `StatusesWorkflow`, and `Template`) now include a class method, `get_organization`, to standardize organization lookup logic.
+
+The test case for Casbin policies has been updated to verify that only the intended policy rule (`UserUpdateRole`) is returned with the correct user identifier.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:36:40
+Result: The edited content is a clear and concise improvement over the original. Here are the key changes and their impacts:
+
+1. **Clarity and Readability**: 
+   - The edited version uses "Convert" instead of "Converting," which makes the sentence more direct and imperative.
+   - The phrase "user policy to ...
+Reedit Available: Yes
+Reedit Message: The edited content is a clear and concise improvement over the original. Here are the key changes and their impacts:
+
+1. **Clarity and Readability**: 
+   - The edited version uses "Convert" instead of...
+--->

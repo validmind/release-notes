@@ -1,0 +1,43 @@
+---
+title: "Enable deletion of `roles` and `stakeholder types` (#1372)"
+categories: [frontend, 25.06, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1372
+---
+
+Delete buttons and confirmation prompts are now available on the list and detail pages for roles and stakeholder types. The group deletion process uses a reusable component with improved styling. An `API.ts` call for deleting roles has been introduced. The stakeholder type settings menu item is added as per documentation.
+
+The roles details page is reused for the stakeholder type detail page with minor differences. The API roles delete endpoint is also reused for stakeholder type deletion requests.
+
+This update enhances role deletion and confirmation dialogs in the application.
+
+- A new API method, `DeleteRole`, enables role deletion via an Axios `DELETE` endpoint.
+
+- The `DeleteConfirmationAlert` component standardizes the deletion confirmation process across pages like Group, RoleDetails, Roles, and Stakeholders, with custom messages for consistency.
+
+- Updated styling for components like `DangerMenuItem` highlights destructive actions with adjusted color and background properties.
+
+- The RoleDetails page now includes a confirmation dialog for deleting roles and stakeholder types, providing detailed messages about the action's impact.
+
+- The Roles and Stakeholders listing pages enable role deletion via a contextual menu, using react-query mutations to trigger deletion and ensure immediate data updates.
+
+- Minor UI copy adjustments in the `AddRoleModal` clarify the difference between adding a new role and a stakeholder type.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:43:59
+Result: The edited content is a concise and clear improvement over the original. It effectively communicates the same idea using fewer words. Here are some specific points of evaluation:
+
+1. **Clarity**: The edited version is straightforward and easy to understand. It uses the word "Enable" which is a stron...
+Failure Patterns: {'meaning': 3}
+Reedit Available: Yes
+Reedit Message: The edited content is a concise and clear improvement over the original. It effectively communicates the same idea using fewer words. Here are some specific points of evaluation:
+
+1. **Clarity**: The ...
+--->

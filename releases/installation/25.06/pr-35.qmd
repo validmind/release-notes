@@ -1,0 +1,27 @@
+---
+title: "Sync `pr_template` from backend (#35)"
+categories: [installation, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/installation/pull/35
+---
+
+This updates the PR Template per discussion on https://github.com/validmind/backend/pull/1386
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:47:08
+Result: The edited content improves upon the original by providing a clearer and more professional description. Here are some specific points of improvement:
+
+1. **Clarity**: The edited version removes the informal "chore" label, which might not be immediately clear to all readers. Instead, it directly stat...
+Failure Patterns: {'formatting': 5}
+Reedit Available: Yes
+Reedit Message: The edited content improves upon the original by providing a clearer and more professional description. Here are some specific points of improvement:
+
+1. **Clarity**: The edited version removes the in...
+--->

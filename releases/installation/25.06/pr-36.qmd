@@ -1,0 +1,46 @@
+---
+title: "Document `ValidMind` installation and configuration updates (#36)"
+categories: [installation, 25.06, release, documentation]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/installation/pull/36
+---
+
+The instructions for customer-managed ValidMind now include the full installation process, covering authentication methods like Keycloak, OIDC, and Entra:
+
+1. Preparing your environment
+2. Pulling the container images
+3. Pulling the Helm chart
+4. Configuring your Helm chart
+5. Configuring LiteLLM
+6. Installing via Helm chart
+7. Completing the initial setup
+
+These updates improve usability with better organization and visual aids. The new structure separates deployment and administration sections, enhances navigation, and includes callout boxes and process diagrams.
+
+[Installing ValidMind](/installation/index.html)
+
+This update improves configuration files and documentation.
+
+- **.gitignore Updates:** Added entries for template directories to improve file exclusion.
+
+- **Helm Secrets and Values Enhancements:**
+  - Expanded comments in the `vm-api-secret` file to clarify each secret's usage and purpose.
+  - The `helm/values.yaml` file now includes detailed comments on configuration parameters like ingress settings, service account details, and resource allocations.
+
+- **Documentation Updates:**
+  - New Quarto (.qmd) files in the `site/installation` directory provide deployment steps, including environment preparation, pulling container images, configuring the Helm chart and LiteLLM, installation instructions, and post-installation verification.
+  - Sidebar and navigation changes improve documentation organization for better accessibility.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:49:55
+Result: The edited content effectively clarifies the purpose of the document by specifying that it includes both installation and configuration updates for "ValidMind." The use of backticks around "ValidMind" is a stylistic choice that can help emphasize the name of the software, making it stand out. Overal...
+Reedit Available: Yes
+Reedit Message: The edited content effectively clarifies the purpose of the document by specifying that it includes both installation and configuration updates for "ValidMind." The use of backticks around "ValidMind"...
+--->

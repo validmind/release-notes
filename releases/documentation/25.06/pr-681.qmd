@@ -1,0 +1,42 @@
+---
+title: "Updated Developer Fundamentals training for improved `notebook` execution and documentation (#681)"
+categories: [documentation, 25.06, release, documentation, highlight]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/documentation/pull/681
+---
+
+Titles in the learning paths now have consistent casing and improved clarity. Descriptions are more concise. A "Register Now" or "Coming Soon" button is added to each course based on availability. The Validator Fundamentals section is streamlined for the upcoming validation experience notebooks.
+
+The extra "Training" drop-down in the training section has been removed to simplify navigation. There is consideration for reintroducing a sidebar or breadcrumb navigation for training pages. The `Releases` section is now an independent section in the condensed drop-down menu.
+
+A browser compatibility message has been added to the registration pages and the "Legal Ease" section on the policy page for consistency.
+
+This update enhances notebook execution and documentation within GitHub Actions and site content. Key changes include:
+
+- Updated `action.yml` files for demo, production, and staging notebooks to execute multiple notebooks.
+- Added a step to register the `validmind` kernel in the GitHub Actions workflow for correct notebook execution.
+- Modified the execution command to target multiple notebooks, improving automated testing.
+
+Documentation and Training Content:
+- Introduced new training modules and updated existing ones for a comprehensive learning path for developers, validators, and administrators using ValidMind.
+- Added detailed markdown files for each training module, outlining learning objectives, course content, and step-by-step instructions.
+- Enhanced site content with new sections and updates to improve navigation and user experience.
+
+Notebook Content and Structure:
+- Reorganized the notebook directory to separate executed notebooks from tutorials for better clarity and maintainability.
+- Updated notebook content to include sections on implementing custom tests and using external test providers.
+- Added new images and GIFs to the documentation to visually guide users through adding content blocks and test results.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:53:18
+Result: The edited content provides additional specificity by mentioning the focus on "improved `notebook` execution and documentation." This enhancement clarifies the purpose of the update, making it more informative for the reader. The use of backticks around "notebook" suggests a technical context, which...
+Reedit Available: Yes
+Reedit Message: The edited content provides additional specificity by mentioning the focus on "improved `notebook` execution and documentation." This enhancement clarifies the purpose of the update, making it more in...
+--->

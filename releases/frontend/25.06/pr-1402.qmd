@@ -1,0 +1,29 @@
+---
+title: "Enhance security by using `DOMPurify` to sanitize HTML in `dangerouslySetInnerHTML` (#1402)"
+categories: [frontend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1402
+---
+
+The `DOMPurify` library sanitizes HTML content before applying `dangerouslySetInnerHTML` in React components to prevent XSS attacks. The `sanitizeHtml` utility function is configured to allow the `target` attribute on links while sanitizing other potentially harmful HTML content. This implementation uses `DOMPurify` version 3.2.5.
+
+This update enhances security by using `DOMPurify` to sanitize HTML content with React's `dangerouslySetInnerHTML`. Key changes include:
+
+- Adding `DOMPurify` to `package.json` and `package-lock.json`.
+- Introducing a `sanitizeHtml` utility function in the `utils` module, wrapping `DOMPurify.sanitize` for use across multiple components.
+- Updating components like `CommandPalette`, `DocumentChecker`, `FindingsList`, `GenerateWithAIModal`, `JSONLogicHumanizer`, `CustomText`, and `TemplateEditor` to sanitize dynamic HTML content, preventing potential XSS attacks.
+- Implementing minor code formatting improvements and small refactors for consistency.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:42:54
+Result: The edited content improves the original by providing a specific solution to enhance security when using `dangerouslySetInnerHTML`. By mentioning `DOMPurify`, it offers a practical tool for sanitizing HTML, which is crucial for preventing cross-site scripting (XSS) attacks. This makes the content mo...
+Reedit Available: Yes
+Reedit Message: The edited content improves the original by providing a specific solution to enhance security when using `dangerouslySetInnerHTML`. By mentioning `DOMPurify`, it offers a practical tool for sanitizing...
+--->

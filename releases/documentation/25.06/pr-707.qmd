@@ -1,0 +1,36 @@
+---
+title: "Updated content block features in `documentation` (#707)"
+categories: [documentation, 25.06, release, documentation]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/documentation/pull/707
+---
+
+Templates and reusable text blocks are now in a new sub-section, applicable beyond model documentation, validation reports, and ongoing monitoring. Broken links have been fixed, and aliases applied to old URLs. A new page details the block library feature and its management.
+
+The content blocks page reflects changes in the block library and user interface, with updated explanations of content block types. The "Add content blocks" and "Remove content blocks" sections align with the new user experience. The "Generate Text with AI" section displays the new chat interface.
+
+The test results page includes the new test-driven block menu user experience and a section on configuring test result displays. The metrics over time page reflects the updated block menu user experience.
+
+Documentation on templates within the ValidMind Platform has been reorganized and expanded. Guides on managing templates for model documentation, validation reports, and ongoing monitoring reports are now under **Guides** in the **templates** section, along with a new guide on managing your text block library.
+
+Documentation templates are now in the `templates` directory instead of `model-documentation`, impacting configuration files, guides, and release notes.
+
+The content block management system has improved text block organization and reuse. New features include a library for reusable text blocks, configuration options for test result displays, and an enhanced user interface for managing content blocks.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:52:55
+Result: The edited content provides a slight improvement in clarity by specifying that the updates pertain to the "documentation." However, it could be further refined for clarity and context. Here's a suggestion:
+
+"Documentation: Updated features of the content block"
+
+This version maintains the original i...
+Reedit Available: Yes
+Reedit Message: The edited content provides a slight improvement in clarity by specifying that the updates pertain to the "documentation." However, it could be further refined for clarity and context. Here's a sugges...
+--->

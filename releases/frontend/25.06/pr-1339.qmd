@@ -1,0 +1,36 @@
+---
+title: "Add ability to delete a `workflow` with dependency checks (#1339)"
+categories: [frontend, 25.06, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1339
+---
+
+The update introduces a `soft-deleting` feature for workflows. When a workflow is deleted, users can still continue any ongoing executions, but it will be removed from active listings to prevent future executions.
+
+This update introduces the ability to delete workflows, with checks for dependencies on associated models.
+
+API Enhancements:
+- `GetWorkflowModelDependenciesCount`: Retrieves the number of models depending on a workflow to warn users of potential impacts before deletion.
+- `DeleteWorkflow`: Sends a DELETE request to remove the specified workflow.
+
+New UI Components:
+- `WorkflowDeleteModal`: Provides a confirmation dialog for deleting workflows, displaying warnings if the workflow is used by models and handling success and error scenarios with toast notifications.
+- `ExecutionDetails`: Alerts users if a workflow has been deleted, ensuring they understand that while the workflow is deprecated, current executions continue normally.
+- `WorkflowList`: Includes a delete option that triggers the dependency count check and opens the delete modal, facilitating safer workflow deletion.
+
+Model Update:
+- A new field, `deleted_at`, has been added to the Workflow model to track when a workflow has been deleted, used by the UI to conditionally render warnings.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:42:59
+Result: The edited content provides a clearer and more detailed description of the feature by specifying that the ability to delete a workflow includes dependency checks. This additional information is valuable as it indicates that the deletion process is not straightforward and involves verifying dependenc...
+Reedit Available: Yes
+Reedit Message: The edited content provides a clearer and more detailed description of the feature by specifying that the ability to delete a workflow includes dependency checks. This additional information is valuab...
+--->

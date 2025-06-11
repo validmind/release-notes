@@ -1,0 +1,35 @@
+---
+title: "Implement improved template `swap` and `merge` experience (#1328)"
+categories: [frontend, 25.06, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1328
+---
+
+A new feature enables documents to be `Updated from Template`. Users can merge a template into an existing document, choosing to add, ignore, delete, or retain specific changes.
+
+This update introduces several functional enhancements and UI improvements:
+
+- **Dependency Updates**: The project version is now 1.33.4. New dependencies, `@minoru/react-dnd-treeview` and `react-dnd`, have been added for advanced template manipulation.
+
+- **API Enhancements**: The `SwapTemplate` function is now `CreateAndSwapTemplate`, combining template creation and swapping into a single API call for improved clarity and reusability.
+
+- **UI Modifications and Component Updates**: Components such as `AddFindingModal`, `AttributesRailDocumentOverview`, `AttributesRailMonitoringOverview`, and `AttributesRailValidationReportOverview` have been updated to enhance user interactions. Updates include revised trigger labels, improved layout and menu integration for templates, and consistent use of Chakra UI components.
+
+- **Swap Template Modal**: A new `SwapTemplateModal` component provides a drag-and-drop tree view for comparing the active template with a selected version. Users can mark sections and blocks with statuses like ADD, KEEP, IGNORE, or DELETE, and the UI assists in resolving invalid configurations before applying changes.
+
+- **Template Model Adjustments**: Minor changes include making the parent section optional and adding a `global_id` field to support the new swapping logic.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:42:20
+Result: The edited content effectively clarifies the original message by adding backticks around "swap" and "merge," which can help emphasize these terms as specific features or actions. However, it omits the "feat(templates):" prefix, which is typically used in commit messages to indicate the type of chang...
+Failure Patterns: {'meaning': 3}
+Reedit Available: Yes
+Reedit Message: The edited content effectively clarifies the original message by adding backticks around "swap" and "merge," which can help emphasize these terms as specific features or actions. However, it omits the...
+--->

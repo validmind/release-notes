@@ -45,9 +45,9 @@ EXCLUDED_SECTIONS = [
 # --- LLM settings ---
 # Model settings
 MODEL_CLASSIFYING = "gpt-4o-mini"  # For quick section classification
-MODEL_PROOFREADING = "gpt-4o"      # For proofreading tasks
 MODEL_EDITING = "gpt-4o"           # For content editing
-MODEL_VALIDATION = "gpt-4o"        # For edit validation
+MODEL_VALIDATION = "o3"            # For edit validation
+MODEL_PROOFREADING = "gpt-4o"      # For proofreading tasks
 
 # Temperature settings
 BASE_TEMPERATURE = 0.0
@@ -99,9 +99,10 @@ EDIT_CONTENT_PROMPT = (
     "When editing content:\n"
     "- Remove all Markdown headings (e.g., '#### What', '# PR Summary').\n"
     "- Keep the original meaning and technical accuracy.\n"
-    "- Use simple, clear language and backticks for technical terms.\n"
+    "- Use simple, clear language.\n"
     "- Focus on user-facing changes; keep content concise.\n"
     "- Uppercase acronyms (e.g., 'LLM', 'API') and spell proper names correctly.\n"
+    "- Enclose technical terms in backticks"
     "- Follow Quarto formatting (e.g., blank lines between blocks).\n"
     "- Use a space after list markers and start each item with a capital letter.\n"
     "- Don't refer to the 'PR body' or 'PR summary'.\n"
@@ -116,13 +117,14 @@ EDIT_PASS_1_INSTRUCTIONS = (
     "- Combine related or similar content into cohesive blocks\n"
     "- Preserve paragraph breaks and list formatting\n"
     "- If there are breaking changes, be sure to highlight them in the text\n"
+    "- Put all summary content (e.g. content that starts with 'This update ...' or 'The update ...') into a single paragraph at the top\n"
     "Output only the grouped and flattened text."
 )
 
 EDIT_PASS_2_INSTRUCTIONS = (
     "Pass 2 — Deduplicate:\n"
     "- Remove VERBATIM duplicates: if multiple sentences or paragraphs start with identical phrases, consolidate them\n"
-    "- Perform SEMANTIC deduplication: if two sentences convey the same meaning, keep only one\n"
+    "- Perform SEMANTIC deduplication: if two sentences or paragraphs convey the same meaning, keep only one\n"
     "- Aggressively remove duplicate or near-duplicate sentences and ideas, even if worded differently\n"
     "- Identify and consolidate conceptual duplicates (e.g., multiple ways of describing the same feature)\n"
     "- Remove redundant explanations where the same functionality is described multiple times\n"

@@ -1,0 +1,23 @@
+---
+title: "Update `Customer-managed-releases.qmd` file (#33)"
+categories: [installation, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/installation/pull/33
+---
+
+add 25.05.01 hotfix
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:47:09
+Result: The edited content improves clarity by specifying that "Customer-managed-releases.qmd" is a file, using backticks to denote it as a filename. This change makes the sentence more precise and easier to understand, especially for readers familiar with coding or documentation conventions. The edit is ap...
+Failure Patterns: {'formatting': 1, 'meaning': 1}
+Reedit Available: Yes
+Reedit Message: The edited content improves clarity by specifying that "Customer-managed-releases.qmd" is a file, using backticks to denote it as a filename. This change makes the sentence more precise and easier to ...
+--->

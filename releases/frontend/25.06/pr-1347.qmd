@@ -1,0 +1,37 @@
+---
+title: "Trigger workflow on `MODEL_FIELD_CHANGE` in inventory model fields (#1347)"
+categories: [frontend, 25.06, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1347
+---
+
+The `On Model Field Change` trigger type is now available for workflows, allowing you to monitor changes in an inventory model field before executing a workflow.
+
+This pull request improves the workflow management component and its API service:
+
+- **API Changes**:
+  - The `GET` endpoint now correctly formats the URL string by removing an unnecessary line break.
+  - An optional `triggerFieldKey` parameter has been added to the `PostWorkflow` API call to capture a custom trigger field key.
+
+- **Workflow Modal Enhancements**:
+  - The Workflow Modal component uses `UsersContext` and `getSchemaPropertyByKey` to list available fields from the organization's inventory model schema.
+  - A new workflow trigger type, `MODEL_FIELD_CHANGE`, has been added. When selected, a dropdown lets users choose the specific field that will trigger the workflow.
+  - The modal supports dynamic behavior based on the selected trigger type, capturing and passing the `field_name` to the API when `MODEL_FIELD_CHANGE` is chosen.
+  - Error states reset upon modal open/close, and conditional logic adjusts entity names and event types based on the trigger type.
+
+- **Model Updates**:
+  - Enumerations for `TriggerType`, `EntityName`, and `EntityEventType` have been extended to support the new `MODEL_FIELD_CHANGE` trigger, enabling workflows to handle both field-based modifications and traditional events.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:43:07
+Result: The edited content provides a clearer and more specific description of the original content. By specifying "MODEL_FIELD_CHANGE" and "inventory model fields," it clarifies the context and the specific trigger for the workflow. This makes the information more actionable and understandable for someone ...
+Reedit Available: Yes
+Reedit Message: The edited content provides a clearer and more specific description of the original content. By specifying "MODEL_FIELD_CHANGE" and "inventory model fields," it clarifies the context and the specific ...
+--->

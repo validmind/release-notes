@@ -1,0 +1,24 @@
+---
+title: "Add Kubernetes `job` for schema migrations in `Helm` deployment (#38)"
+categories: [installation, 25.06, release, enhancement, breaking-change]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/installation/pull/38
+---
+
+A Kubernetes `job` is now included in the Helm deployment to manage schema migrations once per deployment. Use the latest Helm chart version or incorporate this `job` into a custom deployment to prevent database schema misalignment.
+
+Screenshots show schema migrations starting and completing, backend services being created, and the API starting without running schema migrations, only loading document schema/tests metadata and starting the Flask server.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:48:16
+Result: The edited content is a clear and concise improvement over the original. It provides a more detailed description by specifying that the Kubernetes job is part of a Helm deployment. The use of backticks for `job` and `Helm` helps to highlight these technical terms, making the statement more readable ...
+Reedit Available: Yes
+Reedit Message: The edited content is a clear and concise improvement over the original. It provides a more detailed description by specifying that the Kubernetes job is part of a Helm deployment. The use of backtick...
+--->

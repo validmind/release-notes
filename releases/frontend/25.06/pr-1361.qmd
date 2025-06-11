@@ -1,0 +1,33 @@
+---
+title: "Refactor `BlockExplorer` menu for enhanced flexibility and reusability (#1361)"
+categories: [frontend, 25.06, release, bug]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1361
+---
+
+Documentation sections no longer include default text blocks. An empty state now prompts users to "Add New Block."
+
+Fixed a bug where some sections were not deleted.
+
+The `BlockExplorer` component's menu rendering logic has been refactored for better flexibility and reusability. Key changes include:
+
+- A `MenuWrapper` component consolidates menu display logic with `DocumentBlockModal` configuration.
+- `BlockExplorerProps` now includes an optional `customRender` property for customized UI behavior, such as an empty state with an "Add New Block" button.
+- `DocumentationPage` uses `customRender` to provide a context-sensitive empty state, prompting users to start building the section. The `MenuButton` triggers focus using the `setIsFocused` callback.
+- The `getInitialSectionContents` function now returns an empty array instead of a default content block.
+
+These updates enhance modularity, reduce duplication, and give developers more control over block and menu rendering.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:43:12
+Result: The edited content does not seem to be a direct improvement or modification of the original content. The original statement is about the importance of declaring explicit content blocks in templates, which is a general guideline or best practice. The edited content, however, refers to a specific acti...
+Reedit Available: Yes
+Reedit Message: The edited content does not seem to be a direct improvement or modification of the original content. The original statement is about the importance of declaring explicit content blocks in templates, w...
+--->

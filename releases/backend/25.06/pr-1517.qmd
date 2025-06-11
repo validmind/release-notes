@@ -1,0 +1,32 @@
+---
+title: "Increase `celery` concurrency to 24 (#1517)"
+categories: [backend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1517
+---
+
+The PR checklist ensures all steps are completed before merging:
+
+- The PR description outlines the changes, their purpose, and testing instructions.
+- Release and deployment notes are prepared.
+- Labels are applied, and the PR is linked to Shortcut.
+- Screenshots or videos are included for frontend changes.
+- Unit tests are added for backend changes.
+- Changes are tested locally.
+- Documentation is updated if needed.
+
+The concurrency level for the Celery worker is now set to 24, up from 6, by updating the `--concurrency` parameter in both the `Makefile` and `docker-entrypoint.sh`. This change enables the worker to handle more simultaneous tasks, potentially improving performance under load.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:37:12
+Result: The edited content is a clear and concise improvement over the original. It removes the informal term "bump" and replaces it with "Increase," which is more formal and precise. Additionally, enclosing `celery` in backticks helps to clearly indicate that it is a code or command reference. Overall, the...
+Reedit Available: Yes
+Reedit Message: The edited content is a clear and concise improvement over the original. It removes the informal term "bump" and replaces it with "Increase," which is more formal and precise. Additionally, enclosing ...
+--->

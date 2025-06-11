@@ -1,0 +1,41 @@
+---
+title: "Add support for `document types` feature stage 1 (#1396)"
+categories: [frontend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1396
+---
+
+Settings and document types are now enabled. View a demo [here](https://www.loom.com/share/48203f7c757c4de781d210101d785cb1).
+
+Stage 2 will focus on team collaboration for full integration, including permission settings for managing document types and creating generic template page content using new endpoints.
+
+This update enhances the Document Types feature, improving both the API and frontend UI components.
+
+- **API Enhancements**:
+  - New endpoints support list, get, create, update, and delete operations for document types using `Axios`.
+  - Methods for retrieving model document details ensure cohesion between document types and model documents.
+  - Improved error handling addresses potential issues in `Axios` responses.
+
+- **Frontend UI Components**:
+  - A new route (`/settings/document-types/*`) directs users to the Document Types management section, with a dedicated sidebar entry when the feature flag is enabled.
+  - New React components and hooks, such as `DocumentTypesList`, `DocumentTypeModal`, `DeleteDocumentTypeModal`, and `useDocumentTypes`, support listing, creating, editing, and deleting document types.
+  - UI components include validations to ensure fields like name and slug are correctly filled and formatted.
+
+- **Configuration & Infrastructure**:
+  - The feature is conditionally enabled using a feature flag (`documentTypes`).
+  - TypeScript configuration files have been adjusted to change the module resolution from `bundler` to `node`, affecting module imports and compatibility.
+  - Minor code enhancements in existing pages, such as the Model Inventory Overview, improve robustness with optional chaining for safety.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:43:47
+Result: The edited content provides a clearer and more specific description of the task or feature being discussed. By using the phrase "Add support for `document types` feature stage 1," it specifies that the action is to add support, and it highlights that this is related to a feature at stage 1. The use ...
+Reedit Available: Yes
+Reedit Message: The edited content provides a clearer and more specific description of the task or feature being discussed. By using the phrase "Add support for `document types` feature stage 1," it specifies that th...
+--->

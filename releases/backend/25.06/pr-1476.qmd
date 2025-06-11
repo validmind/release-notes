@@ -1,0 +1,34 @@
+---
+title: "Add support for `document_types` stage 1 (#1476)"
+categories: [backend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1476
+---
+
+This update introduces a model for managing Organization Document Types, enabling administrators to handle legacy document types and modify template initialization. The system backpopulates legacy document types with their corresponding Document Type ID for tables like `metadatas`, `test_results`, `document_section_status`, `block_configs`, and `assessment_evidences`. New triggers are added during migrations for future removal.
+
+A feature flag activates Document Type management in the API, ensuring continuous backpopulation. There are no breaking changes to legacy endpoints with hardcoded document type enums. The Document Type auto-initialize settings let administrators configure which documents require template assignment during model creation.
+
+Future plans include developing new, simpler API endpoints to replace legacy ones, simplifying stakeholder permissions and endpoint management. This involves removing old endpoints and unused components, specifically triggers, and introducing new endpoints for model documents. Significant frontend changes are anticipated to simplify and generalize template page content rendering.
+
+The update introduces a `Document Types` feature, adding a `document_types` table and related columns in tables like `model_documents`, `metadatas`, `test_results`, `block_configs`, `document_section_status`, and `assessment_evidences`. Functions and triggers are implemented to set or backfill `document_type_id` fields based on legacy document types.
+
+A `DocumentType` model is added, featuring business logic for creation, slug validation, and template association. It includes methods for creating default document types and loading predefined templates. The `InventoryModel` class now uses the `initialize_model_documents` method, replacing the legacy `set_templates` method, to generate and sync model documents using document type information.
+
+New API endpoints in the `ui_document_types` route support CRUD operations on document types. The update also modifies casbin rules, adjusts model document serialization, and enhances unit tests to ensure integration with existing models and workflows.
+
+This refactor centralizes document type definitions and automates their propagation throughout the application.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:39:05
+Result: The edited content is a clear and concise improvement over the original. By using the phrase "Add support for `document_types` stage 1," it specifies an action to be taken, which is more informative and directive. The use of backticks around `document_types` suggests that it is a code element or spe...
+Reedit Available: Yes
+Reedit Message: The edited content is a clear and concise improvement over the original. By using the phrase "Add support for `document_types` stage 1," it specifies an action to be taken, which is more informative a...
+--->

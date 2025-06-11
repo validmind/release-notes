@@ -1,37 +1,34 @@
 ---
-title: "Refactored the handling of custom field permissions. (#1423)"
+title: "Refactor custom field permissions handling in `API.ts` and `CustomFieldModal` components (#1423)"
 categories: [frontend, 25.06, release, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "May 30, 2025"
-# Content overwritten from an earlier version - 2025-06-05 09:48
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
 # PR URL: https://github.com/validmind/frontend/pull/1423
 ---
 
-This update introduces the `TCustomFieldPermissions` interface to manage read/write permissions for custom fields, enhancing the efficiency of the field permissions dropdown. The `GetFieldPermissions` API call has been implemented to retrieve permissions using a field key, and the `useCustomFieldPermissions` hook now utilizes this API, simplifying its logic. Imports in `API.ts` and `CustomFieldModal/index.tsx` have been adjusted to align with the new model structure.
+The `TCustomFieldPermissions` interface manages read/write permissions for custom fields, simplifying permission management. The `GetFieldPermissions` API call retrieves permissions using the field key, enhancing user experience. The `useCustomFieldPermissions` hook uses this API to fetch permissions, improving logic and performance. Imports in `API.ts` and `CustomFieldModal/index.tsx` have been updated to align with the new model structure, keeping the codebase organized. The field permissions dropdown now loads instantly.
 
-- Added the `TCustomFieldPermissions` interface for managing custom field permissions.
-  
-- Implemented the `GetFieldPermissions` API call to fetch permissions using a field key.
-  
-- Updated the `useCustomFieldPermissions` hook to use the new API, simplifying its logic.
-  
-- Adjusted imports in `API.ts` and `CustomFieldModal/index.tsx` to match the new model structure.
+This update improves the management of custom field permissions:
 
-This ensures the field permissions dropdown loads instantly. 🫡
-
-<!-- List any breaking changes -->
-
-<!-- Add screenshots or videos showing before/after -->
-
-This update improves custom field permission handling by enhancing three key areas:
-
-- A new asynchronous function, `GetFieldPermissions`, has been added to `API.ts`. It retrieves permissions for a custom field, returning an object with separate lists for write and read roles. Existing API functions have been refactored for better formatting.
+- Added an asynchronous function, `GetFieldPermissions`, in `API.ts` to retrieve permissions for a custom field, returning an object with `write` and `read` roles. Some existing API functions have been refactored for better formatting.
 
 - The `CustomFieldModal` component now correctly imports `CodeTestResponse` from the appropriate module, aligning with the new custom fields model.
 
-- The `useCustomFieldPermissions` hook now utilizes the `GetFieldPermissions` function, replacing manual role iteration with direct use of 'write' permissions from the API.
+- The `useCustomFieldPermissions` hook now uses the `GetFieldPermissions` API function, replacing manual iteration over organization roles. This simplifies logic by directly using `write` permissions from the API.
 
-- A new type, `TCustomFieldPermissions`, has been introduced in the `custom_fields` model to consolidate field permission structures and ensure type consistency.
+- Introduced a new type, `TCustomFieldPermissions`, in the `custom_fields` model to ensure type consistency.
 
-These changes enhance the clarity and efficiency of permission handling for custom fields by centralizing logic in the API and reducing repetitive code in UI components.
+These changes centralize permission-related logic in the API and reduce repetitive code in UI components, enhancing clarity and efficiency.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:43:07
+Result: The edited content provides more specific information by mentioning the exact locations where the refactoring should occur, namely in the `API.ts` and `CustomFieldModal` components. This added detail can help developers understand the scope of the task more clearly. The edit improves the original co...
+Reedit Available: Yes
+Reedit Message: The edited content provides more specific information by mentioning the exact locations where the refactoring should occur, namely in the `API.ts` and `CustomFieldModal` components. This added detail ...
+--->

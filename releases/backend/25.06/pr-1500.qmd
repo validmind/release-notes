@@ -1,0 +1,29 @@
+---
+title: "Create template for `code explainer` and rename `additional_instructions` to `user_instructions` in `tracking.py` module (#1500)"
+categories: [backend, 25.06, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1500
+---
+
+A template for model source code documentation has been added. It supports version v0 of the code explainer LLM feature and can demonstrate this feature to customers.
+
+This update includes two main changes:
+
+- In the `tracking.py` module, the request parameter `additional_instructions` has been renamed to `user_instructions`. This change affects JSON payload validation in the `generate_code_explainer` endpoint, aligning the field name with the expected convention.
+
+- A new YAML template, `model_source_code.yaml`, has been introduced to standardize AI/ML model documentation. It includes sections for code overview, environment setup, data handling, model implementation, training and evaluation, inference, configuration management, testing, logging, version control, security, execution examples, and known issues.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:37:01
+Result: The edited content provides a more detailed and specific instruction compared to the original. It not only mentions creating a template for the "code explainer" but also includes an additional task of renaming a variable in a specific module. This makes the edited content more informative and action...
+Failure Patterns: {'formatting': 1}
+Reedit Available: Yes
+Reedit Message: The edited content provides a more detailed and specific instruction compared to the original. It not only mentions creating a template for the "code explainer" but also includes an additional task of...
+--->

@@ -1,0 +1,40 @@
+---
+title: "Fix broken access control in `block_library` with improved authorization checks (#1504)"
+categories: [backend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1504
+---
+
+The Block Library now features authorization and permission controls. Authorization checks ensure users have the necessary permissions for block library routes. Database methods filter items based on user and organization permissions, allowing users to see only their own blocks or shared blocks within their organization. Private blocks are accessible only to their owners, while shared blocks require specific permissions for creation or modification.
+
+Users with the `manage_shared_block_library` permission can create or edit shared blocks, maintaining security and access control. Database queries enforce these permission boundaries at the data access level.
+
+Integration tests verify that access control is enforced correctly, enhancing Block Library security with proper permission controls.
+
+The update enhances block library functionality in the backend with key improvements:
+
+- The `BlockLibraryItem.get_by_cuid` method now includes a `user_id` parameter and an authorization filter, ensuring only blocks owned by the current user or shared blocks are returned.
+
+- Error handling in the UI block library routes has been streamlined. The `GET`, `POST`, `PUT`, and `DELETE` endpoints now directly call underlying methods and raise errors like `ResourceNotFoundError` and `AuthError` as needed, improving error propagation and consistency.
+
+- Enhanced authorization checks have been added to the `POST`, `PUT`, and `DELETE` routes. Before creating or updating a shared block, the user's organizational permissions are verified to ensure they have the `manage_shared_block_library` permission. If this permission is missing, an `AuthError` is raised. The `DELETE` route now includes a permission check for deleting shared blocks, ensuring only authorized users can perform this action.
+
+- Comprehensive integration tests have been added under `tests/integration/test_block_library.py`. These tests cover scenarios such as fetching all blocks, creating private and shared blocks (with and without necessary permissions), updating blocks, deleting blocks, and handling non-existent blocks. The tests also ensure that private and shared blocks are correctly separated and that authorization rules are enforced.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:37:30
+Result: The edited content effectively conveys the main point of the original content but with a few changes. Here's an evaluation of the edits:
+
+1. **Clarity and Conciseness**: The edited content is more concise and clear. It removes the ticket number "[SC-10298]" which may not be necessary for all audienc...
+Reedit Available: Yes
+Reedit Message: The edited content effectively conveys the main point of the original content but with a few changes. Here's an evaluation of the edits:
+
+1. **Clarity and Conciseness**: The edited content is more con...
+--->

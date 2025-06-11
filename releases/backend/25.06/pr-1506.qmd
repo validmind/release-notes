@@ -1,0 +1,47 @@
+---
+title: "Enhance workflow validation and processing for cross-tenant interactions (#1506)"
+categories: [backend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1506
+---
+
+The update adds a validation system for workflow nodes in the `NodesManager` class. The `validate_nodes_data` method checks nodes against organization data using partial functions with specific method signatures. A validation error collection system provides detailed feedback, integrated into the workflow update process.
+
+Validators include:
+
+- `_validate_status_set_node`: Verifies status CUIDs in the organization.
+- `_validate_state_set_node`: Ensures state CUIDs in the workflow.
+- `_validate_user_action_node`: Validates custom fields and role references.
+- `_validate_approval_node`: Checks voter sources and role references.
+- `_validate_branch_router_node`: Verifies custom fields in branch conditions.
+- `_validate_wait_node`: Validates custom field references.
+- `_validate_run_workflow_node`: Ensures referenced workflows exist.
+- `_validate_status_form_node`: Checks status CUIDs and custom fields.
+- `_validate_branch_route_node`: Validates router references and condition fields.
+
+The workflow manager validates the workflow source before starting the pytransitions machinery, raising validation errors during runtime to ensure automatic validation and error display for any started workflow.
+
+Frontend changes are included in a related update: https://github.com/validmind/frontend/pull/1408.
+
+This update improves workflow processing and validation with these key changes:
+
+- A migration adds a `passed` flag to the inventory model metric for schema compatibility.
+- The `validate` method in the workflow model checks the latest workflow version by examining its JSON source. If invalid, it raises a `WorkflowValidationError` with detailed error messages.
+- Node validator methods in the workflows manager validate various node types (e.g., `status_set`, `state_set`, `user_action`, `approval`, `branch_router`, `wait`, `run_workflow`) against organizational data like custom fields and roles.
+- New utility functions in the workflows utils module extract role IDs and custom fields from JSON logic queries to support validators.
+- Various API routes (e.g., `ui_inventory_models`, `ui_statuses`, `ui_workflows`) now invoke the new workflow validation logic during operations to ensure workflows are validated before further processing or deletion.
+- Test cases are updated to test the new workflow validation functionality by introducing errors into the workflow JSON and verifying the correct errors are raised.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:38:55
+Result: The edited content significantly improves the clarity and readability of the original text. The original content appears to be a fragment or a technical reference that lacks context and coherence. The edited version provides a clear and concise statement that suggests a focus on improving workflow v...
+Reedit Available: Yes
+Reedit Message: The edited content significantly improves the clarity and readability of the original text. The original content appears to be a fragment or a technical reference that lacks context and coherence. The...
+--->

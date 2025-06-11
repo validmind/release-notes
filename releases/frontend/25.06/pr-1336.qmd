@@ -1,0 +1,24 @@
+---
+title: "Improve Auth0 error handling for better user guidance in `BootstrapForm` component (#1336)"
+categories: [frontend, 25.06, release, bug]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1336
+---
+
+Backend errors now display helpful messages instead of error codes. If no specific message is available, a default message will appear. A bug fix improves error handling during the organization onboarding process.
+
+The update enhances error handling in the `BootstrapForm` component by prioritizing detailed API error messages (`error.response?.data?.message`) over generic ones (`error.message`). The selected error message is stored in a local variable (`errorMessage`) and used consistently for inline error displays and toast notifications, improving troubleshooting and user guidance.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:42:39
+Result: The edited content provides a clearer and more specific description of the task. By changing "unhappy path flow" to "error handling," it uses more precise terminology that is likely to be understood by a wider audience. Additionally, specifying "for better user guidance" clarifies the purpose of the...
+Reedit Available: Yes
+Reedit Message: The edited content provides a clearer and more specific description of the task. By changing "unhappy path flow" to "error handling," it uses more precise terminology that is likely to be understood b...
+--->

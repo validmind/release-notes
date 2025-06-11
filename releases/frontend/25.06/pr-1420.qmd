@@ -1,0 +1,23 @@
+---
+title: "Use the hostname of `API_URL` as the cookie domain (#1420)"
+categories: [frontend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1420
+---
+
+The `MainApp` component now uses a regular expression to replace the first subdomain in the hostname with a dot (`.`), enhancing the handling of hostnames with multiple subdomains.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:42:37
+Result: The edited content is a clear improvement over the original. It changes the verb tense from "Using" to "Use," which makes the sentence more direct and imperative, suitable for instructions or guidelines. Additionally, enclosing `API_URL` in backticks improves readability by indicating that it is a c...
+Failure Patterns: {'formatting': 2}
+Reedit Available: Yes
+Reedit Message: The edited content is a clear improvement over the original. It changes the verb tense from "Using" to "Use," which makes the sentence more direct and imperative, suitable for instructions or guidelin...
+--->

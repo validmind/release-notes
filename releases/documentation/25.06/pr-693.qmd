@@ -1,0 +1,32 @@
+---
+title: "Add missing `Export ongoing monitoring document` section to documentation (#693)"
+categories: [documentation, 25.06, release, documentation]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/documentation/pull/693
+---
+
+Users can now export ongoing monitoring documentation for models:
+
+- Click `Inventory` in the left sidebar.
+- Select or search for a model.
+- Click `Ongoing Monitoring` in the model's sidebar.
+- Click `Export Document` in the right sidebar.
+- Click `Download File` to save the document locally.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:51:55
+Result: The edited content is a clear and concise improvement over the original. Here are the key points of the edit:
+
+1. **Removal of Jargon**: The original content includes "fix: [sc-9632]", which seems to be an internal reference or ticket number. The edited version removes this, making the content more ...
+Reedit Available: Yes
+Reedit Message: The edited content is a clear and concise improvement over the original. Here are the key points of the edit:
+
+1. **Removal of Jargon**: The original content includes "fix: [sc-9632]", which seems to ...
+--->

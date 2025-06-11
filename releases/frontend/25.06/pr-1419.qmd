@@ -1,17 +1,29 @@
 ---
-title: "Reorganized the settings page for improved navigation and usability. (#1419)"
+title: "Reorganize `settings` page for improved navigation and readability (#1419)"
 categories: [frontend, 25.06, release, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "May 30, 2025"
-# Content overwritten from an earlier version - 2025-06-05 09:48
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
 # PR URL: https://github.com/validmind/frontend/pull/1419
 ---
 
-The settings page has been reorganized to better categorize settings, enhancing readability and making it easier for users to understand the purpose of each setting.
+The settings page has been reorganized for improved readability, helping users understand each setting's purpose.
 
-This update refactors the settings user interface by reorganizing and grouping navigation links into logical sections. The sidebar now clearly distinguishes between areas like "Your Account", "Workspace", "User Permissions", "Models", and "Documents". Key changes include moving the "Stakeholders" link to a model-specific section, introducing conditional rendering for admin features, adjusting link order, and enhancing component structure for better readability and accessibility.
+The update refactors the settings user interface by organizing navigation links into sections. The sidebar now separates `Your Account`, `Workspace`, `User Permissions`, `Models`, and `Documents`. Key changes include:
 
-The "Stakeholders" link is now under a model-specific section and renamed "Model Stakeholder Types" where applicable. Admin features like "Workflows" and "Workflow States" are conditionally displayed based on user permissions, such as `isAdmin` and `workflowsV3`. The order and grouping of links are adjusted to provide a more intuitive navigation experience based on user roles. The component structure is improved by replacing some `Box` components with `Stack` and using the `Heading` component for titles, enhancing readability and accessibility.
+- Moving the `Stakeholders` link to a model-specific section and renaming it `Model Stakeholder Types` where applicable.
+- Introducing conditional rendering for admin features like `Workflows` and `Workflow States`, shown only when user permissions (e.g., `isAdmin` and `workflowsV3`) are met.
+- Adjusting the order of links for more intuitive navigation based on user roles.
+- Enhancing component structure by replacing some `Box` components with `Stack` and using the `Heading` component for titles, improving readability and accessibility.
 
-These changes aim to improve the maintainability, user experience, and adaptability of the settings interface based on user roles and permissions.
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:44:57
+Result: The edited content effectively conveys the purpose of the task with improved clarity and specificity. By using the phrase "for improved navigation and readability," it provides a clear rationale for the reorganization, which adds value to the statement. Additionally, the use of lowercase for "settin...
+Reedit Available: Yes
+Reedit Message: The edited content effectively conveys the purpose of the task with improved clarity and specificity. By using the phrase "for improved navigation and readability," it provides a clear rationale for t...
+--->

@@ -1,0 +1,32 @@
+---
+title: "Fix unauthorized user addition in `POST /users` endpoint of `inventory` model (#1480)"
+categories: [backend, 25.06, release, bug]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1480
+---
+
+A vulnerability in the `POST /users` endpoint of the inventory model allowed unauthorized access.
+
+This update improves owner handling in the Findings API, affecting migration scripts, model methods, and UI route handlers.
+
+Key changes include:
+
+- The `Finding` model's methods, `create_from_json` and `update_from_json`, now accept an optional `owner` parameter. If not provided, the system defaults to the current user, centralizing owner assignment logic.
+
+- UI routes in the `post_finding` and `update_finding` endpoints now require an `owner_cuid` in the validation rules. These endpoints query the user based on `owner_cuid` and the current organization, raising an error if no matching user is found.
+
+- Minor formatting and code adjustments, such as adding trailing commas in filter clauses, improve code clarity and consistency.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:36:55
+Result: The edited content provides a more specific and actionable description of the issue. It identifies the exact endpoint (`POST /users`) and the model (`inventory`) where the problem of unauthorized user addition occurs. This clarity is beneficial for developers or team members who need to address the ...
+Reedit Available: Yes
+Reedit Message: The edited content provides a more specific and actionable description of the issue. It identifies the exact endpoint (`POST /users`) and the model (`inventory`) where the problem of unauthorized user...
+--->

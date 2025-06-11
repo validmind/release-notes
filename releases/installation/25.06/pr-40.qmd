@@ -1,0 +1,22 @@
+---
+title: "Add `25.05.03-rc1` to `cmvm` releases (#40)"
+categories: [installation, 25.06, release, documentation]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/installation/pull/40
+---
+
+Changes include explanations, testing instructions, and necessary release and deployment notes. Labels are applied, and the PR is linked to Shortcut. Frontend changes have screenshots or videos, and backend changes include unit tests. Local testing is complete, and documentation is updated if needed.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:48:20
+Result: The edited content improves the original by making it more readable and professional. It capitalizes the first word, uses backticks to highlight specific terms, and removes the informal "chore" label, which is more suitable for internal notes or commit messages. Overall, the edit enhances clarity an...
+Reedit Available: Yes
+Reedit Message: The edited content improves the original by making it more readable and professional. It capitalizes the first word, uses backticks to highlight specific terms, and removes the informal "chore" label,...
+--->

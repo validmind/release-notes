@@ -1,0 +1,32 @@
+---
+title: "Fix `get_object_storage` initialization for improved modularity and flexibility (#1520)"
+categories: [backend, 25.06, release, bug]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1520
+---
+
+The system's behavior and frontend visuals have been updated to improve the user experience without altering existing functionalities.
+
+The new `get_object_storage` factory method replaces direct imports of the object storage module, improving modularity and allowing flexibility for future changes in storage service implementation.
+
+Changes include:
+
+- In `scripts/update_data_template.py`, the `download_bytes` function uses `get_object_storage` to initialize an object storage instance based on the environment variable.
+
+- In `src/backend/utils/report_render_helpers/__init__.py`, the `download` function uses `get_object_storage` to obtain an object storage instance.
+
+- In `src/backend/utils/reports.py`, `get_object_storage` is used to check file existence and download template files.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:37:24
+Result: The edited content provides a clearer and more informative description of the change. By specifying that the fix is aimed at improving modularity and flexibility, it gives the reader a better understanding of the purpose and benefits of the update. The use of backticks around `get_object_storage` al...
+Reedit Available: Yes
+Reedit Message: The edited content provides a clearer and more informative description of the change. By specifying that the fix is aimed at improving modularity and flexibility, it gives the reader a better understa...
+--->

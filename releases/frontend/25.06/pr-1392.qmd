@@ -1,0 +1,28 @@
+---
+title: "Set a cookie with the `access_token` value for enhanced authentication (#1392)"
+categories: [frontend, 25.06, release]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1392
+---
+
+This update introduces cookie-based authentication as an alternative to authorization headers for accessing assets. Previously, assets embedded in HTML, like `img` tags, were inaccessible when authentication was required because they couldn't set custom headers. Now, the system first tries to authenticate using the `Authorization` header and, if unsuccessful, uses the `authToken` cookie. This change allows authenticated users to access assets in HTML contexts.
+
+This enhancement resolves issues where authenticated users couldn't view assets in HTML documentation, reports, and UI components due to the inability to set an auth header. It also addresses a security issue where unauthorized users could access assets from organizations they don't belong to. Backend changes include organization-level access control validation to ensure users can only access assets from their own organization.
+
+The `MainApp` component now sets an authentication token as a cookie when an access token is available, enhancing user authentication for asset requests.
+
+Refactoring includes wrapping arrow function parameters in parentheses for better readability and standardizing code formatting in the mapping of roles, permissions, and JSX routing components without altering functionality.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:43:08
+Result: The edited content improves upon the original by providing a clearer and more specific instruction. It uses the imperative form "Set" to directly instruct the reader, which is more engaging and actionable. Additionally, it specifies the purpose of setting the cookie—"for enhanced authentication"—whi...
+Reedit Available: Yes
+Reedit Message: The edited content improves upon the original by providing a clearer and more specific instruction. It uses the imperative form "Set" to directly instruct the reader, which is more engaging and action...
+--->

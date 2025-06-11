@@ -1,0 +1,37 @@
+---
+title: "Add approval process notes to `activity log` (#1351)"
+categories: [frontend, 25.06, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1351
+---
+
+Added `workflow approval step voter notes` to the activity log for better tracking and transparency in approval processes.
+
+This update introduces several UI enhancements and refactors:
+
+- In the `EventRowLayout` component, collapsible content now displays additional details, such as vote notes, when available. An `IconButton` toggles a `Collapse` element, with the icon switching between a downward and upward chevron.
+
+- New components for workflow approvals:
+  - `ApprovalActionButtons`: A button group for approving or rejecting votes with color schemes and icons.
+  - `ApprovalHeader`: Displays the approval title and message in a structured layout.
+  - `ApprovalVoterCard`: Shows voter information with an optional popover for vote notes.
+  - `VoteDetailsModal`: A modal for viewing vote notes in a read-only textarea.
+  - `VoterStatusColumn` and constants: Display voter statuses in columns based on their vote state with a uniform look.
+
+- Redundant code and inline comments have been replaced with reusable components, improving maintainability and readability.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:42:59
+Result: Both the original and edited content convey the same idea, but the edited version is more direct and uses an imperative form, which can be more effective in certain contexts, such as instructions or task lists. Here are some points to consider regarding the quality of the edited content:
+
+1. **Clari...
+Reedit Available: Yes
+Reedit Message: Both the original and edited content convey the same idea, but the edited version is more direct and uses an imperative form, which can be more effective in certain contexts, such as instructions or t...
+--->

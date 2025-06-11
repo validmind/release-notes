@@ -1,0 +1,24 @@
+---
+title: "Enable comment export in validation reports (#1359)"
+categories: [frontend, 25.06, release, enhancement]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:54
+# Content overwritten from an earlier version - 2025-06-10 17:54
+# PR URL: https://github.com/validmind/frontend/pull/1359
+---
+
+A new feature allows exporting comments from validation reports. By default, this feature is off. A checkbox in the user interface lets users include comments in the validation report, adding them to the appendix upon export. This update includes backend support for this functionality.
+
+The update improves report downloads by adding an `includeComments` option. The `DownloadReport` function now accepts a boolean parameter to include comments. A front-end checkbox lets users toggle this option, and the API call is updated to pass the `include_comments` parameter.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:42:19
+Result: Both versions of the content convey the same idea, but the edited version is more concise and clear. It uses the verb "Enable" which is more direct and active compared to "Add ability to." Additionally, "comment export" is a more streamlined phrase than "export comments," and "validation reports" is...
+Reedit Available: Yes
+Reedit Message: Both versions of the content convey the same idea, but the edited version is more concise and clear. It uses the verb "Enable" which is more direct and active compared to "Add ability to." Additionall...
+--->

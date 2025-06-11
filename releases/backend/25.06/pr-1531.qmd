@@ -1,25 +1,37 @@
 ---
-title: "Add new custom fields permissions API. (#1531)"
+title: "Add new custom fields permissions `API` (#1531)"
 categories: [backend, 25.06, release, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "May 30, 2025"
-# Content overwritten from an earlier version - 2025-06-05 09:48
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
 # PR URL: https://github.com/validmind/backend/pull/1531
 ---
 
-New routes have been added to retrieve permissions for custom fields.
+New routes have been added to access permissions for custom fields.
 
-This update introduces several enhancements and bug fixes, focusing on workflow improvements, user management, and API refactoring. Key changes include using the service alias `db` for the CASBIN database URI in GitHub Actions, improved admin user management with Flask app context, and enhanced RBAC and SQL initialization with better error handling. The custom fields API has been refactored for better testing and permissions management. Additionally, logging and error handling have been improved, and integration tests have been updated for better security and validation.
+This update includes several enhancements and bug fixes:
 
-- **Workflow Update**: The CASBIN database URI in GitHub Actions now uses the service alias `db` instead of `host.docker.internal`.
+- The CASBIN database URI in GitHub Actions now uses the service alias `db`.
 
-- **Admin User Management Improvements**: The admin user management script now explicitly uses the Flask app context (`with app.app_context()`) for proper database and application resource access. User upsertion logic based on authentication configuration has been clarified.
+- The admin user management script now uses the Flask app context for resource access, with refactored user upsertion logic based on authentication configuration.
 
-- **RBAC and SQL Initialization Enhancements**: RBAC utilities now use context managers (`with open(...)`) for better resource safety and error handling. The initialization function checks for required SQL files, logs processes, and handles exceptions by rolling back on errors.
+- RBAC utilities now use context managers for file handling, improving resource safety and error handling. The initialization function verifies required SQL files, logs the process, and rolls back on errors.
 
-- **Custom Fields API Refactoring**: Old custom fields endpoints have been replaced by a new namespace in `ui_custom_fields.py`, consolidating testing and permissions retrieval. A new method, `get_roles_for_custom_field`, retrieves roles with read/write permissions for a given custom field key, excluding admin roles.
+- Old custom fields endpoints have been replaced with a new namespace that consolidates code testing and permissions retrieval. A new method retrieves roles (excluding admin roles) with appropriate read/write permissions for a given custom field key.
 
-- **Additional Logging and Error Handling**: Enhanced logging across modules, such as in RBAC initialization and schema update functions, aids troubleshooting and monitoring.
+- Logging has been enhanced across modules for better troubleshooting and monitoring.
 
-- **Test Improvements**: Integration tests for text editor file uploads and custom field endpoints have been updated to ensure XSS sanitization, file size validations, and proper serialization of role data, covering unauthorized access and non-existent custom fields.
+- Integration tests for text editor file uploads and custom field endpoints have been updated to ensure XSS sanitization, file size validations, and proper serialization of role data, covering unauthorized access and non-existent custom fields.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:37:03
+Result: The edited content is clear and concise, with the addition of backticks around "API" to indicate it as a code or technical term. This formatting choice can help distinguish the term from the rest of the text, which is particularly useful in technical documentation or content. The edit maintains the ...
+Failure Patterns: {'formatting': 6, 'meaning': 6}
+Reedit Available: Yes
+Reedit Message: The edited content is clear and concise, with the addition of backticks around "API" to indicate it as a code or technical term. This formatting choice can help distinguish the term from the rest of t...
+--->

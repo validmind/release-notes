@@ -1,0 +1,35 @@
+---
+title: "Verify resource availability before access (#1516)"
+categories: [backend, 25.06, release, bug]
+sidebar: release-notes
+toc-expand: true
+date: "May 30, 2025"
+# Content edited by AI - 2025-06-10 17:53
+# Content overwritten from an earlier version - 2025-06-10 17:53
+# PR URL: https://github.com/validmind/backend/pull/1516
+---
+
+This update improves user experience and ensures technical accuracy.
+
+Modifications to `API` endpoints may affect existing integrations. Users should review the updated documentation for compatibility.
+
+Frontend interface improvements offer a more intuitive and streamlined experience, enhancing usability and accessibility. Users are encouraged to review the provided screenshots and videos to understand the impact and adjust workflows accordingly.
+
+The update improves the authentication module by enhancing resource handling and logging.
+
+In the `get_base_resource_type` function, a new check logs a warning and returns the given `resource_type` if the resource lookup is `None`, clarifying missing resources.
+
+The `get_resource_id` function now supports custom dynamic resources. For the `resource_type` "CustomField," it prefixes the resource type with "cf_" based on the "key" from the view arguments, ensuring correct identification and processing of custom fields.
+
+A new local variable, `local_resource_id`, improves readability by separating the logic for retrieving resource identifiers. Organization-related logic assigns the organization identifier (or a placeholder "*") to this variable if needed.
+
+<!--- VALIDATION SUMMARY
+Content Type: title
+Validation Status: CHECK
+Attempts: 7
+Last Validation: 2025-06-10 17:38:57
+Result: The edited content is a concise and clear improvement over the original. It maintains the original intent while using fewer words, making it more direct and easier to understand. The phrase "resource availability" is a more streamlined way to convey the idea of checking if a resource exists. Additio...
+Failure Patterns: {'meaning': 6}
+Reedit Available: Yes
+Reedit Message: The edited content is a concise and clear improvement over the original. It maintains the original intent while using fewer words, making it more direct and easier to understand. The phrase "resource ...
+--->
