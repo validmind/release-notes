@@ -1,32 +1,29 @@
 ---
-title: "Allow users to customize `finding` statuses in the UI (#1407)"
+title: "UI allows users to customize `finding` statuses (#1407)"
 categories: [frontend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "June 06, 2025"
-# Content edited by AI - 2025-06-09 16:40
-# Content overwritten from an earlier version - 2025-06-09 16:40
+date: "June 05, 2025"
+# Content edited by AI - 2025-06-10 17:18
+# Content overwritten from an earlier version - 2025-06-10 17:18
 # PR URL: https://github.com/validmind/frontend/pull/1407
 ---
 
-Users can now customize finding statuses by creating new ones and deleting existing ones. When a status is deleted, associated findings will revert to `Open`.
+Users can now create custom finding statuses and soft-delete existing ones. When a status is deleted, all associated findings revert to `Open`.
 
-This update introduces a feature for managing finding statuses, including API endpoints for fetching, creating, updating, and deleting them. The data model now includes a type for finding status with a unique identifier, color scheme, name, and default flag.
+This update adds a feature for managing finding statuses, including API endpoints for fetching, creating, updating, and deleting these statuses. The data model now includes a type for finding status with a unique identifier, color scheme, name, and default flag.
 
-New UI components support this functionality, such as a modal (`AddFindingStatusModal`) with a shared color grid selector for choosing color schemes. The modal manages default statuses by disabling edits on their names. The main application and settings pages now integrate the new finding statuses, with a new sidebar link for users with appropriate permissions. Existing components that display finding statuses now use these new statuses and display them using the updated design, utilizing a `VMTag` component with colors derived from the status data.
+New UI components support this functionality, such as a modal (`AddFindingStatusModal`) with a shared color grid selector for choosing color schemes. The modal manages default statuses by disabling edits on their names. The main application and settings pages now integrate the new finding statuses, with a sidebar link for users with appropriate permissions. Existing components that display finding statuses now use these new statuses and display them with the updated design, employing a `VMTag` component with colors derived from the status data.
 
-Several settings pages were refactored to use a new `SettingsSection` layout, ensuring a consistent look and feel across the application.
+Several settings pages have been refactored to use a new `SettingsSection` layout, ensuring a consistent look and feel across the application.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-09 16:39:23
-Result: Both the original and edited content convey the same idea, but the edited version is more concise and direct. Here are some points to consider:
-
-1. **Clarity and Brevity**: The edited content is shorter and gets straight to the point, which is often preferable in technical or instructional contexts....
+Last Validation: 2025-06-10 17:15:46
+Result: The edited content is a concise and clear revision of the original. It effectively communicates the same idea with fewer words. However, it slightly changes the meaning by stating that the UI already allows customization, rather than suggesting it should. If the intention is to describe a current fe...
+Failure Patterns: {'meaning': 6}
 Reedit Available: Yes
-Reedit Message: Both the original and edited content convey the same idea, but the edited version is more concise and direct. Here are some points to consider:
-
-1. **Clarity and Brevity**: The edited content is short...
+Reedit Message: The edited content is a concise and clear revision of the original. It effectively communicates the same idea with fewer words. However, it slightly changes the meaning by stating that the UI already ...
 --->

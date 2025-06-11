@@ -2387,7 +2387,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             f.write('This release includes no public-facing updates to features, bug fixes, or documentation. If you\'re unsure whether any changes affect your deployment, contact <support@validmind.com>.\n')
             f.write(':::\n\n')
         f.write("\n".join(content))
-    print(f"\nCreated release file: {file_path}")
+    print(f"\nCreated release notes file: {file_path}")
     
     # --- Begin per-PR file output logic ---
     generated_files = []
@@ -3307,16 +3307,13 @@ def process_tag(repo_tag):
                 else:
                     date = "N/A"
                     
-                # Get release data only if needed (for additional metadata)
+                # Check if release exists (for metadata) but don't use its date
                 release_data = None
                 cmd = ['gh', 'api', f'repos/validmind/{repo}/releases/tags/{tag}']
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 if result.returncode == 0:
                     release_data = json.loads(result.stdout)
-                    # Use release date if available (more accurate for actual release)
-                    release_date = release_data.get('published_at')
-                    if release_date:
-                        date = datetime.datetime.fromisoformat(release_date.replace('Z', '+00:00')).strftime("%B %d, %Y")
+                    # Always use tag creation date, not release published date
                 
                 return create_release_object(
                     version=tag,
