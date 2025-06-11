@@ -35,6 +35,33 @@ The script uses LLMs to edit and validate release notes content:
 
 - **Merge PR detection** - Uses LLM to identify and skip automatic merge PRs
 
+```mermaid
+graph TD
+    A[Content Input] --> B{Content Type?}
+    B -->|Title| C[EDIT_TITLE_PROMPT]
+    B -->|Summary/Notes| D[EDIT_SUMMARY_PROMPT or EDIT_NOTES_PROMPT]
+    
+    C --> E[Single Pass Editing]
+    D --> F[Multi-Pass Editing]
+    
+    E --> G[EDIT_CONTENT_SYSTEM + EDIT_CONTENT_PROMPT]
+    F --> H[Pass 1: EDIT_PASS_1_INSTRUCTIONS]
+    H --> I[Pass 2: EDIT_PASS_2_INSTRUCTIONS] 
+    I --> J[Pass 3: EDIT_PASS_3_INSTRUCTIONS]
+    
+    G --> K[OpenAI API Call]
+    J --> L[OpenAI API Call for each pass]
+    
+    K --> M[VALIDATION_SYSTEM + VALIDATION_PROMPT]
+    L --> M
+    
+    M --> N{Valid?}
+    N -->|Yes| O[Final Output]
+    N -->|No| P[Retry with Feedback]
+    P --> K
+    P --> L
+```
+
 ## Requirements
 
 - Python 3.8+

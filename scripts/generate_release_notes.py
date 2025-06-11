@@ -92,6 +92,10 @@ EDIT_TITLE_PROMPT = (
     "{body}"
 )
 
+EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and user-facing release notes."
+
+EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and user-facing release notes."
+
 # --- Content editing instructions ---
 EDIT_CONTENT_SYSTEM = "You are a release notes editor. Your job is to edit content for clarity and user-facing release notes while maintaining the original PR's scope. Follow the instructions exactly."
 
@@ -111,6 +115,7 @@ EDIT_CONTENT_PROMPT = (
 )
 
 # --- Content editing instructions for multi-pass editing ---
+
 EDIT_PASS_1_INSTRUCTIONS = (
     "Pass 1 — Group and Flatten:\n"
     "- Remove ALL Markdown headings (#, ##, ###, ####, etc.) including '# PR Summary'\n"
@@ -2161,7 +2166,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             validation_summaries = []
             
             if commit.get('pr_summary'):
-                pr_obj.edit_content('summary', commit['pr_summary'], "Edit this PR summary for clarity and user-facing release notes.", edit=True)
+                pr_obj.edit_content('summary', commit['pr_summary'], EDIT_SUMMARY_PROMPT, edit=True)
                 commit['pr_summary'] = pr_obj.pr_interpreted_summary
                 if hasattr(pr_obj, 'validation_summary'):
                     validation_summaries.append(pr_obj.validation_summary)
@@ -2170,7 +2175,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                 if pr_obj.validated:
                     validated = True
             if commit.get('external_notes'):
-                pr_obj.edit_content('notes', commit['external_notes'], "Edit these external release notes for clarity and user-facing release notes.", edit=True)
+                pr_obj.edit_content('notes', commit['external_notes'], EDIT_NOTES_PROMPT, edit=True)
                 commit['external_notes'] = pr_obj.edited_text
                 if hasattr(pr_obj, 'validation_summary'):
                     validation_summaries.append(pr_obj.validation_summary)
