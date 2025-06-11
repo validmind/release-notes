@@ -41,18 +41,36 @@ graph TD
     B -->|Title| C[EDIT_TITLE_PROMPT]
     B -->|Summary/Notes| D[EDIT_SUMMARY_PROMPT or EDIT_NOTES_PROMPT]
     
-    C --> E[Single Pass: LLM + Validation + Retry]
-    D --> F[Pass 1: LLM + Validation + Retry]
-    F --> G[Pass 2: LLM + Validation + Retry] 
-    G --> H[Pass 3: LLM + Validation + Retry]
+    C --> E["Single Pass:<br/>Content Prompt +<br/>EDIT_CONTENT_PROMPT"]
+    D --> F["Pass 1:<br/>EDIT_PASS_1_INSTRUCTIONS +<br/>EDIT_CONTENT_PROMPT"]
+    F --> G["Pass 2:<br/>EDIT_PASS_2_INSTRUCTIONS +<br/>EDIT_CONTENT_PROMPT"] 
+    G --> H["Pass 3:<br/>EDIT_PASS_3_INSTRUCTIONS +<br/>EDIT_CONTENT_PROMPT"]
     
-    E --> I[Final Output]
-    H --> I
+    E --> I[EDIT_CONTENT_SYSTEM]
+    F --> J[EDIT_CONTENT_SYSTEM]
+    G --> J
+    H --> J
+    
+    I --> K[OpenAI Editing API]
+    J --> L[OpenAI Editing API]
+    
+    K --> M["VALIDATION_PROMPT +<br/>Content-Specific Criteria"]
+    L --> M
+    
+    M --> N[VALIDATION_SYSTEM]
+    N --> O[OpenAI Validation API]
+    
+    O --> P{Valid?}
+    P -->|Yes| Q[Final Output]
+    P -->|No| R[Retry with Feedback]
+    R --> K
+    R --> L
     
     style E fill:#e1f5fe
     style F fill:#e8f5e8
     style G fill:#e8f5e8
     style H fill:#e8f5e8
+    style M fill:#fff3e0
 ```
 
 ## Requirements

@@ -78,7 +78,7 @@ JITTER_RANGE_WIDE = (-0.2, 0.2)
 SUMMARY_CHAR_LIMIT = 250
 PROOFREAD_MAX_TRIES = 5
 
-# --- Editing prompt and static editing info ---
+# --- Editing prompts ---
 EDIT_TITLE_PROMPT = (
     "Edit the following PR title for release notes:\n"
     "- Keep it under 120 characters, in a single line\n"
