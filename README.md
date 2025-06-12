@@ -12,65 +12,97 @@ The release notes generator:
 - Formats and edits titles for content for clarity and consistency
 - Outputs release notes in Quarto Markdown format
 
-## Editing & validation
+## Editing & validation logic
 
-The script uses LLMs to edit and validate release notes content:
+The script uses a multi-model LLM pipeline to edit and validate release notes content with adaptive temperature management and retry logic.
 
-- **Multi-pass editing** - Content goes through three passes:
-  - Group and flatten related content
-  - Remove duplicates and redundant information
-  - Streamline and summarize for clarity
+### Content Processing Pipeline
 
-- **Content validation** - Each edit is validated for:
-  - Maintaining original meaning and technical accuracy
-  - Proper formatting and structure
-  - No addition of unsupported information
-  - Removal of internal sections and references
+**Multi-pass editing** for summaries and notes (titles use single-pass):
+- **Pass 1: Group and flatten** (MODEL_PASS_1 - GPT-4o) - Removes headings, combines related content, creates cohesive blocks
+- **Pass 2: Deduplicate** (MODEL_PASS_2 - o3) - Removes exact duplicates, consolidates overlapping content, varies sentence starters  
+- **Pass 3: Streamline** (MODEL_PASS_3 - GPT-4o) - Improves clarity, adds temporal language, removes concluding statements
 
-- **PR section classification** - Automatically identifies and includes:
-  - User-facing changes and features
-  - Breaking changes and upgrade notes
-  - Screenshots and media
-  - Excludes internal notes and development processes
+**Validation system** with adaptive retry:
+- Each pass validated using MODEL_VALIDATION (GPT-4o) with content-specific criteria
+- Adaptive temperature: starts at 0.2, increases 0.15 per attempt (max 0.5)
+- Failure pattern tracking: format issues increase temperature, meaning issues decrease it
+- Up to 5 retry attempts with exponential backoff and jitter
+- Validation summaries stored in HTML comments for debugging
 
-- **Merge PR detection** - Uses LLM to identify and skip automatic merge PRs
+### Content Classification
+
+**PR section classification** - Uses MODEL_CLASSIFYING (GPT-4o-mini) to automatically:
+- Include user-facing changes, features, breaking changes, screenshots
+- Exclude internal notes, checklists, deployment steps, testing sections
+- Fallback to pattern matching if OpenAI classification fails
+
+**Merge PR detection** - Uses MODEL_CLASSIFYING to identify and skip:
+- Branch merges, environment syncs, deploy operations
+- Release candidates and hotfix merges
+- Fallback to keyword matching for 30+ merge-related terms
+
+### Model Configuration
+
+- **Editing models**: GPT-4o (passes 1&3), o3 (pass 2 deduplication), GPT-4o-mini (classification)
+- **Temperature management**: Base 0.3, adaptive adjustments based on failure patterns
+- **Token limits**: 4096 editing, 200 validation, 10 classification
+- **Rate limiting**: Exponential backoff with jitter for API calls
 
 ```mermaid
 graph TD
-    A[Content Input] --> B{Content Type?}
-    B -->|Title| C[EDIT_TITLE_PROMPT]
-    B -->|Summary/Notes| D[EDIT_SUMMARY_PROMPT or EDIT_NOTES_PROMPT]
+    A[PR Content Input] --> B{Content Type?}
+    B -->|Title| C[Single Pass Process]
+    B -->|Summary/Notes| D[Multi-Pass Process]
     
-    C --> E["Single Pass:<br/>Content Prompt +<br/>EDIT_CONTENT_PROMPT"]
-    D --> F["Pass 1:<br/>EDIT_PASS_1_INSTRUCTIONS +<br/>EDIT_CONTENT_PROMPT"]
-    F --> G["Pass 2:<br/>EDIT_PASS_2_INSTRUCTIONS +<br/>EDIT_CONTENT_PROMPT"] 
-    G --> H["Pass 3:<br/>EDIT_PASS_3_INSTRUCTIONS +<br/>EDIT_CONTENT_PROMPT"]
+    %% Single Pass for Titles
+    C --> C1[EDIT_TITLE_PROMPT]
+    C1 --> C2[MODEL_EDITING - GPT-4o]
+    C2 --> C3[Validation Check]
     
-    E --> I[EDIT_CONTENT_SYSTEM]
-    F --> J[EDIT_CONTENT_SYSTEM]
-    G --> J
-    H --> J
+    %% Multi-Pass for Summary/Notes  
+    D --> D1["Pass 1: Group & Flatten<br/>MODEL_PASS_1 - GPT-4o<br/>Remove headings, combine content"]
+    D1 --> D2["Pass 2: Deduplicate<br/>MODEL_PASS_2 - o3<br/>Remove duplicates, consolidate"]
+    D2 --> D3["Pass 3: Streamline<br/>MODEL_PASS_3 - GPT-4o<br/>Improve clarity, add temporal language"]
     
-    I --> K[OpenAI Editing API]
-    J --> L[OpenAI Editing API]
+    %% Validation Process
+    C3 --> V[Validation System]
+    D1 --> V1[Validation Check]
+    D2 --> V2[Validation Check] 
+    D3 --> V3[Validation Check]
+    V --> V4[MODEL_VALIDATION - GPT-4o]
+    V1 --> V4
+    V2 --> V4
+    V3 --> V4
     
-    K --> M["VALIDATION_PROMPT +<br/>Content-Specific Criteria"]
-    L --> M
+    V4 --> V5{Valid?}
+    V5 -->|Yes| SUCCESS[Final Output + Validation Summary]
+    V5 -->|No| RETRY["Retry Logic:<br/>• Adaptive temperature<br/>• Failure pattern tracking<br/>• Up to 5 attempts<br/>• Exponential backoff"]
     
-    M --> N[VALIDATION_SYSTEM]
-    N --> O[OpenAI Validation API]
+    %% Retry flows back to appropriate editing step
+    RETRY -.->|Title| C2
+    RETRY -.->|Pass 1| D1  
+    RETRY -.->|Pass 2| D2
+    RETRY -.->|Pass 3| D3
     
-    O --> P{Valid?}
-    P -->|Yes| Q[Final Output]
-    P -->|No| R[Retry with Feedback]
-    R --> K
-    R --> L
+    %% Parallel Classification Processes
+    E[PR Sections] --> F[Section Classification<br/>MODEL_CLASSIFYING - GPT-4o-mini]
+    F --> F1{Include?}
+    F1 -->|Yes| INCLUDE[User-facing content<br/>Features, breaking changes<br/>Screenshots, dependencies]
+    F1 -->|No| EXCLUDE[Internal content<br/>Checklists, testing<br/>Deployment, review]
     
-    style E fill:#e1f5fe
-    style F fill:#e8f5e8
-    style G fill:#e8f5e8
-    style H fill:#e8f5e8
-    style M fill:#fff3e0
+    G[PR Title] --> H[Merge Detection<br/>MODEL_CLASSIFYING - GPT-4o-mini]  
+    H --> H1{Merge PR?}
+    H1 -->|Yes| SKIP[Skip - automatic merge]
+    H1 -->|No| PROCESS[Process for release notes]
+    
+    %% Styling
+    style D1 fill:#e8f5e8
+    style D2 fill:#fff3e0  
+    style D3 fill:#e8f5e8
+    style V4 fill:#ffebee
+    style RETRY fill:#fce4ec
+    style SUCCESS fill:#e8f5e8
 ```
 
 ## Requirements
@@ -108,11 +140,19 @@ Generate release notes for `cmvm/25.06` and edit them:
 poetry run python scripts/generate_release_notes.py --tag cmvm/25.06 --edit
 ```
 
-Generate release notes for `cmvm/25.06` and edit them, overwriting previous files, and output DEBUG information:
+Generate release notes for `cmvm/25.06` and edit them, overwriting previous files, and output DEBUG information on the command line and in output file comments:
 
 ```bash
 poetry run python scripts/generate_release_notes.py --tag cmvm/25.06 --edit --overwrite --debug
 ```
+
+ALPHA: Also download GitHub assets when generating and editing release notes for `cmvm/25.06`:
+
+```bash
+poetry run python scripts/generate_release_notes.py --tag cmvm/25.06 --edit --download-assets
+```
+
+Downloading assets is currently hit-and-miss due to how GitHub stores assets. There is some preliminary Playwright support in the script to enable headless downloading, but it's not very reliably at the moment, unless you authenticate manually first. 
 
 ## Repository Structure
 

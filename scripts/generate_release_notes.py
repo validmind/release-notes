@@ -50,9 +50,9 @@ MODEL_VALIDATION = "gpt-4o"        # For edit validation
 MODEL_PROOFREADING = "gpt-4o-mini" # For proofreading tasks
 
 # Multi-pass editing model settings
-MODEL_PASS_1 = "gpt-4o"            # Pass 1: Group and flatten (structural)
-MODEL_PASS_2 = "gpt-4o"            # Pass 2: Deduplicate (complex reasoning)
-MODEL_PASS_3 = "gpt-4o-mini"       # Pass 3: Streamline (style polish)
+MODEL_PASS_1 = "gpt-4o"            # Pass 1: Group and flatten (structural, gpt-4o seems better)
+MODEL_PASS_2 = "o3"                # Pass 2: Deduplicate (complex reasoning, o3 seems better)
+MODEL_PASS_3 = "gpt-4o"            # Pass 3: Streamline (style polish, gpt-4o seems better)
 
 # Editing temperature settings
 BASE_TEMPERATURE = 0.3          # Slightly higher for better creativity in editing
@@ -149,7 +149,7 @@ EDIT_CONTENT_PROMPT = (
     "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
     "- Don't add concluding or summary statements.\n"
     "- Address readers directly using 'you' instead of 'users' (e.g., 'you can now...' not 'users can now...').\n"
-    "- Use temporal language to indicate changes: 'now', 'as of this release', 'starting with this version', etc.\n"
+    "- Use temporal language in the first sentence only to indicate changes: 'now', 'as of this release', 'starting with this version', etc.\n"
     "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...'\n"
     "- If content contains images, ensure the content begins with a text summary before any image embeds."
 )
