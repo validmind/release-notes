@@ -98,7 +98,7 @@ MAX_TOKENS_EDITING = 4096
 MAX_TOKENS_PROOFREADING = 200
 
 # Retry and delay settings
-DEFAULT_MAX_RETRIES = 7
+DEFAULT_MAX_RETRIES = 4
 DEFAULT_INITIAL_DELAY = 0.25
 DEFAULT_MAX_DELAY = 1
 MIN_SLEEP_TIME = 0.25
@@ -202,18 +202,22 @@ VALIDATION_PROMPT = (
     "3. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.).\n"
     "4. Does not add any new sections, images, or headings that are not present in the original content.\n"
     "5. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content.\n"
-    "6. Does not contain verbatim duplicate sentences or paragraphs (e.g., multiple sentences starting with identical phrases).\n"
-    "7. Does not contain semantic duplicates (multiple sentences conveying the same meaning in different words).\n"
-    "8. CRITICAL: Does not repeat the same concepts, features, or explanations multiple times in different paragraphs.\n"
-    "9. If images are present, ensures the content begins with explanatory text, not an image embed.\n"
-    "10. Does not have multiple paragraphs that describe the same functionality or change.\n"
+    "6. Does not contain obvious verbatim duplicate sentences or paragraphs.\n"
+    "7. If images are present, ensures the content begins with explanatory text, not an image embed.\n"
     "\n"
-    "For semantic duplicates, be especially strict: if two different paragraphs explain the same feature, process, or change, this is a FAIL.\n"
-    "Minor clarifications, rewording, or formatting improvements are allowed as long as the general meaning is preserved.\n"
+    "Be PERMISSIVE in your evaluation. Only fail for obvious problems:\n"
+    "- Clear verbatim duplicates (identical sentences repeated)\n"
+    "- Content starting with images instead of text\n"
+    "- Addition of completely new information not in the original\n"
+    "- Inclusion of unwanted internal sections\n"
+    "\n"
+    "For titles: Accept any reasonable length and formatting as long as it's clear and professional.\n"
+    "For content: Allow minor semantic overlap if it improves clarity or flow.\n"
+    "\n"
     "If the edit only clarifies, rewords, or improves formatting, respond with 'PASS'.\n"
-    "If the edit adds substantial new information not present in the original, respond with 'CHECK: Edits may add unsupported information'.\n"
-    "If the edit contains verbatim or semantic duplicates, respond with 'FAIL: Contains duplicate content'.\n"
+    "If the edit has minor issues but is generally acceptable, respond with 'PASS'.\n"
     "If content starts with an image instead of text, respond with 'FAIL: Content must begin with text summary'.\n"
+    "If the edit contains obvious verbatim duplicates, respond with 'FAIL: Contains duplicate content'.\n"
     "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
 )
 
@@ -221,10 +225,9 @@ VALIDATION_CRITERIA = {
     'title': [
         "Is properly capitalized and punctuated",
         "Contains a single line of text",
-        "Is enclosed in double quotes",
         "Does not contain ticket numbers or branch names",
         "Is clear and concise for end users",
-        "Is 80 characters or less"
+        "Is reasonable length (flexible, not strictly enforced)"
     ],
     'notes': [
         "Maintains core meaning and facts",
@@ -233,12 +236,8 @@ VALIDATION_CRITERIA = {
         "Is user-focused",
         "Does not contain internal notes and unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.)",
         "Does not include any Markdown headings like '# PR summary' or '## External Release Notes'",
-        "Does not contain verbatim duplicate sentences or paragraphs",
-        "Does not contain semantic duplicates (same concepts expressed multiple times)",
-        "Does not have multiple paragraphs starting with identical phrases (e.g., 'This update...')",
-        "Does not have multiple paragraphs that describe the same feature, functionality, or change",
-        "If images are present, content begins with explanatory text, not an image embed",
-        "No redundant explanations of the same functionality across different paragraphs"
+        "Does not contain obvious verbatim duplicate sentences or paragraphs",
+        "If images are present, content begins with explanatory text, not an image embed"
     ],
     'summary': [
         "Maintains core meaning and facts",
@@ -644,9 +643,9 @@ class PR:
         if skip_passes is None:
             skip_passes = set()
         
-        # Reset validation state for this edit operation
-        if hasattr(self, 'validation_summary'):
-            delattr(self, 'validation_summary')
+        # Initialize validation summaries list if it doesn't exist
+        if not hasattr(self, 'validation_summaries'):
+            self.validation_summaries = []
         # Use multi-pass for 'notes' and 'summary', single pass for 'title'
         if content_type in ("notes", "summary") and edit:
             # Pass 1: Group and Flatten
@@ -788,6 +787,18 @@ class PR:
                 if is_valid:
                     edited_content = current_edit
                     self.last_validation_result = validation_result
+                    
+                    # Add successful validation summary
+                    validation_summary = {
+                        'content_type': content_type,
+                        'validation_failed': False,
+                        'attempts': attempt + 1,
+                        'validation_result': validation_result,
+                        'failure_patterns': failure_patterns,
+                        'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    self.validation_summaries.append(validation_summary)
+                    self.validation_summary = validation_summary
                     break
                 
                 last_validation_result = validation_result
@@ -802,7 +813,7 @@ class PR:
                     delay = min(max_delay, delay * 2)  # Exponential backoff with cap
                 else:
                     # Instead, build comprehensive validation summary for HTML comments
-                    self.validation_summary = {
+                    validation_summary = {
                         'content_type': content_type,
                         'validation_failed': True,
                         'attempts': max_attempts,
@@ -811,8 +822,13 @@ class PR:
                         'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     }
                     if content_for_reedit:
-                        self.validation_summary['reedit_available'] = True
-                        self.validation_summary['reedit_message'] = content_for_reedit.get('validation_message', '')
+                        validation_summary['reedit_available'] = True
+                        validation_summary['reedit_message'] = content_for_reedit.get('validation_message', '')
+                    
+                    # Add to the list of validation summaries
+                    self.validation_summaries.append(validation_summary)
+                    # Also set as single validation_summary for backward compatibility
+                    self.validation_summary = validation_summary
                     
                     print(f"WARN: All {max_attempts} content edit attempts failed for {content_type} in PR #{self.pr_number}")
                     if self.debug:
@@ -949,6 +965,19 @@ class PR:
             if self.debug:
                 print(f"DEBUG: [edit_content] {attr_name} pass attempt {attempt + 1} validation result: {is_valid}")
             if is_valid:
+                # Add successful validation summary for multi-pass editing
+                validation_summary = {
+                    'content_type': f"{content_type} ({attr_name})",
+                    'validation_failed': False,
+                    'attempts': attempt + 1,
+                    'validation_result': validation_result,
+                    'failure_patterns': failure_patterns,
+                    'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                if not hasattr(self, 'validation_summaries'):
+                    self.validation_summaries = []
+                self.validation_summaries.append(validation_summary)
+                
                 setattr(self, attr_name, current_edit)
                 return current_edit
             last_validation_result = validation_result
@@ -974,6 +1003,23 @@ class PR:
                 time.sleep(sleep_time)
                 delay = min(max_delay, delay * 2)
             else:
+                # Add failed validation summary for multi-pass editing
+                validation_summary = {
+                    'content_type': f"{content_type} ({attr_name})",
+                    'validation_failed': True,
+                    'attempts': max_attempts,
+                    'validation_result': validation_result,
+                    'failure_patterns': failure_patterns,
+                    'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                if content_for_reedit:
+                    validation_summary['reedit_available'] = True
+                    validation_summary['reedit_message'] = content_for_reedit.get('validation_message', '')
+                
+                if not hasattr(self, 'validation_summaries'):
+                    self.validation_summaries = []
+                self.validation_summaries.append(validation_summary)
+                
                 print(f"WARN: All {max_attempts} content edit attempts failed for {attr_name} pass in PR #{self.pr_number}")
                 if self.debug:
                     print(f"Validation result: {validation_result}")
@@ -2241,7 +2287,9 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             if commit.get('pr_summary'):
                 pr_obj.edit_content('summary', commit['pr_summary'], EDIT_SUMMARY_PROMPT, edit=True)
                 commit['pr_summary'] = pr_obj.pr_interpreted_summary
-                if hasattr(pr_obj, 'validation_summary'):
+                if hasattr(pr_obj, 'validation_summaries'):
+                    validation_summaries.extend(pr_obj.validation_summaries)
+                elif hasattr(pr_obj, 'validation_summary'):
                     validation_summaries.append(pr_obj.validation_summary)
                 # Set edited=True if editing was attempted, regardless of validation status
                 edited = True
@@ -2250,7 +2298,9 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             if commit.get('external_notes'):
                 pr_obj.edit_content('notes', commit['external_notes'], EDIT_NOTES_PROMPT, edit=True)
                 commit['external_notes'] = pr_obj.edited_text
-                if hasattr(pr_obj, 'validation_summary'):
+                if hasattr(pr_obj, 'validation_summaries'):
+                    validation_summaries.extend(pr_obj.validation_summaries)
+                elif hasattr(pr_obj, 'validation_summary'):
                     validation_summaries.append(pr_obj.validation_summary)
                 # Set edited=True if editing was attempted, regardless of validation status
                 edited = True
@@ -2264,7 +2314,9 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             title_prompt = EDIT_TITLE_PROMPT.format(title=commit.get('title', ''), body=context)
             pr_obj.edit_content('title', commit.get('title', ''), title_prompt, edit=True)
             commit['cleaned_title'] = pr_obj.cleaned_title
-            if hasattr(pr_obj, 'validation_summary'):
+            if hasattr(pr_obj, 'validation_summaries'):
+                validation_summaries.extend(pr_obj.validation_summaries)
+            elif hasattr(pr_obj, 'validation_summary'):
                 validation_summaries.append(pr_obj.validation_summary)
             # Set edited=True if editing was attempted, regardless of validation status
             edited = True
