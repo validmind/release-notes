@@ -128,9 +128,9 @@ EDIT_TITLE_PROMPT = (
     "{body}"
 )
 
-EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and user-facing release notes. Near the top use temporal language like 'now', 'with this update', or 'you can now' to indicate changes."
+EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and user-facing release notes."
 
-EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and user-facing release notes. Ensure they begin with a text summary before any images or lists, address readers directly, and use temporal language to indicate changes (e.g., 'you must now', 'this now requires', 'you can now')."
+EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and user-facing release notes. Ensure they begin with a text summary before any images or lists and address readers directly."
 
 # --- Content editing instructions ---
 EDIT_CONTENT_SYSTEM = "You are a professional release notes editor."
@@ -170,17 +170,16 @@ EDIT_PASS_1_INSTRUCTIONS = (
 
 EDIT_PASS_2_INSTRUCTIONS = (
     "Pass 2 — Deduplicate:\n"
-    "- Remove only EXACT word-for-word duplicate sentences\n"
-    "- If multiple paragraphs describe the same feature, consolidate into ONE clear paragraph\n"
-    "- Remove redundant explanations of the same functionality\n"
-    "- Consolidate overlapping bullet points into single statements\n"
-    "- Vary sentence starters - avoid multiple sentences beginning with 'This update', 'This release', etc.\n"
-    "- If high-level and detailed descriptions overlap, keep the most informative version\n"
-    "- Remove bullet points that restate paragraph content\n"
-    "- Remove references to breaking changes if none exist\n"
-    "- Ensure each concept is explained only once\n"
-    "- Keep different phrasings of technical concepts (this is normal and acceptable)\n"
-    "- Prioritize clarity while avoiding exact repetition\n"
+    "- AGGRESSIVELY remove semantic duplicates - if two sentences describe the same feature/concept, keep only the clearest one\n"
+    "- Consolidate ALL overlapping content about the same functionality into ONE concise paragraph\n"
+    "- Remove redundant explanations - if something is mentioned twice with different wording, pick the best version\n"
+    "- Eliminate repetitive sentence patterns - avoid starting multiple sentences with 'As of this release', 'Now', 'This update', etc.\n"
+    "- Remove bullet points that merely restate what's already in paragraph form\n"
+    "- If both high-level and detailed descriptions exist for the same feature, merge them into one comprehensive explanation\n"
+    "- Cut verbose explanations - be concise while preserving technical accuracy\n"
+    "- Remove filler phrases and unnecessary elaboration\n"
+    "- Ensure each feature/improvement is mentioned exactly once\n"
+    "- Focus on the most important user-facing changes - remove minor implementation details if they don't add value\n"
     "Input: grouped text from Pass 1. Output only the deduplicated text."
 )
 
@@ -188,9 +187,9 @@ EDIT_PASS_3_INSTRUCTIONS = (
     "Pass 3 — Streamline and summarise:\n"
     "- Improve clarity and flow\n"
     "- Trim filler words or overly verbose phrasing\n"
-    "- Add temporal language where appropriate: 'now', 'as of this release', 'starting with this version'\n"
-    "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...'\n"
-    "- If concluding or summary statements appear at the end, remove them."
+    "- Start the first paragraph with temporal language, e.g. add 'now', 'you can now', or 'this now requires' where it genuinely clarifies a change\n"
+    "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...' only when necessary\n"
+    "- If concluding or summary statements appear at the end, remove them.\n"
     "Input: deduplicated text from Pass 2. Output only the final edited text."
 )
 
@@ -266,8 +265,11 @@ MERGE_KEYWORDS = [
     "merge master", "merge to", "merge from", "merge changes", "merge update", "merge upstream",
     "merge down", "merge up", "merge test", "merge qa", "merge rc", "merge candidate",
     "sync main", "sync develop", "sync branch", "sync changes", "sync upstream",
+    "sync staging", "sync production", "sync with main", "sync main into", "sync staging into",
+    "sync staging branch", "synchronize", "automatically merge", "automatically sync",
     "deploy to", "deploy prod", "deploy production", "deploy staging", "deploy develop",
-    "release candidate", "release hotfix", "release patch", "release update"
+    "release candidate", "release hotfix", "release patch", "release update",
+    "prod:", "staging:", "production:", "hotfix:", "bump version", "version bump"
 ]
 
 MERGE_PR_CLASSIFICATION_PROMPT = (
@@ -2095,6 +2097,11 @@ def get_commits_for_tag(repo, tag, debug=False):
                 pr_number = future_to_pr[future]
                 try:
                     external_notes, pr_summary, labels, title, pr_body, image_urls = future.result()
+                    # Skip merge PRs (identified by empty labels and no content)
+                    if not labels and external_notes is None and pr_summary is None:
+                        if debug:
+                            print(f"DEBUG: [get_commits_for_tag] Skipping merge PR #{pr_number} in {repo}")
+                        continue
                     if 'internal' not in labels:
                         commits.append({
                             'pr_number': pr_number,
