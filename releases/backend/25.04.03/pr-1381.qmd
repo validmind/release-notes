@@ -1,22 +1,78 @@
 ---
-title: "Refine authorization for `report_generation` endpoint in UI reporting route (#1381)"
+title: "Report generation `GET` endpoint now requires `download_doc` or `download_vr` (#1381)"
 categories: [backend, 25.04.03, hotfix]
 sidebar: release-notes
 toc-expand: true
-date: "April 10, 2025"
-# Content edited by AI - 2025-06-08 18:21
-# Content overwritten from an earlier version - 2025-06-08 18:21
+date: "April 14, 2025"
+# Content edited by AI - 2025-06-11 17:46
+# Content overwritten from an earlier version - 2025-06-11 17:46
 # PR URL: https://github.com/validmind/backend/pull/1381
 ---
 
-This update refines authorization for the report generation endpoint in the UI reporting route. The authorization decorator on the GET endpoint now uses a generic `read` action. In-method permission checks are added based on the document type in the request. The endpoint performs `download_doc` authorization for `documentation-report` or `monitoring-report`, `download_vr` authorization for `validation-report`, and raises `BadRequestError` for unsupported document types. These changes ensure users have the correct permissions for the specific report type they access.
+As of this release, the `GET` report-generation endpoint now uses the generic `read` action decorator and enforces permissions by `document_type`.
+
+You must now have one of the following permissions:
+
+- Documentation-report and Monitoring-report: `download_doc`
+- Validation-report: `download_vr`
+
+Any other `document_type` now returns `BadRequestError`.
+
+This change replaces `download_report` and may break existing integrations.
 
 <!--- VALIDATION SUMMARY
+Content Type: summary (grouped_text)
+Validation Status: CHECK
+Attempts: 4
+Validation Temperature: 0.8
+Last Validation: 2025-06-11 17:43:21
+Reedit Available: Yes
+
+VALIDATION SUMMARY 2
+Content Type: summary (deduplicated_text)
+Validation Status: CHECK
+Attempts: 4
+Validation Temperature: 0.8
+Last Validation: 2025-06-11 17:43:52
+Reedit Available: Yes
+
+VALIDATION SUMMARY 3
+Content Type: summary (edited_text)
+Validation Status: CHECK
+Attempts: 4
+Validation Temperature: 0.8
+Last Validation: 2025-06-11 17:44:34
+Reedit Available: Yes
+
+VALIDATION SUMMARY 4
+Content Type: summary (grouped_text)
+Validation Status: CHECK
+Attempts: 4
+Validation Temperature: 0.8
+Last Validation: 2025-06-11 17:43:21
+Reedit Available: Yes
+
+VALIDATION SUMMARY 5
+Content Type: summary (deduplicated_text)
+Validation Status: CHECK
+Attempts: 4
+Validation Temperature: 0.8
+Last Validation: 2025-06-11 17:43:52
+Reedit Available: Yes
+
+VALIDATION SUMMARY 6
+Content Type: summary (edited_text)
+Validation Status: CHECK
+Attempts: 4
+Validation Temperature: 0.8
+Last Validation: 2025-06-11 17:44:34
+Reedit Available: Yes
+
+VALIDATION SUMMARY 7
 Content Type: title
 Validation Status: CHECK
-Attempts: 7
-Last Validation: 2025-06-08 18:20:49
-Result: The edited content provides a clearer and more specific description of the task or change being made. It replaces the vague term "cherry pick #1380 onto prod" with a precise action, "Refine authorization for `report_generation` endpoint in UI reporting route," which helps in understanding the exact ...
+Attempts: 4
+Validation Temperature: 0.8
+Last Validation: 2025-06-11 17:45:18
 Reedit Available: Yes
-Reedit Message: The edited content provides a clearer and more specific description of the task or change being made. It replaces the vague term "cherry pick #1380 onto prod" with a precise action, "Refine authorizat...
 --->

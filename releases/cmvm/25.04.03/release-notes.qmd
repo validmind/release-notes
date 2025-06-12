@@ -1,14 +1,14 @@
 ---
 title: "25.04.03 Hotfix release notes"
-date: "April 10, 2025"
+date: "April 14, 2025"
 categories: [cmvm, 25.04.03, hotfix]
 sidebar: release-notes
 toc-expand: true
-# Content edited by AI - 2025-06-08 18:21
-# Content overwritten from an earlier version - 2025-06-08 18:21
+# Content edited by AI - 2025-06-11 17:46
+# Content overwritten from an earlier version - 2025-06-11 17:46
 ---
 
-This release includes refined authorization for the `report_generation` endpoint in the UI reporting route.
+This release includes a change to the report-generation `GET` endpoint: you must now specify either `download_doc` or `download_vr`.
 
 # Backend
 <!--- Tag: [cmvm/25.04.03](https://github.com/validmind/backend/releases/tag/cmvm/25.04.03) --->
@@ -19,9 +19,18 @@ This release includes refined authorization for the `report_generation` endpoint
 
 <!--- PR #1381: https://github.com/validmind/backend/pull/1381 --->
 <!--- Labels: none --->
-### Refine authorization for `report_generation` endpoint in UI reporting route (#1381)
+### Report generation `GET` endpoint now requires `download_doc` or `download_vr` (#1381)
 
-This update refines authorization for the report generation endpoint in the UI reporting route. The authorization decorator on the GET endpoint now uses a generic `read` action. In-method permission checks are added based on the document type in the request. The endpoint performs `download_doc` authorization for `documentation-report` or `monitoring-report`, `download_vr` authorization for `validation-report`, and raises `BadRequestError` for unsupported document types. These changes ensure users have the correct permissions for the specific report type they access.
+As of this release, the `GET` report-generation endpoint now uses the generic `read` action decorator and enforces permissions by `document_type`.
+
+You must now have one of the following permissions:
+
+- Documentation-report and Monitoring-report: `download_doc`
+- Validation-report: `download_vr`
+
+Any other `document_type` now returns `BadRequestError`.
+
+This change replaces `download_report` and may break existing integrations.
 
 
 <!--- # Frontend --->

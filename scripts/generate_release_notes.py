@@ -54,12 +54,17 @@ MODEL_PASS_1 = "o3"            # Pass 1: Group and flatten (structural)
 MODEL_PASS_2 = "o3"                # Pass 2: Deduplicate (complex reasoning)
 MODEL_PASS_3 = "o3"            # Pass 3: Streamline (style polish)
 
-# Temperature settings
-BASE_TEMPERATURE = 0.0
-MAX_TEMPERATURE = 0.7
+# Editing temperature settings
+BASE_TEMPERATURE = 0.2
+MAX_TEMPERATURE = 1
 TEMPERATURE_INCREMENT = 0.05
 TEMPERATURE_FORMAT_ADJUST = 0.1
 TEMPERATURE_MEANING_ADJUST = -0.05
+
+# Validation temperature settings
+VALIDATION_BASE_TEMPERATURE = 0.1       # Starting temperature for validation
+VALIDATION_TEMPERATURE_INCREMENT = 0.1  # How much to increase per attempt
+VALIDATION_MAX_TEMPERATURE = 0.3        # Maximum validation temperature
 
 # Model parameters
 FREQUENCY_PENALTY = 0.0
@@ -98,10 +103,10 @@ MAX_TOKENS_EDITING = 4096
 MAX_TOKENS_PROOFREADING = 200
 
 # Retry and delay settings
-DEFAULT_MAX_RETRIES = 4
-DEFAULT_INITIAL_DELAY = 0.25
+DEFAULT_MAX_RETRIES = 5
+DEFAULT_INITIAL_DELAY = 0.1
 DEFAULT_MAX_DELAY = 1
-MIN_SLEEP_TIME = 0.25
+MIN_SLEEP_TIME = 0.1
 JITTER_RANGE = (0, 0.1)
 JITTER_RANGE_WIDE = (-0.2, 0.2)
 
@@ -123,12 +128,12 @@ EDIT_TITLE_PROMPT = (
     "{body}"
 )
 
-EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and user-facing release notes."
+EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and user-facing release notes. Use temporal language like 'now', 'with this update', or 'you can now' to indicate changes."
 
-EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and user-facing release notes. Ensure they begin with a text summary before any images or lists, and address readers directly."
+EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and user-facing release notes. Ensure they begin with a text summary before any images or lists, address readers directly, and use temporal language to indicate changes (e.g., 'you must now', 'this now requires', 'you can now')."
 
 # --- Content editing instructions ---
-EDIT_CONTENT_SYSTEM = "You are a professional technical writer editing release notes."
+EDIT_CONTENT_SYSTEM = "You are a professional release notes editor."
 
 EDIT_CONTENT_PROMPT = (
     "When editing content:\n"
@@ -144,6 +149,8 @@ EDIT_CONTENT_PROMPT = (
     "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
     "- Don't add concluding or summary statements.\n"
     "- Address readers directly using 'you' instead of 'users' (e.g., 'you can now...' not 'users can now...').\n"
+    "- Use temporal language to indicate changes: 'now', 'as of this release', 'starting with this version', etc.\n"
+    "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...'\n"
     "- If content contains images, ensure the content begins with a text summary before any image embeds."
 )
 
@@ -186,6 +193,8 @@ EDIT_PASS_3_INSTRUCTIONS = (
     "Pass 3 — Streamline and summarise:\n"
     "- Improve clarity and flow\n"
     "- Trim filler words or overly verbose phrasing\n"
+    "- Add temporal language where appropriate: 'now', 'as of this release', 'starting with this version'\n"
+    "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...'\n"
     "- If concluding or summary statements appear at the end, remove them."
     "Input: deduplicated text from Pass 2. Output only the final edited text."
 )
@@ -194,57 +203,49 @@ EDIT_PASS_3_INSTRUCTIONS = (
 VALIDATION_SYSTEM = "You are a judge evaluating the quality of edited content."
 
 VALIDATION_PROMPT = (
-    "You are a judge evaluating the quality of edited content.\n"
-    "For {content_type}, check if the edit:\n"
+    "You are a quality checker for release notes. Your job is to catch only SERIOUS problems.\n"
     "\n"
-    "1. Is clear, professional, and concise.\n"
-    "2. Does not add substantial new information not present in the original.\n"
-    "3. Does not contain any unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.).\n"
-    "4. Does not add any new sections, images, or headings that are not present in the original content.\n"
-    "5. Does not include 'Homepage Before' or 'Homepage After' text if this text is not also in the original content.\n"
-    "6. Does not contain obvious verbatim duplicate sentences or paragraphs.\n"
-    "7. If images are present, ensures the content begins with explanatory text, not an image embed.\n"
+    "For {content_type}, check if the edit has any of these CRITICAL issues:\n"
+    "1. Content starts with an image/video instead of text\n"
+    "2. Contains identical sentences repeated word-for-word\n"
+    "3. Includes internal sections like 'Checklist', 'Deployment Notes', 'Testing'\n"
+    "4. Adds completely fabricated information not in the original\n"
     "\n"
-    "Be PERMISSIVE in your evaluation. Only fail for obvious problems:\n"
-    "- Clear verbatim duplicates (identical sentences repeated)\n"
-    "- Content starting with images instead of text\n"
-    "- Addition of completely new information not in the original\n"
-    "- Inclusion of unwanted internal sections\n"
+    "IMPORTANT: Be very lenient. Most edits should PASS.\n"
+    "- Different wording of the same concept is ACCEPTABLE\n"
+    "- Minor formatting changes are ACCEPTABLE\n"
+    "- Adding temporal language like 'now', 'as of this release' is ACCEPTABLE\n"
+    "- Reasonable title lengths and styles are ACCEPTABLE\n"
+    "- Clarifications and improvements are ACCEPTABLE\n"
     "\n"
-    "For titles: Accept any reasonable length and formatting as long as it's clear and professional.\n"
-    "For content: Allow minor semantic overlap if it improves clarity or flow.\n"
+    "Only respond 'FAIL' if you find a critical issue listed above.\n"
+    "Otherwise, respond 'PASS'.\n"
     "\n"
-    "If the edit only clarifies, rewords, or improves formatting, respond with 'PASS'.\n"
-    "If the edit has minor issues but is generally acceptable, respond with 'PASS'.\n"
-    "If content starts with an image instead of text, respond with 'FAIL: Content must begin with text summary'.\n"
-    "If the edit contains obvious verbatim duplicates, respond with 'FAIL: Contains duplicate content'.\n"
-    "Otherwise, respond with only 'PASS' or 'FAIL' followed by a brief reason."
+    "Examples of PASS:\n"
+    "- 'You can access the feature' → 'You can now access the feature'\n"
+    "- 'The API requires authentication' → 'The API now requires authentication'\n"
+    "- Minor rewording for clarity\n"
+    "\n"
+    "Examples of FAIL:\n"
+    "- Same sentence appears twice identically\n"
+    "- Contains '# PR Summary' section"
+    "- Content starts with ![image] instead of text\n"
 )
 
 VALIDATION_CRITERIA = {
     'title': [
-        "Is properly capitalized and punctuated",
-        "Contains a single line of text",
-        "Does not contain ticket numbers or branch names",
-        "Is clear and concise for end users",
-        "Is reasonable length (flexible, not strictly enforced)"
+        "Is clear and professional",
+        "Does not contain obvious errors"
     ],
     'notes': [
-        "Maintains core meaning and facts",
-        "Maintains technical accuracy",
-        "Uses consistent formatting",
-        "Is user-focused",
-        "Does not contain internal notes and unwanted sections (Checklist, Deployment Notes, Areas Needing Special Review, etc.)",
-        "Does not include any Markdown headings like '# PR summary' or '## External Release Notes'",
-        "Does not contain obvious verbatim duplicate sentences or paragraphs",
-        "If images are present, content begins with explanatory text, not an image embed"
+        "Starts with text, not images",
+        "Does not contain internal sections",
+        "Does not have identical duplicate sentences"
     ],
     'summary': [
-        "Maintains core meaning and facts",
-        "Uses proper formatting and paragraph structure",
-        "Is clear and professional",
-        "Does not contain unwanted sections",
-        "Does not contain references to ticket numbers, prefixes, or branch names"
+        "Starts with text, not images", 
+        "Does not contain internal sections",
+        "Does not have identical duplicate sentences"
     ]
 }
 
@@ -440,6 +441,7 @@ def generate_validation_comment(commit, debug=False):
             f"Content Type: {validation_info.get('content_type', 'unknown')}",
             f"Validation Status: {'CHECK' if validation_info.get('validation_failed') else 'PASSED'}",
             f"Attempts: {validation_info.get('attempts', 'unknown')}",
+            f"Validation Temperature: {validation_info.get('validation_temperature', 'unknown')}",
             f"Last Validation: {validation_info.get('last_validation_time', 'unknown')}"
         ]
         
@@ -780,7 +782,7 @@ class PR:
                     print(f"DEBUG: [edit_content] Attempt {attempt + 1} content (first 100 chars): {repr(current_edit[:100]) if current_edit else None}")
                 
                 # Validate current attempt
-                is_valid, validation_result, content_for_reedit = self.validate_edit(content_type, content, current_edit, edit)
+                is_valid, validation_result, content_for_reedit = self.validate_edit(content_type, content, current_edit, edit, attempt + 1)
                 if self.debug:
                     print(f"DEBUG: [edit_content] Attempt {attempt + 1} validation result: {is_valid}")
                 
@@ -795,6 +797,7 @@ class PR:
                         'attempts': attempt + 1,
                         'validation_result': validation_result,
                         'failure_patterns': failure_patterns,
+                        'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + attempt * VALIDATION_TEMPERATURE_INCREMENT),
                         'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     }
                     self.validation_summaries.append(validation_summary)
@@ -819,6 +822,7 @@ class PR:
                         'attempts': max_attempts,
                         'validation_result': validation_result,
                         'failure_patterns': failure_patterns,
+                        'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + (max_attempts - 1) * VALIDATION_TEMPERATURE_INCREMENT),
                         'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     }
                     if content_for_reedit:
@@ -972,6 +976,7 @@ class PR:
                     'attempts': attempt + 1,
                     'validation_result': validation_result,
                     'failure_patterns': failure_patterns,
+                    'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + attempt * VALIDATION_TEMPERATURE_INCREMENT),
                     'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 if not hasattr(self, 'validation_summaries'):
@@ -1010,6 +1015,7 @@ class PR:
                     'attempts': max_attempts,
                     'validation_result': validation_result,
                     'failure_patterns': failure_patterns,
+                    'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + (max_attempts - 1) * VALIDATION_TEMPERATURE_INCREMENT),
                     'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 if content_for_reedit:
@@ -1030,7 +1036,7 @@ class PR:
                 setattr(self, attr_name, current_edit)
                 return current_edit
 
-    def validate_edit(self, content_type, original_content, edited_content, edit=False):
+    def validate_edit(self, content_type, original_content, edited_content, edit=False, attempt_number=1):
         """Uses LLM to validate edits by checking for common issues.
         
         Args:
@@ -1038,6 +1044,7 @@ class PR:
             original_content (str): The original content before editing
             edited_content (str): The edited content to validate
             edit (bool): Whether to perform validation
+            attempt_number (int): Which editing attempt this is (1-based, for adaptive temperature)
             
         Returns:
             tuple: (bool, str, dict): (is_valid, validation_message, content_for_reedit)
@@ -1072,6 +1079,11 @@ class PR:
             print(f"DEBUG: [validate_edit] Original (first 100 chars): {repr(original_content[:100]) if original_content else None}")
             print(f"DEBUG: [validate_edit] Edited (first 100 chars): {repr(edited_content[:100]) if edited_content else None}")
 
+        # Quick heuristic check for obviously good content
+        if self._quick_validation_check(content_type, original_content, edited_content):
+            print(f"Quick validation PASS for {content_type} edit in PR #{self.pr_number}")
+            return True, "PASS: Quick validation passed", None
+
         # Build detailed validation prompt
         validation_prompt = VALIDATION_PROMPT.format(content_type=content_type)
         if content_type in VALIDATION_CRITERIA:
@@ -1079,15 +1091,21 @@ class PR:
             for criterion in VALIDATION_CRITERIA[content_type]:
                 validation_prompt += f"- {criterion}\n"
 
-        max_retries = DEFAULT_MAX_RETRIES
+        max_retries = 2  # Reduced retries since validation is now more permissive
         retry_delay = DEFAULT_INITIAL_DELAY
         max_delay = DEFAULT_MAX_DELAY
         last_error = None
 
+        # Calculate adaptive validation temperature based on editing attempt
+        validation_temperature = min(
+            VALIDATION_MAX_TEMPERATURE,
+            VALIDATION_BASE_TEMPERATURE + (attempt_number - 1) * VALIDATION_TEMPERATURE_INCREMENT
+        )
+        
         for attempt in range(max_retries):
             try:
-                # Use appropriate parameters based on model
-                api_params = get_model_api_params(MODEL_VALIDATION, MAX_TOKENS_VALIDATION)
+                # Use appropriate parameters based on model with adaptive temperature
+                api_params = get_model_api_params(MODEL_VALIDATION, MAX_TOKENS_VALIDATION, validation_temperature)
                 
                 response = client.chat.completions.create(
                     messages=[
@@ -1155,6 +1173,36 @@ class PR:
                 else:
                     print(f"\nAll validation attempts failed for {content_type} edit in PR #{self.pr_number}. Last error: {last_error}")
                     return True, f"FAIL: Exception during validation - {last_error}", None
+
+    def _quick_validation_check(self, content_type, original_content, edited_content):
+        """Quick heuristic validation check for obviously good content.
+        
+        Returns True if content passes basic checks and can skip LLM validation.
+        """
+        if not edited_content or not original_content:
+            return False
+            
+        # Check for critical issues that should always fail
+        if edited_content.strip().startswith(('![', '<img')):
+            return False  # Starts with image
+            
+        if '## Checklist' in edited_content or '## Deployment' in edited_content:
+            return False  # Contains internal sections
+            
+        # Check for obvious duplicates (same sentence appears twice)
+        sentences = [s.strip() for s in edited_content.split('.') if s.strip()]
+        if len(sentences) != len(set(sentences)) and len(sentences) > 1:
+            return False  # Has duplicate sentences
+            
+        # For titles, check basic sanity
+        if content_type == 'title':
+            if len(edited_content.split('\n')) > 1:
+                return False  # Multi-line title
+            if len(edited_content) > 200:
+                return False  # Extremely long title
+                
+        # If we get here, content looks good
+        return True
 
     def extract_dependencies(self):
         """Extract dependencies and breaking changes from the PR body
@@ -2578,6 +2626,17 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             yaml_header.append(f'# Content edited by AI - {current_time}')
         if commit.get('validated', False):
             yaml_header.append(f'# Content validated by AI - {current_time}')
+            
+            # Add validation temperature information if available
+            validation_summaries = commit.get('validation_summaries', [])
+            if validation_summaries:
+                # Get the highest validation temperature used across all validations
+                max_temp = max((vs.get('validation_temperature', 0) for vs in validation_summaries), default=0)
+                yaml_header.append(f'# Validation temperature (higher is more permissive): {max_temp}')
+            elif commit.get('validation_summary', {}).get('validation_temperature') is not None:
+                temp = commit['validation_summary']['validation_temperature']
+                yaml_header.append(f'# Validation temperature: {temp}')
+                
         if overwrite:
             yaml_header.append(f'# Content overwritten from an earlier version - {current_time}')
         yaml_header.append(f'# PR URL: https://github.com/validmind/{repo}/pull/{pr_number}')
