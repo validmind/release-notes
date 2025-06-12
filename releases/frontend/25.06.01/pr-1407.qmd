@@ -1,15 +1,147 @@
 ---
-title: "UI allows you to customize finding statuses (#1407)"
+title: "Allow customization of finding statuses in the UI (#1407)"
 categories: [frontend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "June 06, 2025"
-# Content edited by AI - 2025-06-11 14:17
-# Content validated by AI - 2025-06-11 14:17
-# Content overwritten from an earlier version - 2025-06-11 14:17
+# Content edited by AI - 2025-06-12 10:52
+# Content validated by AI - 2025-06-12 10:52
+# Validation temperature (higher is more permissive): 0.2
+# Content overwritten from an earlier version - 2025-06-12 10:52
 # PR URL: https://github.com/validmind/frontend/pull/1407
 ---
 
-You can now customize finding statuses by creating new ones and 'soft-deleting' existing ones. If a finding status is deleted, all findings using that status will default to `Open`.
+You can now customize finding statuses by creating new ones or soft-deleting existing ones. When a status is deleted, any findings assigned to it automatically revert to `Open`.
 
-This update introduces a feature for managing finding statuses within the application. It adds new API endpoints for fetching, creating, updating, and deleting finding statuses. The data model now includes a type for finding status with a unique identifier, color scheme, name, and default flag. New UI components support this functionality, including a modal (`AddFindingStatusModal`) with a shared color grid selector for choosing color schemes. The modal disables edits on default status names. The main application and settings pages integrate the new finding statuses, adding a sidebar link for you if you have the appropriate permissions. Existing components that display finding statuses, such as findings lists and detailed views, now use these new statuses and display them with the updated design, using a `VMTag` component with colors derived from the status data. Several settings pages were refactored to use a new `SettingsSection` layout for a consistent look and feel. This update integrates the new finding statuses feature on the backend through API enhancements and on the frontend through component and layout updates.
+You can now manage finding statuses. New API endpoints allow you to fetch, create, update, and delete each status, which includes an ID, name, color scheme, and default flag. The UI introduces an `AddFindingStatusModal` with a color grid selector and restricts name edits for default statuses. Findings lists and detail views display statuses using `VMTag` with their assigned colors. Settings pages now use a unified `SettingsSection` layout and feature a permission-gated sidebar link for managing finding statuses.
+
+<!--- VALIDATION SUMMARY
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:58
+Result: The edited content maintains the essential details and structure of the original content while making minor stylistic adjustments. It effectively communicates the introduction of a new feature for managing finding statuses, detailing both backend and frontend changes. The content is clear and free o...
+
+VALIDATION SUMMARY 2
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:10
+Result: The edited content effectively summarizes the original release notes, capturing the key features and updates introduced in the application. It maintains clarity and conciseness while ensuring that the essential details are conveyed. There are no serious issues present in the edited content. It is ac...
+
+VALIDATION SUMMARY 3
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:12
+Result: The edited content is clear and maintains the original meaning while improving readability. There are no serious issues present. The changes made are stylistic and enhance the flow of the text. The release notes are ready for publication.
+
+VALIDATION SUMMARY 4
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:58
+Result: The edited content maintains the essential details and structure of the original content while making minor stylistic adjustments. It effectively communicates the introduction of a new feature for managing finding statuses, detailing both backend and frontend changes. The content is clear and free o...
+
+VALIDATION SUMMARY 5
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:10
+Result: The edited content effectively summarizes the original release notes, capturing the key features and updates introduced in the application. It maintains clarity and conciseness while ensuring that the essential details are conveyed. There are no serious issues present in the edited content. It is ac...
+
+VALIDATION SUMMARY 6
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:12
+Result: The edited content is clear and maintains the original meaning while improving readability. There are no serious issues present. The changes made are stylistic and enhance the flow of the text. The release notes are ready for publication.
+
+VALIDATION SUMMARY 7
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:16
+Result: The edited content is clear and concise, effectively summarizing the changes introduced. It maintains the essential details from the original content while improving readability. There are no serious issues present, so this content passes the quality check.
+
+VALIDATION SUMMARY 8
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:28
+Result: The edited content is clear and accurately conveys the same information as the original. It maintains the functionality details and uses concise language. There are no serious issues present. The content is approved.
+
+VALIDATION SUMMARY 9
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:30
+Result: The edited content is identical to the original content and does not contain any serious issues. It accurately conveys the information about customizing finding statuses and the behavior when a status is deleted. The release note is clear and concise. Approved.
+
+VALIDATION SUMMARY 10
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:58
+Result: The edited content maintains the essential details and structure of the original content while making minor stylistic adjustments. It effectively communicates the introduction of a new feature for managing finding statuses, detailing both backend and frontend changes. The content is clear and free o...
+
+VALIDATION SUMMARY 11
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:10
+Result: The edited content effectively summarizes the original release notes, capturing the key features and updates introduced in the application. It maintains clarity and conciseness while ensuring that the essential details are conveyed. There are no serious issues present in the edited content. It is ac...
+
+VALIDATION SUMMARY 12
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:12
+Result: The edited content is clear and maintains the original meaning while improving readability. There are no serious issues present. The changes made are stylistic and enhance the flow of the text. The release notes are ready for publication.
+
+VALIDATION SUMMARY 13
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:16
+Result: The edited content is clear and concise, effectively summarizing the changes introduced. It maintains the essential details from the original content while improving readability. There are no serious issues present, so this content passes the quality check.
+
+VALIDATION SUMMARY 14
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:28
+Result: The edited content is clear and accurately conveys the same information as the original. It maintains the functionality details and uses concise language. There are no serious issues present. The content is approved.
+
+VALIDATION SUMMARY 15
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:30
+Result: The edited content is identical to the original content and does not contain any serious issues. It accurately conveys the information about customizing finding statuses and the behavior when a status is deleted. The release note is clear and concise. Approved.
+
+VALIDATION SUMMARY 16
+Content Type: title
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:31
+Result: The edited content is clear and concise, effectively conveying the main point of the original content. It maintains the essential information and is suitable for release notes. There are no serious issues present. 
+
+Verdict: Pass
+--->

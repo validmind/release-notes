@@ -1,21 +1,145 @@
 ---
 title: "Configure finding statuses via the `API` (#1499)"
-categories: [backend, 25.06.01, hotfix, enhancement]
+categories: [backend, 25.06.01, hotfix, enhancement, highlight]
 sidebar: release-notes
 toc-expand: true
 date: "June 06, 2025"
-# Content edited by AI - 2025-06-11 14:17
-# Content validated by AI - 2025-06-11 14:17
-# Content overwritten from an earlier version - 2025-06-11 14:17
+# Content edited by AI - 2025-06-12 10:52
+# Content validated by AI - 2025-06-12 10:52
+# Validation temperature (higher is more permissive): 0.2
+# Content overwritten from an earlier version - 2025-06-12 10:52
 # PR URL: https://github.com/validmind/backend/pull/1499
 ---
 
-You can now customize finding statuses on the Settings page.
+You can now customize finding statuses on the Settings page, moving beyond predefined values.
 
-This update introduces a feature for managing the status of findings, allowing you to define custom statuses such as open, closed, and deleted. It enhances data integrity by implementing a relational approach and extends API interfaces for improved UI interaction.
+You can now create, update, delete, and retrieve custom finding statuses such as `open`, `closed`, and `deleted`. A migration introduces a `finding_statuses` table, replacing the previous string field with a `status_id` foreign key on `findings`, and automatically back-fills existing data. The Finding model, along with all related UI, reporting routes, SQL views, organization templates, and platform configurations, now references this table. New authenticated API endpoints manage statuses and prevent duplicate names.
 
-The changes include a migration script that creates a new `finding_statuses` table and adds a `status_id` column to the `findings` table. This script backfills existing findings with old status values and removes the deprecated column. The `Finding` model is updated to replace the string-based status field with a foreign key relationship to the `FindingStatus` model, affecting serialization, creation, updating, and deletion processes to ensure proper status management.
+<!--- VALIDATION SUMMARY
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:06
+Result: The edited content maintains the essential details and clarity of the original content while improving readability and conciseness. It effectively summarizes the new feature and its components, including database changes, model updates, API modifications, and testing enhancements. The changes are we...
 
-A new `FindingStatus` model is added, featuring methods for creating, updating, deleting, and loading default statuses for an organization. It includes helper methods like serialization and `mark_as_deleted`. API changes introduce new endpoints within a dedicated namespace for managing finding statuses, enforcing validations such as duplicate status names and permissions through the `requires_auth` decorator.
+VALIDATION SUMMARY 2
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:22
+Result: The edited content is a concise and clear summary of the original content. It effectively captures the key changes and features introduced in the pull request. The main points, such as the creation, updating, deletion, and retrieval of custom finding statuses, the migration to a new `finding_statuse...
 
-Related routes, including UI, reporting, and SQL views, are updated to join and filter against the new `FindingStatus` table. Organization templates and platform configurations are also updated to incorporate finding statuses. Unit tests are modified to test the new functionality for creating, updating, and deleting finding statuses as part of finding CRUD operations.
+VALIDATION SUMMARY 3
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:25
+Result: The edited content is clear and maintains the original intent and details. It improves readability by using more natural language and punctuation. There are no serious issues present. The release notes are acceptable.
+
+VALIDATION SUMMARY 4
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:06
+Result: The edited content maintains the essential details and clarity of the original content while improving readability and conciseness. It effectively summarizes the new feature and its components, including database changes, model updates, API modifications, and testing enhancements. The changes are we...
+
+VALIDATION SUMMARY 5
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:22
+Result: The edited content is a concise and clear summary of the original content. It effectively captures the key changes and features introduced in the pull request. The main points, such as the creation, updating, deletion, and retrieval of custom finding statuses, the migration to a new `finding_statuse...
+
+VALIDATION SUMMARY 6
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:25
+Result: The edited content is clear and maintains the original intent and details. It improves readability by using more natural language and punctuation. There are no serious issues present. The release notes are acceptable.
+
+VALIDATION SUMMARY 7
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:28
+Result: The edited content is clear and effectively communicates the change and its purpose. It provides a concise explanation of what the update does and why it is beneficial. There are no serious issues present. The content passes.
+
+VALIDATION SUMMARY 8
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:34
+Result: The edited content is clear and accurately conveys the main point of the original content. It effectively communicates the new feature of customizing finding statuses without unnecessary details. There are no serious issues present, so the content passes.
+
+VALIDATION SUMMARY 9
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:36
+Result: The edited content maintains the original message while slightly rephrasing it for clarity and flow. There are no serious issues with the edited content, so it passes the quality check.
+
+VALIDATION SUMMARY 10
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:06
+Result: The edited content maintains the essential details and clarity of the original content while improving readability and conciseness. It effectively summarizes the new feature and its components, including database changes, model updates, API modifications, and testing enhancements. The changes are we...
+
+VALIDATION SUMMARY 11
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:22
+Result: The edited content is a concise and clear summary of the original content. It effectively captures the key changes and features introduced in the pull request. The main points, such as the creation, updating, deletion, and retrieval of custom finding statuses, the migration to a new `finding_statuse...
+
+VALIDATION SUMMARY 12
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:25
+Result: The edited content is clear and maintains the original intent and details. It improves readability by using more natural language and punctuation. There are no serious issues present. The release notes are acceptable.
+
+VALIDATION SUMMARY 13
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:28
+Result: The edited content is clear and effectively communicates the change and its purpose. It provides a concise explanation of what the update does and why it is beneficial. There are no serious issues present. The content passes.
+
+VALIDATION SUMMARY 14
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:34
+Result: The edited content is clear and accurately conveys the main point of the original content. It effectively communicates the new feature of customizing finding statuses without unnecessary details. There are no serious issues present, so the content passes.
+
+VALIDATION SUMMARY 15
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:36
+Result: The edited content maintains the original message while slightly rephrasing it for clarity and flow. There are no serious issues with the edited content, so it passes the quality check.
+
+VALIDATION SUMMARY 16
+Content Type: title
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:39
+Result: The edited content is clear and concise, but it omits the reference to the specific task or issue number "[SC-10229]" which might be important for tracking purposes. If the context requires mentioning the task number for clarity or traceability, it should be included. Otherwise, the edited content i...
+--->

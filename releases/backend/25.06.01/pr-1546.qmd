@@ -1,15 +1,145 @@
 ---
-title: "Automatically set `PYTHONPATH` for improved module resolution and error handling (#1546)"
+title: "Automatic `PYTHONPATH` setup for improved module resolution and error handling (#1546)"
 categories: [backend, 25.06.01, hotfix]
 sidebar: release-notes
 toc-expand: true
 date: "June 06, 2025"
-# Content edited by AI - 2025-06-11 14:17
-# Content validated by AI - 2025-06-11 14:17
-# Content overwritten from an earlier version - 2025-06-11 14:17
+# Content edited by AI - 2025-06-12 10:52
+# Content validated by AI - 2025-06-12 10:52
+# Validation temperature (higher is more permissive): 0.2
+# Content overwritten from an earlier version - 2025-06-12 10:52
 # PR URL: https://github.com/validmind/backend/pull/1546
 ---
 
-This update allows scripts to be spawned with the application's original base path by setting the `PYTHONPATH`. It uses module calling syntax to correctly load code dependencies that rely on relative imports. Error message handling is improved for better visibility on the console and in HTTP responses. When an error occurs, detailed information is provided, including an error code, message, and guidance for your response. These errors are also logged for further analysis.
+`PYTHONPATH` is now set automatically, allowing spawned scripts to inherit the application's base path. Using `python -m` invocation now loads all dependencies, including those with relative imports. Internal errors are now displayed in both the console and HTTP responses, with logs providing full stack traces for easier debugging.
 
-The update improves the robustness and maintainability of the API and worker processes. In the `Makefile`, the command for running the API now includes the current backend source directory in the `PYTHONPATH`, ensuring explicit module resolution and avoiding path issues. The UI reporting route has been enhanced by invoking the report worker using module syntax with the `-m` flag, simplifying command line invocation and reducing path resolution issues. Error handling is improved by checking for detailed error information before logging and propagating errors. Import statements in the report worker file have been refactored to import directly from the `db` package, streamlining module dependencies and improving maintainability.
+You can now rely on more robust API and worker processes. The `Makefile` adds the backend source directory to `PYTHONPATH` for accurate module resolution. The UI reporting route uses `python -m` to run the report worker, simplifying commands and preventing path errors. Error handling checks for detailed information before logging or re-raising, and the report worker now imports directly from the top-level `db` package, reducing coupling.
+
+<!--- VALIDATION SUMMARY
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:00
+Result: The edited content is clear and effectively summarizes the changes made in the update. It maintains the essential details from the original content while presenting them in a more concise manner. There are no serious issues present, so the content passes the quality check.
+
+VALIDATION SUMMARY 2
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:17
+Result: The edited content effectively conveys the key updates and improvements made in the release. It maintains the essential details while presenting them in a more concise manner. The changes are clear and do not omit any critical information that would lead to misunderstandings. Therefore, the edited c...
+
+VALIDATION SUMMARY 3
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:20
+Result: The edited content is identical to the original content. There are no issues with the content as it stands. It is clear and informative, providing details on the improvements made to the API, worker processes, and error handling. The technical details are well-presented and should be understandable ...
+
+VALIDATION SUMMARY 4
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:00
+Result: The edited content is clear and effectively summarizes the changes made in the update. It maintains the essential details from the original content while presenting them in a more concise manner. There are no serious issues present, so the content passes the quality check.
+
+VALIDATION SUMMARY 5
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:17
+Result: The edited content effectively conveys the key updates and improvements made in the release. It maintains the essential details while presenting them in a more concise manner. The changes are clear and do not omit any critical information that would lead to misunderstandings. Therefore, the edited c...
+
+VALIDATION SUMMARY 6
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:20
+Result: The edited content is identical to the original content. There are no issues with the content as it stands. It is clear and informative, providing details on the improvements made to the API, worker processes, and error handling. The technical details are well-presented and should be understandable ...
+
+VALIDATION SUMMARY 7
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:25
+Result: The edited content is clear and concise, maintaining the essential details from the original content while improving readability. It effectively communicates the changes and improvements made, particularly regarding the `PYTHONPATH` and error handling. The example provided is summarized well, and th...
+
+VALIDATION SUMMARY 8
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:37
+Result: The edited content is a concise and clear version of the original release notes. It effectively communicates the key updates without losing essential information. The changes made improve readability and maintain the technical accuracy of the original content. There are no serious issues present, so...
+
+VALIDATION SUMMARY 9
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:39
+Result: The edited content maintains the original meaning and improves clarity and readability. There are no serious issues present. The changes are acceptable.
+
+VALIDATION SUMMARY 10
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:00
+Result: The edited content is clear and effectively summarizes the changes made in the update. It maintains the essential details from the original content while presenting them in a more concise manner. There are no serious issues present, so the content passes the quality check.
+
+VALIDATION SUMMARY 11
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:17
+Result: The edited content effectively conveys the key updates and improvements made in the release. It maintains the essential details while presenting them in a more concise manner. The changes are clear and do not omit any critical information that would lead to misunderstandings. Therefore, the edited c...
+
+VALIDATION SUMMARY 12
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:20
+Result: The edited content is identical to the original content. There are no issues with the content as it stands. It is clear and informative, providing details on the improvements made to the API, worker processes, and error handling. The technical details are well-presented and should be understandable ...
+
+VALIDATION SUMMARY 13
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:25
+Result: The edited content is clear and concise, maintaining the essential details from the original content while improving readability. It effectively communicates the changes and improvements made, particularly regarding the `PYTHONPATH` and error handling. The example provided is summarized well, and th...
+
+VALIDATION SUMMARY 14
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:37
+Result: The edited content is a concise and clear version of the original release notes. It effectively communicates the key updates without losing essential information. The changes made improve readability and maintain the technical accuracy of the original content. There are no serious issues present, so...
+
+VALIDATION SUMMARY 15
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:39
+Result: The edited content maintains the original meaning and improves clarity and readability. There are no serious issues present. The changes are acceptable.
+
+VALIDATION SUMMARY 16
+Content Type: title
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:41
+Result: The edited content is clear and provides additional context about the purpose of the automatic `PYTHONPATH` setup. There are no serious issues present. The edit is approved.
+--->

@@ -1,24 +1,147 @@
 ---
-title: "Upload `sourcemaps` to `Datadog` and `Sentry` without deploying (#1434)"
+title: "Upload `sourcemaps` to Datadog and Sentry without deploying (#1434)"
 categories: [frontend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "June 06, 2025"
-# Content edited by AI - 2025-06-11 14:17
-# Content validated by AI - 2025-06-11 14:17
-# Content overwritten from an earlier version - 2025-06-11 14:17
+# Content edited by AI - 2025-06-12 10:52
+# Content validated by AI - 2025-06-12 10:52
+# Validation temperature (higher is more permissive): 0.2
+# Content overwritten from an earlier version - 2025-06-12 10:52
 # PR URL: https://github.com/validmind/frontend/pull/1434
 ---
 
-This update allows you to upload sourcemaps to Datadog and Sentry, improving debugging capabilities. An `npm` command is provided for this upload and runs during the `prod` Docker image build. Sourcemaps are removed from the final build target to protect proprietary information. For more details, see the documentation for [Datadog sourcemap](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/), [Sentry sourcemap](https://docs.sentry.io/platforms/javascript/sourcemaps/uploading/cli/), and [Sentry release](https://docs.sentry.io/cli/releases/).
+You can now upload JavaScript sourcemaps to Datadog and Sentry using a new `npm` script that runs automatically during the production Docker build. The updated GitHub Actions workflow provides the necessary variables and then removes the sourcemaps from the final image to protect proprietary code.
 
-Note: The related GitHub actions have been updated to include new variables needed during the build process.
+The Dockerfile now includes a `sourcemaps-upload` stage that runs `scripts/sourcemaps-upload.sh`. This script uses build secrets for Datadog and Sentry API keys, validates necessary environment variables, uploads generated sourcemaps to both services, and transfers the compiled output to the production stage. Sourcemap files are deleted from the final image to protect source code.
 
-This update introduces a multi-stage Docker build to improve error tracking and debugging in production by managing the uploading of sourcemaps. A dedicated build stage, `sourcemaps-upload`, is added, using build secrets to securely handle API keys for Datadog and Sentry. This stage uses a custom NPM script (`sourcemaps-upload`) defined in the package configuration and implemented in the `scripts/sourcemaps-upload.sh` file. The script checks for required environment variables and conditionally uploads the sourcemaps to Datadog and Sentry. The production stage now copies the build output from the sourcemaps upload stage and removes sourcemap files from the final container to prevent exposure of source details. Sentry initialization in the frontend application is updated to include the current release version, aiding in correlating sourcemap data with application versions.
+Frontend Sentry initialization now includes the current release version, ensuring uploaded sourcemaps align with production errors.
 
-Functional changes include:
+<!--- VALIDATION SUMMARY
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:58
+Result: The edited content maintains the key details and clarity of the original content while streamlining some of the language. There are no serious issues present, and the information is conveyed effectively. The changes made are appropriate and enhance readability without losing any critical information...
 
-- Introducing a Docker build stage for uploading sourcemaps.
-- Integrating Datadog and Sentry APIs for automated sourcemap uploads.
-- Updating package scripts and adding necessary development dependencies.
-- Modifying Sentry initialization to include the release version.
+VALIDATION SUMMARY 2
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:11
+Result: The edited content is a concise and clear summary of the original release notes. It effectively captures the key changes and improvements introduced in the update. There are no serious issues present, and the essential details regarding the Docker build process, sourcemap handling, and Sentry initia...
+
+VALIDATION SUMMARY 3
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:15
+Result: The edited content maintains the original meaning and intent while improving clarity and conciseness. There are no serious issues present. The changes made are appropriate and enhance readability. Therefore, the edited content passes the quality check.
+
+VALIDATION SUMMARY 4
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:58
+Result: The edited content maintains the key details and clarity of the original content while streamlining some of the language. There are no serious issues present, and the information is conveyed effectively. The changes made are appropriate and enhance readability without losing any critical information...
+
+VALIDATION SUMMARY 5
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:11
+Result: The edited content is a concise and clear summary of the original release notes. It effectively captures the key changes and improvements introduced in the update. There are no serious issues present, and the essential details regarding the Docker build process, sourcemap handling, and Sentry initia...
+
+VALIDATION SUMMARY 6
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:15
+Result: The edited content maintains the original meaning and intent while improving clarity and conciseness. There are no serious issues present. The changes made are appropriate and enhance readability. Therefore, the edited content passes the quality check.
+
+VALIDATION SUMMARY 7
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:20
+Result: The edited content is clear and concise, maintaining the essential details from the original content. It effectively communicates the enhancements related to sourcemap management and provides links to relevant documentation for further information. The mention of updates to GitHub Actions and the re...
+
+VALIDATION SUMMARY 8
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:32
+Result: The edited content effectively condenses the original information while maintaining the key points. It clearly communicates the new feature of uploading JavaScript sourcemaps to Datadog and Sentry using an `npm` script, the role of the updated GitHub Actions workflow, and the removal of sourcemaps t...
+
+VALIDATION SUMMARY 9
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:34
+Result: The edited content is clear and maintains the original message. The changes made improve readability and flow without altering the meaning. There are no serious issues present. The content passes.
+
+VALIDATION SUMMARY 10
+Content Type: summary (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:51:58
+Result: The edited content maintains the key details and clarity of the original content while streamlining some of the language. There are no serious issues present, and the information is conveyed effectively. The changes made are appropriate and enhance readability without losing any critical information...
+
+VALIDATION SUMMARY 11
+Content Type: summary (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:11
+Result: The edited content is a concise and clear summary of the original release notes. It effectively captures the key changes and improvements introduced in the update. There are no serious issues present, and the essential details regarding the Docker build process, sourcemap handling, and Sentry initia...
+
+VALIDATION SUMMARY 12
+Content Type: summary (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:15
+Result: The edited content maintains the original meaning and intent while improving clarity and conciseness. There are no serious issues present. The changes made are appropriate and enhance readability. Therefore, the edited content passes the quality check.
+
+VALIDATION SUMMARY 13
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:20
+Result: The edited content is clear and concise, maintaining the essential details from the original content. It effectively communicates the enhancements related to sourcemap management and provides links to relevant documentation for further information. The mention of updates to GitHub Actions and the re...
+
+VALIDATION SUMMARY 14
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:32
+Result: The edited content effectively condenses the original information while maintaining the key points. It clearly communicates the new feature of uploading JavaScript sourcemaps to Datadog and Sentry using an `npm` script, the role of the updated GitHub Actions workflow, and the removal of sourcemaps t...
+
+VALIDATION SUMMARY 15
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:34
+Result: The edited content is clear and maintains the original message. The changes made improve readability and flow without altering the meaning. There are no serious issues present. The content passes.
+
+VALIDATION SUMMARY 16
+Content Type: title
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-12 10:52:36
+Result: The edited content is clear and accurately conveys the original message. The use of backticks around "sourcemaps" is appropriate for highlighting technical terms, and the conjunction "and" is correctly used to list Datadog and Sentry. The removal of the reference "[SC-10091]" is acceptable if it was...
+--->
