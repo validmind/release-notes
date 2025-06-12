@@ -44,15 +44,15 @@ EXCLUDED_SECTIONS = [
 
 # --- LLM settings ---
 # Model settings
-MODEL_CLASSIFYING = "gpt-4o-mini"  # For quick section classification
-MODEL_EDITING = "gpt-4o"           # For content editing (single-pass and default multi-pass)
+MODEL_CLASSIFYING = "o3-mini"  # For quick section classification
+MODEL_EDITING = "o3"           # For content editing (single-pass and default multi-pass)
 MODEL_VALIDATION = "o3"            # For edit validation
-MODEL_PROOFREADING = "gpt-4o"      # For proofreading tasks
+MODEL_PROOFREADING = "o3"      # For proofreading tasks
 
 # Multi-pass editing model settings
-MODEL_PASS_1 = "gpt-4o"            # Pass 1: Group and flatten (structural)
+MODEL_PASS_1 = "o3"            # Pass 1: Group and flatten (structural)
 MODEL_PASS_2 = "o3"                # Pass 2: Deduplicate (complex reasoning)
-MODEL_PASS_3 = "gpt-4o"            # Pass 3: Streamline (style polish)
+MODEL_PASS_3 = "o3"            # Pass 3: Streamline (style polish)
 
 # Temperature settings
 BASE_TEMPERATURE = 0.0
@@ -64,6 +64,32 @@ TEMPERATURE_MEANING_ADJUST = -0.05
 # Model parameters
 FREQUENCY_PENALTY = 0.0
 PRESENCE_PENALTY = 0.0
+
+def get_model_api_params(model, max_tokens_value, temperature=BASE_TEMPERATURE):
+    """Get model-specific API parameters for OpenAI calls.
+    
+    Args:
+        model (str): Model name (e.g., 'o3', 'o3-mini', 'gpt-4o')
+        max_tokens_value (int): Maximum tokens value
+        temperature (float): Temperature value
+        
+    Returns:
+        dict: API parameters suitable for client.chat.completions.create()
+    """
+    api_params = {"model": model}
+    
+    # Handle token parameter based on model
+    if model in ["o3", "o3-mini"]:
+        api_params["max_completion_tokens"] = max_tokens_value
+        # o3 models only support default temperature (1), not custom values
+        # Don't set temperature, frequency_penalty, or presence_penalty
+    else:
+        api_params["max_tokens"] = max_tokens_value
+        api_params["temperature"] = temperature
+        api_params["frequency_penalty"] = FREQUENCY_PENALTY
+        api_params["presence_penalty"] = PRESENCE_PENALTY
+    
+    return api_params
 
 # Token limits
 MAX_TOKENS_CLASSIFICATION = 10
@@ -86,7 +112,7 @@ PROOFREAD_MAX_TRIES = 5
 # --- Editing prompts ---
 EDIT_TITLE_PROMPT = (
     "Edit the following PR title for release notes:\n"
-    "- Keep it under 120 characters, in a single line\n"
+    "- Keep it under 80 characters, in a single line\n"
     "- Remove ticket numbers, branch names, prefixes, and trailing periods\n"
     "- Enclose technical terms (e.g., file names, words_with_underscores) in backticks\n"
     "- Use sentence-style capitalization (only the first word and proper nouns)\n"
@@ -327,8 +353,8 @@ def classify_section(section_title, section_content, debug=False):
             content=section_content
         )
             
+        api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_CLASSIFICATION)
         response = client.chat.completions.create(
-            model=MODEL_CLASSIFYING,
             messages=[
                 {
                     "role": "system",
@@ -339,8 +365,7 @@ def classify_section(section_title, section_content, debug=False):
                     "content": prompt
                 }
             ],
-            max_tokens=MAX_TOKENS_CLASSIFICATION,
-            temperature=BASE_TEMPERATURE
+            **api_params
         )
         
         result = response.choices[0].message.content.strip().upper()
@@ -735,18 +760,9 @@ class PR:
                     content_to_edit = content
 
                 # Make API call with model-specific parameters
-                api_params = {}
-                if MODEL_EDITING == "o3":
-                    api_params["max_completion_tokens"] = MAX_TOKENS_EDITING
-                    # o3 only supports default temperature (1), no frequency/presence penalty
-                else:
-                    api_params["max_tokens"] = MAX_TOKENS_EDITING
-                    api_params["temperature"] = temperature
-                    api_params["frequency_penalty"] = FREQUENCY_PENALTY
-                    api_params["presence_penalty"] = PRESENCE_PENALTY
+                api_params = get_model_api_params(MODEL_EDITING, MAX_TOKENS_EDITING, temperature)
                 
                 response = client.chat.completions.create(
-                    model=MODEL_EDITING,
                     messages=[
                         {
                             "role": "system",
@@ -917,18 +933,9 @@ class PR:
             else:
                 content_to_edit = content
             # Use appropriate parameters based on model
-            api_params = {}
-            if model == "o3":
-                api_params["max_completion_tokens"] = MAX_TOKENS_EDITING
-                # o3 only supports default temperature (1), no frequency/presence penalty
-            else:
-                api_params["max_tokens"] = MAX_TOKENS_EDITING
-                api_params["temperature"] = temperature
-                api_params["frequency_penalty"] = FREQUENCY_PENALTY
-                api_params["presence_penalty"] = PRESENCE_PENALTY
+            api_params = get_model_api_params(model, MAX_TOKENS_EDITING, temperature)
             
             response = client.chat.completions.create(
-                model=model,
                 messages=[
                     {"role": "system", "content": EDIT_CONTENT_SYSTEM},
                     {"role": "user", "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content_to_edit}"}
@@ -1034,16 +1041,9 @@ class PR:
         for attempt in range(max_retries):
             try:
                 # Use appropriate parameters based on model
-                api_params = {}
-                if MODEL_VALIDATION == "o3":
-                    api_params["max_completion_tokens"] = MAX_TOKENS_VALIDATION
-                    # o3 only supports default temperature (1)
-                else:
-                    api_params["max_tokens"] = MAX_TOKENS_VALIDATION
-                    api_params["temperature"] = BASE_TEMPERATURE
+                api_params = get_model_api_params(MODEL_VALIDATION, MAX_TOKENS_VALIDATION)
                 
                 response = client.chat.completions.create(
-                    model=MODEL_VALIDATION,
                     messages=[
                         {
                             "role": "system",
@@ -1454,9 +1454,9 @@ def is_merge_pr(title, debug=False):
     
     try:
         prompt = MERGE_PR_CLASSIFICATION_PROMPT.format(title=title)
+        api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_CLASSIFICATION)
 
         response = client.chat.completions.create(
-            model=MODEL_CLASSIFYING,
             messages=[
                 {
                     "role": "system",
@@ -1467,8 +1467,7 @@ def is_merge_pr(title, debug=False):
                     "content": prompt
                 }
             ],
-            max_tokens=MAX_TOKENS_CLASSIFICATION,
-            temperature=BASE_TEMPERATURE
+            **api_params
         )
         
         result = response.choices[0].message.content.strip().upper()
@@ -2388,14 +2387,13 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         prompt = PROOFREAD_SUMMARY_PROMPT.format(summary=summary)
         for attempt in range(max_tries):
             try:
+                api_params = get_model_api_params(MODEL_PROOFREADING, MAX_TOKENS_PROOFREADING)
                 response = client.chat.completions.create(
-                    model=MODEL_PROOFREADING,
                     messages=[
                         {"role": "system", "content": MODEL_PROOFREADING_SYSTEM},
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=MAX_TOKENS_PROOFREADING,
-                    temperature=BASE_TEMPERATURE
+                    **api_params
                 )
                 improved = response.choices[0].message.content.strip()
                 # Simple validation: must start with the required phrase and not be empty
