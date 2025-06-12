@@ -62,9 +62,9 @@ TEMPERATURE_FORMAT_ADJUST = 0.1
 TEMPERATURE_MEANING_ADJUST = -0.05
 
 # Validation temperature settings
-VALIDATION_BASE_TEMPERATURE = 0.1       # Starting temperature for validation
-VALIDATION_TEMPERATURE_INCREMENT = 0.1  # How much to increase per attempt
-VALIDATION_MAX_TEMPERATURE = 0.3        # Maximum validation temperature
+VALIDATION_BASE_TEMPERATURE = 0.2       # Starting temperature for validation
+VALIDATION_TEMPERATURE_INCREMENT = 0.15 # How much to increase per attempt
+VALIDATION_MAX_TEMPERATURE = 0.5        # Maximum validation temperature
 
 # Model parameters
 FREQUENCY_PENALTY = 0.0
@@ -128,7 +128,7 @@ EDIT_TITLE_PROMPT = (
     "{body}"
 )
 
-EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and user-facing release notes. Use temporal language like 'now', 'with this update', or 'you can now' to indicate changes."
+EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and user-facing release notes. Near the top use temporal language like 'now', 'with this update', or 'you can now' to indicate changes."
 
 EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and user-facing release notes. Ensure they begin with a text summary before any images or lists, address readers directly, and use temporal language to indicate changes (e.g., 'you must now', 'this now requires', 'you can now')."
 
@@ -205,31 +205,36 @@ VALIDATION_SYSTEM = "You are a judge evaluating the quality of edited content."
 VALIDATION_PROMPT = (
     "You are a quality checker for release notes. Your job is to catch only SERIOUS problems.\n"
     "\n"
-    "For {content_type}, check if the edit has any of these CRITICAL issues:\n"
-    "1. Content starts with an image/video instead of text\n"
-    "2. Contains identical sentences repeated word-for-word\n"
-    "3. Includes internal sections like 'Checklist', 'Deployment Notes', 'Testing'\n"
-    "4. Adds completely fabricated information not in the original\n"
+    "CRITICAL ISSUES that should FAIL:\n"
+    "1. Content starts with ![image] or <img instead of text\n"
+    "2. Contains identical sentences repeated word-for-word (exact duplicates) or very similar sentences (e.g. multiple sentences that include 'this update' or 'this release' or 'this version')\n"
+    "3. Includes internal sections like '# PR Summary', '## Checklist', '## Deployment Notes', '## Testing'\n"
+    "4. Adds completely fabricated information not present in the original\n"
     "\n"
-    "IMPORTANT: Be very lenient. Most edits should PASS.\n"
-    "- Different wording of the same concept is ACCEPTABLE\n"
-    "- Minor formatting changes are ACCEPTABLE\n"
-    "- Adding temporal language like 'now', 'as of this release' is ACCEPTABLE\n"
-    "- Reasonable title lengths and styles are ACCEPTABLE\n"
-    "- Clarifications and improvements are ACCEPTABLE\n"
+    "AUTOMATIC PASS CONDITIONS (these should always pass):\n"
+    "- Content starts with text (not an image)\n"
+    "- No internal development sections\n"
+    "- No word-for-word duplicate sentences\n"
+    "- Content is reasonable length and professional\n"
     "\n"
-    "Only respond 'FAIL' if you find a critical issue listed above.\n"
-    "Otherwise, respond 'PASS'.\n"
+    "ALWAYS ACCEPTABLE (never fail for these):\n"
+    "- Adding temporal language: 'now', 'as of this release', 'you can now', 'you must now'\n"
+    "- Rewording for clarity while keeping the same meaning\n"
+    "- Minor formatting improvements\n"
+    "- Reasonable title lengths (under 200 characters)\n"
+    "- Single-line titles\n"
+    "- Different phrasing of the same technical concept\n"
+    "- Bullet points and lists\n"
+    "- Technical terms in backticks\n"
     "\n"
-    "Examples of PASS:\n"
-    "- 'You can access the feature' → 'You can now access the feature'\n"
-    "- 'The API requires authentication' → 'The API now requires authentication'\n"
-    "- Minor rewording for clarity\n"
+    "DECISION PROCESS:\n"
+    "1. Does content start with text? If yes, lean toward PASS\n"
+    "2. Are there internal sections? If no, lean toward PASS\n"
+    "3. Are there exact duplicate sentences? If no, lean toward PASS\n"
+    "4. Is the content professional and reasonable? If yes, lean toward PASS\n"
     "\n"
-    "Examples of FAIL:\n"
-    "- Same sentence appears twice identically\n"
-    "- Contains '# PR Summary' section"
-    "- Content starts with ![image] instead of text\n"
+    "Respond with 'PASS' unless you find a critical issue from the FAIL list.\n"
+    "If failing, respond 'FAIL: [specific reason]'."
 )
 
 VALIDATION_CRITERIA = {
@@ -442,6 +447,7 @@ def generate_validation_comment(commit, debug=False):
             f"Validation Status: {'CHECK' if validation_info.get('validation_failed') else 'PASSED'}",
             f"Attempts: {validation_info.get('attempts', 'unknown')}",
             f"Validation Temperature: {validation_info.get('validation_temperature', 'unknown')}",
+
             f"Last Validation: {validation_info.get('last_validation_time', 'unknown')}"
         ]
         
@@ -798,6 +804,7 @@ class PR:
                         'validation_result': validation_result,
                         'failure_patterns': failure_patterns,
                         'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + attempt * VALIDATION_TEMPERATURE_INCREMENT),
+
                         'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     }
                     self.validation_summaries.append(validation_summary)
@@ -823,6 +830,7 @@ class PR:
                         'validation_result': validation_result,
                         'failure_patterns': failure_patterns,
                         'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + (max_attempts - 1) * VALIDATION_TEMPERATURE_INCREMENT),
+
                         'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     }
                     if content_for_reedit:
@@ -977,6 +985,7 @@ class PR:
                     'validation_result': validation_result,
                     'failure_patterns': failure_patterns,
                     'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + attempt * VALIDATION_TEMPERATURE_INCREMENT),
+
                     'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 if not hasattr(self, 'validation_summaries'):
@@ -1016,6 +1025,7 @@ class PR:
                     'validation_result': validation_result,
                     'failure_patterns': failure_patterns,
                     'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + (max_attempts - 1) * VALIDATION_TEMPERATURE_INCREMENT),
+
                     'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 if content_for_reedit:
@@ -1079,10 +1089,7 @@ class PR:
             print(f"DEBUG: [validate_edit] Original (first 100 chars): {repr(original_content[:100]) if original_content else None}")
             print(f"DEBUG: [validate_edit] Edited (first 100 chars): {repr(edited_content[:100]) if edited_content else None}")
 
-        # Quick heuristic check for obviously good content
-        if self._quick_validation_check(content_type, original_content, edited_content):
-            print(f"Quick validation PASS for {content_type} edit in PR #{self.pr_number}")
-            return True, "PASS: Quick validation passed", None
+
 
         # Build detailed validation prompt
         validation_prompt = VALIDATION_PROMPT.format(content_type=content_type)
@@ -1091,7 +1098,7 @@ class PR:
             for criterion in VALIDATION_CRITERIA[content_type]:
                 validation_prompt += f"- {criterion}\n"
 
-        max_retries = 2  # Reduced retries since validation is now more permissive
+        max_retries = 3  # Reasonable retries with improved validation prompt
         retry_delay = DEFAULT_INITIAL_DELAY
         max_delay = DEFAULT_MAX_DELAY
         last_error = None
@@ -1174,35 +1181,7 @@ class PR:
                     print(f"\nAll validation attempts failed for {content_type} edit in PR #{self.pr_number}. Last error: {last_error}")
                     return True, f"FAIL: Exception during validation - {last_error}", None
 
-    def _quick_validation_check(self, content_type, original_content, edited_content):
-        """Quick heuristic validation check for obviously good content.
-        
-        Returns True if content passes basic checks and can skip LLM validation.
-        """
-        if not edited_content or not original_content:
-            return False
-            
-        # Check for critical issues that should always fail
-        if edited_content.strip().startswith(('![', '<img')):
-            return False  # Starts with image
-            
-        if '## Checklist' in edited_content or '## Deployment' in edited_content:
-            return False  # Contains internal sections
-            
-        # Check for obvious duplicates (same sentence appears twice)
-        sentences = [s.strip() for s in edited_content.split('.') if s.strip()]
-        if len(sentences) != len(set(sentences)) and len(sentences) > 1:
-            return False  # Has duplicate sentences
-            
-        # For titles, check basic sanity
-        if content_type == 'title':
-            if len(edited_content.split('\n')) > 1:
-                return False  # Multi-line title
-            if len(edited_content) > 200:
-                return False  # Extremely long title
-                
-        # If we get here, content looks good
-        return True
+
 
     def extract_dependencies(self):
         """Extract dependencies and breaking changes from the PR body
