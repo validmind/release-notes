@@ -1,22 +1,22 @@
 ---
-title: "Sort the model inventory by `Updated Date` or `Documentation Updated Date` (#1326)"
+title: "Sort model inventory by `Updated Date` and `Documentation Updated Date` (#1326)"
 categories: [frontend, 25.05, release, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:54
+# Content overwritten from an earlier version - 2025-06-11 16:54
 # PR URL: https://github.com/validmind/frontend/pull/1326
 ---
 
-You can sort the Inventory Model list by `Updated Date` and `Documentation Updated Date`.
+You can sort the inventory model list by `Updated Date` and `Documentation Updated Date`.
 
-You can now sort the Model Inventory page by `Updated Date` or `Documentation Updated Date` in ascending or descending order using the existing sorting logic in `src/pages/ModelInventory/index.tsx`.
+You can now sort the Model Inventory page by `Updated Date` and `Documentation Updated Date` in both ascending and descending order.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:18:27
+Last Validation: 2025-06-11 16:46:56
 Reedit Available: Yes
 --->

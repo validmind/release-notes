@@ -1,28 +1,26 @@
 ---
-title: "Manage model stakeholder types in `documentation` for easier configuration and permissions management (#686)"
+title: "Manage stakeholder types in `manage-model-stakeholder-types.qmd` document (#686)"
 categories: [documentation, 25.05, release, documentation]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:55
+# Content overwritten from an earlier version - 2025-06-11 16:55
 # PR URL: https://github.com/validmind/documentation/pull/686
 ---
 
-You can now manage model stakeholders more easily. A new `Model stakeholder types` page under `Managing users`, accessible from the landing page, replaces role-based references in `Model inventory fields`, allowing you to edit model stakeholders.
+You can now manage stakeholder types from the `Managing users` tile. Model inventory fields reference these stakeholder types instead of legacy role permissions. Refer to the documentation for editing instructions.
 
-`manage-model-stakeholder-types.qmd`: Manage stakeholder types, assign them to models, and configure permissions.
+The new `manage-model-stakeholder-types.qmd` document explains how to create or edit stakeholder types, set permissions, and assign them to models. The documents `edit-model-inventory-fields.qmd` and `manage-model-inventory-fields.qmd` now reference stakeholder types.
 
-`manage-roles.qmd`: Manage roles, set permissions, link users, and ensure unique names.
+In `manage-roles.qmd`, find instructions on creating roles, assigning permissions, linking roles to users, and following naming rules.
 
-`edit-model-inventory-fields.qmd` and `manage-model-inventory-fields.qmd`: Use stakeholder types to configure inventory field permissions.
-
-`managing-users.qmd`: Align grid columns and update wording.
+The `managing-users.qmd` document has minor layout adjustments for consistency.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:26:44
+Last Validation: 2025-06-11 16:54:00
 Reedit Available: Yes
 --->

@@ -1,26 +1,24 @@
 ---
-title: "Update user guide with consolidated `attestation` section and enhanced `Mermaid` diagram theme colors and styles (#687)"
+title: "Update user guide for `attestation` features, including setup, questionnaires, workflows, and `Attestation` glossary entry (#687)"
 categories: [documentation, 25.05, release, documentation, highlight]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:55
+# Content overwritten from an earlier version - 2025-06-11 16:55
 # PR URL: https://github.com/validmind/documentation/pull/687
 ---
 
-`Model attestation` verifies key model details at a specific time for governance and compliance. It provides clear status updates and role-specific tasks to help you track progress.
+Model attestation allows you and validators to certify model details at a specific time for internal governance, external compliance, status updates, and role-specific tasks. For more information, see the `Working with attestations` guide.
 
-See the guide to get started.
+You can now create structured documentation for model attestations, including setup instructions, questionnaires, review workflows, an attestation guide, and a new `Attestation` glossary entry.
 
-You can now access a consolidated attestation section that includes a workflow guide (setup, questionnaires, review), a glossary entry for `Attestation`, and related guides.
-
-The `Mermaid` diagram theme now features updated node and edge colors, along with rounded node corners.
+The Mermaid diagram theme now features updated node and edge colors, as well as rounded node corners.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:26:07
+Last Validation: 2025-06-11 16:53:40
 Reedit Available: Yes
 --->

@@ -1,26 +1,24 @@
 ---
-title: "Add date localization support with `FormattedDate` and `useFormattedDateAndTime` utilities (#1312)"
+title: "Date localization support with `FormattedDate` component and `useFormattedDateAndTime` hook (#1312)"
 categories: [frontend, 25.05, release, enhancement]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:54
+# Content overwritten from an earlier version - 2025-06-11 16:54
 # PR URL: https://github.com/validmind/frontend/pull/1312
 ---
 
-Date display functions now accept a `locale` parameter, allowing you to format dates based on your preferences.
+Date functions now accept a `locale` parameter, allowing you to display dates in your chosen locale.
 
-`FormattedDate` and `useFormattedDateAndTime` have replaced previous date utilities. All date displays, including admin pages, user views, templates, workflow executions, profile pages, activity feed, related modals, and the custom date picker, now align with your selected locale.
+Use the locale-aware `FormattedDate` component and `useFormattedDateAndTime` hook to replace outdated date utilities. These tools store your UI locale in `localStorage`, render dates with `FormattedDate`, and load date-picker locale data as needed.
 
-Your UI locale preference is saved to `localStorage` when changed.
-
-New `OrganizationRow`, `RoleRow`, and `UserRow` components enhance the efficiency of admin tables.
+Reusable admin rows are now available: `OrganizationRow`, `RoleRow`, and `UserRow`.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:19:52
+Last Validation: 2025-06-11 16:48:11
 Reedit Available: Yes
 --->

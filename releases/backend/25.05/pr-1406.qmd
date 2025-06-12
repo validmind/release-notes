@@ -1,24 +1,22 @@
 ---
-title: "Update `h11` to `0.16.0` for security enhancement (#1406)"
+title: "Upgrade `h11` to `0.16.0` to address CVE-2025-43859 (#1406)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:54
+# Content overwritten from an earlier version - 2025-06-11 16:54
 # PR URL: https://github.com/validmind/backend/pull/1406
 ---
 
-- Updated the base image to `v1.67.4`.
+- Update the Dockerfile base image to `v1.67.4` from `v1.63.14`.
 
-- Set the minimum version of `h11` to `0.16.0` in `pyproject.toml` and `poetry.lock`.
-
-- Upgraded `httpcore` to `1.0.9` for consistent security across container and Poetry builds.
+- Upgrade `h11` to `0.16.0` and `httpcore` to `1.0.9` in Dockerfiles, `pyproject.toml`, and `poetry.lock`.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:11:39
+Last Validation: 2025-06-11 16:40:54
 Reedit Available: Yes
 --->

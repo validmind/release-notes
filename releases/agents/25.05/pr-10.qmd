@@ -1,11 +1,11 @@
 ---
-title: "Local dev displays test message in `UI` (#10)"
+title: "Local dev responds with a test message in the `UI` (#10)"
 categories: [agents, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:54
+# Content overwritten from an earlier version - 2025-06-11 16:54
 # PR URL: https://github.com/validmind/agents/pull/10
 ---
 
@@ -17,6 +17,6 @@ When running locally, we have logic that checks if litellm is running by sending
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:20:22
+Last Validation: 2025-06-11 16:48:33
 Reedit Available: Yes
 --->

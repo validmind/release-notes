@@ -4,17 +4,17 @@ categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:54
+# Content overwritten from an earlier version - 2025-06-11 16:54
 # PR URL: https://github.com/validmind/backend/pull/1393
 ---
 
-The `get_latest_figures` function now filters `datetime` and `date` metadata. If the value is a timestamp, it converts the JSON string to `datetime` using `SQLAlchemy`'s `func.cast`. Otherwise, it compares the raw string.
+Filtering `get_latest_figures` with a `datetime` or `date` now converts JSON string fields to timestamps. Without these filters, fields convert to strings for accurate date and time comparisons.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:12:53
+Last Validation: 2025-06-11 16:40:35
 Reedit Available: Yes
 --->

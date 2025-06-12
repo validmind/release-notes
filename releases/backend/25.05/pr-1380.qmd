@@ -1,20 +1,20 @@
 ---
-title: "Fix regression preventing document downloads (#1380)"
+title: "Fix regression preventing document downloads by requiring `read` authorization for the UI reporting endpoint (#1380)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:54
+# Content overwritten from an earlier version - 2025-06-11 16:54
 # PR URL: https://github.com/validmind/backend/pull/1380
 ---
 
-The reporting endpoint first checks your `read` permission, then verifies the required rights: `download_doc` for `documentation-report` and `download_vr` for `validation-report`. Requesting an unknown report type results in a `BadRequestError`, while other exceptions are managed by the system.
+The UI reporting endpoint requires `read` authorization. It routes `documentation-report` and `monitoring-report` to `download_doc` and directs `validation-report` to `download_vr`. It raises a `BadRequestError` for unknown types and uses default exception handling for others.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:13:00
+Last Validation: 2025-06-11 16:42:36
 Reedit Available: Yes
 --->

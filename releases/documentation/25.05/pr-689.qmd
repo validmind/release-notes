@@ -1,30 +1,36 @@
 ---
-title: "Add new introductory `validation` notebooks with updated security sections and clearer instructions (#689)"
+title: "Add introductory `validation` notebooks and update `ValidMind Library` documentation for setup and usage (#689)"
 categories: [documentation, 25.05, release, documentation]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:55
+# Content overwritten from an earlier version - 2025-06-11 16:55
 # PR URL: https://github.com/validmind/documentation/pull/689
 ---
 
-You can now access model-validation and development notebooks directly from the library portal. Notebook numbering has been updated.
+- Added model validation notebooks and reorganized model development notebooks for clearer sequencing.
 
-Language, links, and styling are consistent with the `API` documentation, and notebook titles are shortened.
+- Updated language, links, and styling to align with API documentation and prevent title overflow.
 
-The landing section uses a dedicated `_sidebar.yaml` for easier navigation.
+- Moved the landing section sidebar to `_sidebar.yaml` for easier maintenance.
 
-The validmind.com link has been removed from the top navigation but remains in the footer.
+- Reframed the Developers > ValidMind Library as a universal library section.
 
-The documentation now includes updated security sections with clearer instructions, setup guides, and examples.
+- Removed the `validmind.com` link from the top navigation; it is still available in the footer.
 
-You can run additional tests with broader coverage for model validation and data quality. The refactored code and reorganized test files improve readability, resolve minor execution and logging issues, and ensure that results and logs handle sensitive data more securely.
+- Updated setup and usage documentation for the `ValidMind Library`, with examples for custom tests and external providers.
+
+- Introduced model validation and data quality tests, including detailed parameters and expected outcomes.
+
+- Refactored code for better readability, reorganized test files, and enhanced test execution and logging.
+
+- Improved security guidance and handling of sensitive data in test results and logs.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:26:11
+Last Validation: 2025-06-11 16:54:30
 Reedit Available: Yes
 --->

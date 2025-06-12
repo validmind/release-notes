@@ -4,21 +4,25 @@ categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:54
+# Content overwritten from an earlier version - 2025-06-11 16:54
 # PR URL: https://github.com/validmind/backend/pull/1391
 ---
 
-Refactored API initialization and logging to reduce noise.
+Refactor API initialization and logging to enhance maintainability and reduce log noise.
 
-- Consolidated imports, reordered error-handler registration, and initialized context earlier in `src/backend/api.py`.
-- Registered routes for diagnostics, organizations, RBAC, scrubbers, settings, users, approvals, assessment options, assets proxy, attestations, block library, guidelines, and model page layouts.
-- Suppressed `/api/v1/health` messages from `werkzeug`; this endpoint now logs at the debug level, while other routes log at the info level.
+- Reorganized imports.
+
+- Registered routes for `diagnostics`, `organizations`, `RBAC`, `scrubbers`, `settings`, `users`, `approvals`, `assessment options`, `assets proxy`, `attestations`, `block library`, `guidelines`, and `model page layouts`.
+
+- Streamlined error handler setup and context initialization.
+
+- Added a `werkzeug` logging filter; `/api/v1/health` now logs at the debug level, while all other endpoints log at the info level.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:12:20
+Last Validation: 2025-06-11 16:41:14
 Reedit Available: Yes
 --->

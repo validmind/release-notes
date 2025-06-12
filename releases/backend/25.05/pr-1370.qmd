@@ -1,20 +1,20 @@
 ---
-title: "Add `file` to `docker/build-push-action` for AWS deployment in `ca1` (#1370)"
+title: "Add file to `docker/build-push-action` for AWS secondary deployment workflow (#1370)"
 categories: [backend, 25.05, release]
 sidebar: release-notes
 toc-expand: true
 date: "April 28, 2025"
-# Content edited by AI - 2025-06-11 16:27
-# Content overwritten from an earlier version - 2025-06-11 16:27
+# Content edited by AI - 2025-06-11 16:54
+# Content overwritten from an earlier version - 2025-06-11 16:54
 # PR URL: https://github.com/validmind/backend/pull/1370
 ---
 
-Set `file: ${{ matrix.file }}` in `docker/build-push-action` to enable the AWS secondary deployment workflow to automatically select the correct Dockerfile from the build matrix. This allows you to build multiple images without changing the workflow.
+You can now build multiple images in the AWS secondary deployment workflow without modifying the workflow. The `docker/build-push-action` step dynamically sets the `Dockerfile` using `file: ${{ matrix.file }}`.
 
 <!--- VALIDATION SUMMARY
 Content Type: title
 Validation Status: CHECK
 Attempts: 7
-Last Validation: 2025-06-11 16:11:21
+Last Validation: 2025-06-11 16:40:30
 Reedit Available: Yes
 --->

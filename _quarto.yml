@@ -20,6 +20,8 @@ website:
         href: validmind-library.qmd
       - text: Documentation
         href: documentation.qmd
+      - text: Feature Highlights
+        href: feature-highlights.qmd#category=highlight
 
 
 
