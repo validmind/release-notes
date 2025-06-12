@@ -149,7 +149,6 @@ EDIT_CONTENT_PROMPT = (
     "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
     "- Don't add concluding or summary statements.\n"
     "- Address readers directly using 'you' instead of 'users' (e.g., 'you can now...' not 'users can now...').\n"
-    "- Use temporal language in the first sentence only to indicate changes: 'now', 'as of this release', 'starting with this version', etc.\n"
     "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...'\n"
     "- If content contains images, ensure the content begins with a text summary before any image embeds."
 )
