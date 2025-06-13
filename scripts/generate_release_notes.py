@@ -128,70 +128,72 @@ EDIT_TITLE_PROMPT = (
     "{body}"
 )
 
-EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and user-facing release notes."
+EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and brevity."
 
-EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and user-facing release notes. Ensure they begin with a text summary before any images or lists and address readers directly."
+EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and brevity."
 
 # --- Content editing instructions ---
-EDIT_CONTENT_SYSTEM = "You are a professional release notes editor."
+EDIT_CONTENT_SYSTEM = (
+    "You are a professional release notes editor. Your task is to combine and streamline duplicate content from the PR body and PR summary comment.\n"
+    "The result should be clear and concise for an external audience without access to the codebase, making the changes easy to understand."
+)
 
 EDIT_CONTENT_PROMPT = (
     "When editing content:\n"
-    "- Remove all Markdown headings (e.g., '#### What', '# PR Summary').\n"
     "- Keep the original meaning and technical accuracy.\n"
     "- Use simple, clear language.\n"
+    "- Address readers directly using 'you' instead of 'users' (e.g., 'you can now ...' not 'users now can ...').\n"
     "- Focus on user-facing changes; keep content concise.\n"
     "- Uppercase acronyms (e.g., 'LLM', 'API') and spell proper names correctly.\n"
     "- Enclose technical terms in backticks"
     "- Follow Quarto formatting (e.g., blank lines between blocks).\n"
     "- Use a space after list markers and start each item with a capital letter.\n"
     "- Don't refer to the 'PR body' or 'PR summary'.\n"
-    "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
     "- Don't add concluding or summary statements.\n"
-    "- Address readers directly using 'you' instead of 'users' (e.g., 'you can now...' not 'users can now...').\n"
-    "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...'\n"
-    "- If content contains images, ensure the content begins with a text summary before any image embeds."
+    "- If content contains images, ensure the content begins with text before any image embeds."
+    "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
 )
 
 # --- Content editing instructions for multi-pass editing ---
 
 EDIT_PASS_1_INSTRUCTIONS = (
     "Pass 1 — Initial cleanup and structure:\n"
-    "- Remove any headings or section markers\n"
-    "- Start with a clear user benefit statement\n"
-    "- Group related changes together\n"
-    "- Use bullet points for technical details\n"
-    "- Explain technical terms in context\n"
+    "- Remove all Markdown headings (e.g., '#### What', '# PR Summary').\n"
+    "- Start with a clear user benefit statement.\n"
+    "- Group related changes together.\n"
+    "- Use bullet points for technical details.\n"
+    "- Explain technical terms in context.\n"
     "- Format as:\n"
-    "  1. User benefit statement\n"
-    "  2. Key changes (bullet points)\n"
-    "  3. Technical details (if needed)\n"
-    "- Remove any duplicate information\n"
+    "  1. User benefit statement.\n"
+    "  2. Technical details (if needed).\n"
+    "  3. Key changes (bullet points).\n"
+    "- Remove any semantically duplicate information.\n"
     "Input: raw text. Output only the edited text."
 )
 
 EDIT_PASS_2_INSTRUCTIONS = (
     "Pass 2 — Deduplicate:\n"
-    "- AGGRESSIVELY remove semantic duplicates - if two sentences describe the same feature/concept, keep only the clearest one\n"
-    "- Consolidate ALL overlapping content about the same functionality into ONE concise paragraph\n"
-    "- Remove redundant explanations - if something is mentioned twice with different wording, pick the best version\n"
+    "- AGGRESSIVELY remove semantic duplicates - if two sentences describe the same feature/concept, keep only the clearest one.\n"
+    "- Consolidate ALL overlapping content about the same functionality into ONE concise paragraph.\n"
+    "- Remove redundant explanations - if something is mentioned twice with different wording, pick the best version.\n"
     "- Eliminate repetitive sentence patterns - avoid starting multiple sentences with 'As of this release', 'Now', 'This update', etc.\n"
-    "- Remove bullet points that merely restate what's already in paragraph form\n"
-    "- If both high-level and detailed descriptions exist for the same feature, merge them into one comprehensive explanation\n"
-    "- Cut verbose explanations - be concise while preserving technical accuracy\n"
-    "- Remove filler phrases and unnecessary elaboration\n"
-    "- Ensure each feature/improvement is mentioned exactly once\n"
-    "- Focus on the most important user-facing changes - remove minor implementation details if they don't add value\n"
+    "- Remove bullet points that merely restate what's already in paragraph form.\n"
+    "- If both high-level and detailed descriptions exist for the same feature, merge them into one comprehensive explanation.\n"
+    "- Cut verbose explanations - be concise while preserving technical accuracy.\n"
+    "- Remove filler phrases and unnecessary elaboration.\n"
+    "- Ensure each feature/improvement is mentioned exactly once.\n"
+    "- Focus on the most important user-facing changes - remove minor implementation details if they don't add value.\n"
     "Input: grouped text from Pass 1. Output only the deduplicated text."
 )
 
 EDIT_PASS_3_INSTRUCTIONS = (
     "Pass 3 — Streamline and summarise:\n"
-    "- Improve clarity and flow\n"
-    "- Trim filler words or overly verbose phrasing\n"
-    "- Avoid using temporal words (e.g., 'now', 'you can now', 'this now requires') multiple times\n"
-    "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...' only when necessary and only at the start\n"
-    "- If semtantic duplicates still exist, aggressively remove them\n"
+    "- Improve clarity and flow.\n"
+    "- Trim filler words or overly verbose phrasing.\n"
+    "- Group related sentences into paragraphs.\n"
+    "- Avoid using multiple temporal words (e.g., 'now', 'you can now', 'this now requires').\n"
+    "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...' only when necessary and only at the start.\n"
+    "- If semtantic duplicates still exist, aggressively remove them.\n"
     "- If concluding or summary statements appear at the end, remove them.\n"
     "Input: deduplicated text from Pass 2. Output only the final edited text."
 )
@@ -203,20 +205,20 @@ VALIDATION_PROMPT = (
     "Check this edited content for CRITICAL ISSUES ONLY. Most content should PASS.\n"
     "\n"
     "FAIL ONLY if you find:\n"
-    "1. Exact duplicate sentences (word-for-word identical)\n"
-    "2. Internal development sections like '# PR Summary', '## Checklist', '## Testing'\n"
-    "3. Content starts with ![image] or <img tag instead of text\n"
-    "4. Completely fabricated information not in the original\n"
+    "1. Exact duplicate sentences (word-for-word identical).\n"
+    "2. Internal development sections like '# PR Summary', '## Checklist', '## Testing'.\n"
+    "3. Content starts with ![image] or <img tag instead of text.\n"
+    "4. Completely fabricated information not in the original.\n"
     "\n"
     "ALWAYS PASS if:\n"
-    "- Content starts with text (even if it has images later)\n"
-    "- No internal development sections\n"
-    "- No exact word-for-word duplicate sentences\n"
-    "- Content is professional and reasonable\n"
-    "- Similar sentences with different wording (this is normal editing)\n"
-    "- Temporal language like 'now', 'this release', 'you can now'\n"
-    "- Technical terms, bullet points, formatting improvements\n"
-    "- Reasonable length changes or rewording for clarity\n"
+    "- Content starts with text (even if it has images later).\n"
+    "- No internal development sections.\n"
+    "- No exact word-for-word duplicate sentences.\n"
+    "- Content is professional and reasonable.\n"
+    "- Similar sentences with different wording (this is normal editing).\n"
+    "- Temporal language like 'now', 'this release', 'you can now'.\n"
+    "- Technical terms, bullet points, formatting improvements.\n"
+    "- Reasonable length changes or rewording for clarity.\n"
     "\n"
     "Be VERY LENIENT. Only fail for the 4 critical issues above.\n"
     "\n"
@@ -1688,7 +1690,29 @@ def get_pr_content(pr_number, repo, debug=False):
             if "# PR Summary" in body:
                 match = re.search(r"(# PR Summary\s*.+?)(?=^## |\Z)", body, re.DOTALL | re.MULTILINE)
                 if match:
-                    pr_summary = match.group(1).strip()
+                    full_summary = match.group(1).strip()
+                    # Extract only the first paragraph after the "# PR Summary" heading
+                    summary_content = full_summary.replace("# PR Summary", "").strip()
+                    if summary_content:
+                        # Split on double newlines first, then single newlines as fallback
+                        paragraphs = summary_content.split('\n\n')
+                        if len(paragraphs) > 1:
+                            pr_summary = f"# PR Summary\n\n{paragraphs[0].strip()}"
+                        else:
+                            # If no double newlines, take first few lines until we hit a bullet point or empty line
+                            lines = summary_content.split('\n')
+                            first_paragraph = []
+                            for line in lines:
+                                line = line.strip()
+                                if not line or line.startswith('- ') or line.startswith('* ') or line.startswith('1.'):
+                                    break
+                                first_paragraph.append(line)
+                            if first_paragraph:
+                                pr_summary = f"# PR Summary\n\n{' '.join(first_paragraph)}"
+                            else:
+                                pr_summary = full_summary
+                    else:
+                        pr_summary = full_summary
                     if debug:
                         print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Found PR summary: {pr_summary[:80]!r}")
                     break

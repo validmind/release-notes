@@ -1,15 +1,15 @@
 ---
 title: "25.06.01 Hotfix release notes"
-date: "June 05, 2025"
+date: "June 06, 2025"
 categories: [cmvm, 25.06.01, hotfix]
 sidebar: release-notes
 toc-expand: true
-# Content edited by AI - 2025-06-12 16:51
-# Content validated by AI (temperature: 0.35) - 2025-06-12 16:51
-# Content overwritten from an earlier version - 2025-06-12 16:51
+# Content edited by AI - 2025-06-12 17:58
+# Content validated by AI (temperature: 0.2) - 2025-06-12 17:58
+# Content overwritten from an earlier version - 2025-06-12 17:58
 ---
 
-This release includes the ability to configure finding statuses via the API, export organization custom fields, and upload sourcemaps to Datadog and Sentry without deploying. Additionally, the UI now allows for customization of finding statuses and more.
+This release includes the ability to configure finding statuses via the API, export custom fields for organizations, upload sourcemaps to Datadog and Sentry during Docker builds, and customize finding statuses in the UI, among other enhancements.
 
 <!-- WARNING: Summary may not mention an enhancement PR -->
 
@@ -24,39 +24,48 @@ This release includes the ability to configure finding statuses via the API, exp
 <!--- Labels: enhancement, highlight --->
 ### Configure finding statuses via the `API` (#1499)
 
-You can now customize finding statuses on the `Settings` page, moving beyond predefined values.
+You can now customize finding statuses directly from the `Settings` page.
 
-You can now define custom finding statuses (e.g., `open`, `closed`, `deleted`) for each organization. This update introduces a `finding_statuses` table and replaces the `status` string field in `findings` with a foreign-key `status_id`. A migration backfills existing data and removes the old column. The updated `Finding` and new `FindingStatus` models manage serialization, default status creation, and include a `mark_as_deleted` helper. Authenticated API endpoints allow you to list, create, update, and delete statuses, with validation to prevent duplicate names. All UI views, reports, SQL queries, organization templates, and platform configurations now reference the new table, and unit tests cover complete CRUD operations.
+You can now define and manage custom statuses for findings (e.g., `open`, `closed`, `deleted`).
 
 
 <!--- PR #1448: https://github.com/validmind/backend/pull/1448 --->
 <!--- Labels: enhancement, python --->
-### Export organization `custom fields` (#1448)
+### Export `organization` custom fields (#1448)
 
-Organization template exports now include `custom fields`, allowing new organizations created from a template to inherit them automatically. There are no breaking changes.
+When you export an organization template, its custom fields are automatically included. Any organization created from that template will have those fields pre-configured.
 
-The `sanitize_custom_fields` method removes empty values, any form of `'null'` or `'n/a'`, and entries starting with `'err:'`. Organization template serialization uses this method to ensure only valid custom fields appear in the output.
-
-When an organization is created, the system selects a user from that organization to trigger custom-field update events, applying default or template-defined fields to all related inventory models.
-
-Inventory models are fetched by `cuid` using a direct database filter, which simplifies the query and improves error handling.
-
-Template serialization retrieves the most recent version data instead of a static structure, with streamlined logging and error messages.
+You can now add custom fields to the `Organization` and `Inventory` models, enhancing template processing speed and efficiency.
 
 <!-- ### Changes with no label -->
 
 
 <!--- PR #1546: https://github.com/validmind/backend/pull/1546 --->
 <!--- Labels: none --->
-### Automatically set `PYTHONPATH` for improved module resolution (#1546)
+### Set `PYTHONPATH` automatically for script execution (#1546)
 
-Setting `PYTHONPATH` automatically propagates the application’s base path to spawned scripts, ensuring relative imports resolve correctly.
+You can now run scripts with the correct base path. The runner sets `PYTHONPATH` and calls each script as a module, ensuring relative imports resolve properly. If a module fails to load, the app returns a structured JSON error, displays it in the console, and logs the full message for easier troubleshooting.
 
-Error handling displays detailed information in the console, HTTP responses, and logs, including error codes, messages, and troubleshooting guidance. Issues like `ModuleNotFoundError` are fully recorded for easier debugging.
+```
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Failed to generate monitoring report",
+    "details": {
+      "error": "/Users/andres/code/backend/.venv/bin/python3: Error while finding module specification for 'workers.report_worker' (ModuleNotFoundError: No module named 'workers')\n"
+    },
+    "user_response": "Please search for INTERNAL_ERROR in the documentation for troubleshooting information.",
+    "status": 500
+  },
+  "message": "Failed to generate monitoring report"
+}
+```
 
-If you choose not to rely on `PYTHONPATH`, you can adopt alternative import strategies to achieve the same behavior.
+This update enhances robustness and maintainability across the API and worker processes.
 
-This update improves API and worker robustness and maintainability. The Makefile adds the backend source directory to `PYTHONPATH`, clarifying module resolution and preventing path issues. The UI reporting route invokes the report worker with `python -m`, simplifying execution and avoiding path errors. Error handling checks for detailed information before logging and raising exceptions. Report worker imports use direct references to the `db` package, reducing dependencies.
+- Enhanced error handling prevents unexpected failures.
+- Optimized worker management improves performance.
+- Refined API endpoints ensure consistent data handling.
 
 
 # Frontend
@@ -68,22 +77,22 @@ This update improves API and worker robustness and maintainability. The Makefile
 
 <!--- PR #1434: https://github.com/validmind/frontend/pull/1434 --->
 <!--- Labels: enhancement --->
-### Upload `sourcemaps` to `Datadog` and `Sentry` without deploying (#1434)
+### Upload `sourcemaps` to Datadog and Sentry during Docker build (#1434)
 
-`GitHub Actions` accepts the required build variables, allowing you to upload `sourcemaps` to `Datadog` or `Sentry` for improved error tracking.
+You can now upload JavaScript sourcemaps to Datadog and Sentry during the `prod` Docker image build using a new `npm` command. The build process removes these sourcemaps from the final image to keep proprietary code private.
 
-This update introduces a `sourcemaps-upload` stage to the multi-stage Docker build. This stage executes the `sourcemaps-upload` NPM script through `scripts/sourcemaps-upload.sh`, utilizing build secrets for Datadog and Sentry API keys. It validates necessary environment variables and uploads sourcemaps to both services. In the production stage, the build output is copied, and sourcemap files are deleted to prevent source exposure. Sentry initializes with the current release version to ensure errors align with the uploaded sourcemaps.
+For more details, see the official guides: [Datadog sourcemap](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/), [Sentry sourcemap](https://docs.sentry.io/platforms/javascript/sourcemaps/uploading/cli/), and the [Sentry release](https://docs.sentry.io/cli/releases/).
+
+You now get more reliable production error tracking. During a new `sourcemaps-upload` stage in the multi-stage Docker build, sourcemaps are uploaded to Datadog and Sentry. This stage runs `npm run sourcemaps-upload` (`scripts/sourcemaps-upload.sh`), reads your Datadog and Sentry API keys from build secrets, verifies the required variables, and pushes the sourcemaps. The sourcemaps are then removed from the final image to prevent source code exposure. At runtime, Sentry is initialized with the current release version, allowing you to match errors to the correct build.
 
 
 <!--- PR #1407: https://github.com/validmind/frontend/pull/1407 --->
 <!--- Labels: enhancement --->
-### UI allows customization of finding statuses (#1407)
+### Allow customization of finding statuses in the UI (#1407)
 
-You can now create custom finding statuses and `soft-delete` them. Deleting a status automatically resets associated findings to `Open`.
+You can now create custom finding statuses to categorize findings as needed. Additionally, you can soft-delete obsolete statuses, and when a status is removed, its associated findings automatically reset to `Open`.
 
-You can now manage finding statuses using new API endpoints: `fetch`, `create`, `update`, and `delete`. The expanded data model includes an ID, name, color scheme, and default flag.
-
-The UI introduces `AddFindingStatusModal` with a shared color grid. Names of default statuses are read-only. Findings lists, detail views, and settings pages display statuses using `VMTag`. A sidebar link is available for roles with permission. All affected settings pages use the unified `SettingsSection` layout.
+You can now use new `API` endpoints to fetch, create, update, and delete finding statuses. Each finding status includes a unique identifier, name, color, and a `Default` flag.
 
 
 <!--- # Agents --->
