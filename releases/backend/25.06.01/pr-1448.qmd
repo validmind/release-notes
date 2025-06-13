@@ -3,151 +3,154 @@ title: "Export organization `custom fields` (#1448)"
 categories: [backend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "June 06, 2025"
-# Content edited by AI - 2025-06-12 10:52
-# Content validated by AI - 2025-06-12 10:52
-# Validation temperature (higher is more permissive): 0.2
-# Content overwritten from an earlier version - 2025-06-12 10:52
+date: "June 05, 2025"
+# Content edited by AI - 2025-06-12 16:51
+# Content validated by AI (temperature: 0.35) - 2025-06-12 16:51
+# Content overwritten from an earlier version - 2025-06-12 16:51
 # PR URL: https://github.com/validmind/backend/pull/1448
 ---
 
-You can now export organization templates that include `custom fields`. When you create a new organization from a template, these fields are automatically added. There are no breaking changes.
+Organization template exports now include `custom fields`, allowing new organizations created from a template to inherit them automatically. There are no breaking changes.
 
-Now, a `sanitize_custom_fields` method is included in inventory model serialization. This method removes empty values, strings equal to `null` or `n/a` (case-insensitive), and values starting with `err:`. Organization templates now use this sanitizer to ensure only valid custom fields are stored.
+The `sanitize_custom_fields` method removes empty values, any form of `'null'` or `'n/a'`, and entries starting with `'err:'`. Organization template serialization uses this method to ensure only valid custom fields appear in the output.
 
-When creating an organization, the system now selects a user from that organization and triggers custom-field update events, allowing default or template-defined fields to immediately propagate to related inventory models.
+When an organization is created, the system selects a user from that organization to trigger custom-field update events, applying default or template-defined fields to all related inventory models.
 
-Inventory models are now retrieved using a direct database filter on `cuid`, reducing query overhead and enhancing error handling.
+Inventory models are fetched by `cuid` using a direct database filter, which simplifies the query and improves error handling.
 
-Template serialization now accesses the latest version data, providing you with accurate, version-aware template content.
-
-Logging, formatting, and error messages have been standardized for consistency.
+Template serialization retrieves the most recent version data instead of a static structure, with streamlined logging and error messages.
 
 <!--- VALIDATION SUMMARY
 Content Type: summary (grouped_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:01
-Result: The edited content maintains the original intent and details while improving clarity and readability. It effectively summarizes the key changes and enhancements introduced in the update. There are no serious issues present, so the content passes the quality check.
+Last Validation: 2025-06-12 16:49:21
+Result: The edited content is clear and effectively communicates the updates and enhancements made in the release. It maintains the essential details from the original content while improving readability and flow. There are no serious issues present, so the content passes the quality check.
 
 VALIDATION SUMMARY 2
 Content Type: summary (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:17
-Result: The edited content effectively captures the key updates and improvements from the original content while maintaining clarity and conciseness. It highlights the introduction of the `sanitize_custom_fields` method, the changes in organization creation workflow, the improvements in inventory model retr...
+Last Validation: 2025-06-12 16:49:36
+Result: The edited content successfully condenses the original release notes while maintaining the essential information. It highlights the key updates and improvements without losing clarity or meaning. The changes made are appropriate and do not introduce any serious issues. Therefore, the edited content ...
 
 VALIDATION SUMMARY 3
 Content Type: summary (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:21
-Result: The edited content maintains the original meaning and intent while improving clarity and readability. The changes made are stylistic and do not introduce any errors or significant issues. Therefore, the edited content passes the quality check.
+Last Validation: 2025-06-12 16:49:40
+Result: The edited content maintains the original meaning and improves clarity and conciseness. The changes made are appropriate, and there are no serious issues present. The release notes are clear and informative. 
+
+Pass.
 
 VALIDATION SUMMARY 4
 Content Type: summary (grouped_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:01
-Result: The edited content maintains the original intent and details while improving clarity and readability. It effectively summarizes the key changes and enhancements introduced in the update. There are no serious issues present, so the content passes the quality check.
+Last Validation: 2025-06-12 16:49:21
+Result: The edited content is clear and effectively communicates the updates and enhancements made in the release. It maintains the essential details from the original content while improving readability and flow. There are no serious issues present, so the content passes the quality check.
 
 VALIDATION SUMMARY 5
 Content Type: summary (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:17
-Result: The edited content effectively captures the key updates and improvements from the original content while maintaining clarity and conciseness. It highlights the introduction of the `sanitize_custom_fields` method, the changes in organization creation workflow, the improvements in inventory model retr...
+Last Validation: 2025-06-12 16:49:36
+Result: The edited content successfully condenses the original release notes while maintaining the essential information. It highlights the key updates and improvements without losing clarity or meaning. The changes made are appropriate and do not introduce any serious issues. Therefore, the edited content ...
 
 VALIDATION SUMMARY 6
 Content Type: summary (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:21
-Result: The edited content maintains the original meaning and intent while improving clarity and readability. The changes made are stylistic and do not introduce any errors or significant issues. Therefore, the edited content passes the quality check.
+Last Validation: 2025-06-12 16:49:40
+Result: The edited content maintains the original meaning and improves clarity and conciseness. The changes made are appropriate, and there are no serious issues present. The release notes are clear and informative. 
+
+Pass.
 
 VALIDATION SUMMARY 7
 Content Type: notes (grouped_text)
 Validation Status: PASSED
-Attempts: 1
-Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:24
-Result: The release notes content is clear and provides a concise explanation of the changes made. It effectively communicates the addition of custom fields to exported organization templates and the benefits of this change. There are no serious issues present, and the content is suitable for release. Appro...
+Attempts: 2
+Validation Temperature: 0.35
+Last Validation: 2025-06-12 16:49:47
+Result: The release notes content is clear and provides a good explanation of the changes made. It effectively communicates the enhancement to the organization template export functionality by including custom fields, which simplifies the setup process for new organizations. The absence of breaking changes ...
 
 VALIDATION SUMMARY 8
 Content Type: notes (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:31
-Result: The edited content is clear and concise, effectively conveying the key information from the original content. It maintains the essential details about the inclusion of custom fields in exported organization templates and confirms that there are no breaking changes. The simplification does not omit a...
+Last Validation: 2025-06-12 16:49:53
+Result: The edited content is clear and concise, effectively conveying the key update about the inclusion of custom fields in organization template exports. It maintains the essential information from the original content and communicates it in a straightforward manner. There are no serious issues with the ...
 
 VALIDATION SUMMARY 9
 Content Type: notes (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:33
-Result: The edited content is clear and maintains the original meaning. It effectively communicates the update and assures users that there are no breaking changes. There are no serious issues present. The release note passes.
+Last Validation: 2025-06-12 16:49:54
+Result: The edited content is clear and maintains the original message. There are no serious issues present. The changes made improve the readability and flow of the sentence. The release note is approved.
 
 VALIDATION SUMMARY 10
 Content Type: summary (grouped_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:01
-Result: The edited content maintains the original intent and details while improving clarity and readability. It effectively summarizes the key changes and enhancements introduced in the update. There are no serious issues present, so the content passes the quality check.
+Last Validation: 2025-06-12 16:49:21
+Result: The edited content is clear and effectively communicates the updates and enhancements made in the release. It maintains the essential details from the original content while improving readability and flow. There are no serious issues present, so the content passes the quality check.
 
 VALIDATION SUMMARY 11
 Content Type: summary (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:17
-Result: The edited content effectively captures the key updates and improvements from the original content while maintaining clarity and conciseness. It highlights the introduction of the `sanitize_custom_fields` method, the changes in organization creation workflow, the improvements in inventory model retr...
+Last Validation: 2025-06-12 16:49:36
+Result: The edited content successfully condenses the original release notes while maintaining the essential information. It highlights the key updates and improvements without losing clarity or meaning. The changes made are appropriate and do not introduce any serious issues. Therefore, the edited content ...
 
 VALIDATION SUMMARY 12
 Content Type: summary (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:21
-Result: The edited content maintains the original meaning and intent while improving clarity and readability. The changes made are stylistic and do not introduce any errors or significant issues. Therefore, the edited content passes the quality check.
+Last Validation: 2025-06-12 16:49:40
+Result: The edited content maintains the original meaning and improves clarity and conciseness. The changes made are appropriate, and there are no serious issues present. The release notes are clear and informative. 
+
+Pass.
 
 VALIDATION SUMMARY 13
 Content Type: notes (grouped_text)
 Validation Status: PASSED
-Attempts: 1
-Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:24
-Result: The release notes content is clear and provides a concise explanation of the changes made. It effectively communicates the addition of custom fields to exported organization templates and the benefits of this change. There are no serious issues present, and the content is suitable for release. Appro...
+Attempts: 2
+Validation Temperature: 0.35
+Last Validation: 2025-06-12 16:49:47
+Result: The release notes content is clear and provides a good explanation of the changes made. It effectively communicates the enhancement to the organization template export functionality by including custom fields, which simplifies the setup process for new organizations. The absence of breaking changes ...
 
 VALIDATION SUMMARY 14
 Content Type: notes (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:31
-Result: The edited content is clear and concise, effectively conveying the key information from the original content. It maintains the essential details about the inclusion of custom fields in exported organization templates and confirms that there are no breaking changes. The simplification does not omit a...
+Last Validation: 2025-06-12 16:49:53
+Result: The edited content is clear and concise, effectively conveying the key update about the inclusion of custom fields in organization template exports. It maintains the essential information from the original content and communicates it in a straightforward manner. There are no serious issues with the ...
 
 VALIDATION SUMMARY 15
 Content Type: notes (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:33
-Result: The edited content is clear and maintains the original meaning. It effectively communicates the update and assures users that there are no breaking changes. There are no serious issues present. The release note passes.
+Last Validation: 2025-06-12 16:49:54
+Result: The edited content is clear and maintains the original message. There are no serious issues present. The changes made improve the readability and flow of the sentence. The release note is approved.
 
 VALIDATION SUMMARY 16
 Content Type: title
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:35
-Result: The edited content is acceptable. The use of backticks around "custom fields" is a stylistic choice and does not introduce any serious issues. The meaning remains clear and accurate.
+Last Validation: 2025-06-12 16:49:56
+Result: The edited content is acceptable. The use of backticks around "custom fields" is a stylistic choice and does not introduce any serious issues. The meaning remains clear and accurate. Approved.
 --->

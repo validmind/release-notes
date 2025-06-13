@@ -1,147 +1,146 @@
 ---
-title: "Allow customization of finding statuses in the UI (#1407)"
+title: "UI allows customization of finding statuses (#1407)"
 categories: [frontend, 25.06.01, hotfix, enhancement]
 sidebar: release-notes
 toc-expand: true
-date: "June 06, 2025"
-# Content edited by AI - 2025-06-12 10:52
-# Content validated by AI - 2025-06-12 10:52
-# Validation temperature (higher is more permissive): 0.2
-# Content overwritten from an earlier version - 2025-06-12 10:52
+date: "June 05, 2025"
+# Content edited by AI - 2025-06-12 16:51
+# Content validated by AI (temperature: 0.2) - 2025-06-12 16:51
+# Content overwritten from an earlier version - 2025-06-12 16:51
 # PR URL: https://github.com/validmind/frontend/pull/1407
 ---
 
-You can now customize finding statuses by creating new ones or soft-deleting existing ones. When a status is deleted, any findings assigned to it automatically revert to `Open`.
+You can now create custom finding statuses and `soft-delete` them. Deleting a status automatically resets associated findings to `Open`.
 
-You can now manage finding statuses. New API endpoints allow you to fetch, create, update, and delete each status, which includes an ID, name, color scheme, and default flag. The UI introduces an `AddFindingStatusModal` with a color grid selector and restricts name edits for default statuses. Findings lists and detail views display statuses using `VMTag` with their assigned colors. Settings pages now use a unified `SettingsSection` layout and feature a permission-gated sidebar link for managing finding statuses.
+You can now manage finding statuses using new API endpoints: `fetch`, `create`, `update`, and `delete`. The expanded data model includes an ID, name, color scheme, and default flag.
+
+The UI introduces `AddFindingStatusModal` with a shared color grid. Names of default statuses are read-only. Findings lists, detail views, and settings pages display statuses using `VMTag`. A sidebar link is available for roles with permission. All affected settings pages use the unified `SettingsSection` layout.
 
 <!--- VALIDATION SUMMARY
 Content Type: summary (grouped_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:58
-Result: The edited content maintains the essential details and structure of the original content while making minor stylistic adjustments. It effectively communicates the introduction of a new feature for managing finding statuses, detailing both backend and frontend changes. The content is clear and free o...
+Last Validation: 2025-06-12 16:50:15
+Result: The edited content is clear and effectively communicates the updates introduced in the release. It maintains the essential details from the original content while improving readability and flow. There are no serious issues present, so the content passes the quality check.
 
 VALIDATION SUMMARY 2
 Content Type: summary (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:10
-Result: The edited content effectively summarizes the original release notes, capturing the key features and updates introduced in the application. It maintains clarity and conciseness while ensuring that the essential details are conveyed. There are no serious issues present in the edited content. It is ac...
+Last Validation: 2025-06-12 16:50:31
+Result: The edited content effectively condenses the original information while maintaining clarity. It highlights the key features and changes introduced in the update, such as the new API endpoints, UI components, and layout updates. The essential details about the data model enhancements and the integrat...
 
 VALIDATION SUMMARY 3
 Content Type: summary (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:12
-Result: The edited content is clear and maintains the original meaning while improving readability. There are no serious issues present. The changes made are stylistic and enhance the flow of the text. The release notes are ready for publication.
+Last Validation: 2025-06-12 16:50:35
+Result: The edited content is clear and maintains the original meaning while improving readability. There are no serious issues present. The changes made enhance the flow and clarity of the information. Therefore, the edited content passes the quality check.
 
 VALIDATION SUMMARY 4
 Content Type: summary (grouped_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:58
-Result: The edited content maintains the essential details and structure of the original content while making minor stylistic adjustments. It effectively communicates the introduction of a new feature for managing finding statuses, detailing both backend and frontend changes. The content is clear and free o...
+Last Validation: 2025-06-12 16:50:15
+Result: The edited content is clear and effectively communicates the updates introduced in the release. It maintains the essential details from the original content while improving readability and flow. There are no serious issues present, so the content passes the quality check.
 
 VALIDATION SUMMARY 5
 Content Type: summary (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:10
-Result: The edited content effectively summarizes the original release notes, capturing the key features and updates introduced in the application. It maintains clarity and conciseness while ensuring that the essential details are conveyed. There are no serious issues present in the edited content. It is ac...
+Last Validation: 2025-06-12 16:50:31
+Result: The edited content effectively condenses the original information while maintaining clarity. It highlights the key features and changes introduced in the update, such as the new API endpoints, UI components, and layout updates. The essential details about the data model enhancements and the integrat...
 
 VALIDATION SUMMARY 6
 Content Type: summary (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:12
-Result: The edited content is clear and maintains the original meaning while improving readability. There are no serious issues present. The changes made are stylistic and enhance the flow of the text. The release notes are ready for publication.
+Last Validation: 2025-06-12 16:50:35
+Result: The edited content is clear and maintains the original meaning while improving readability. There are no serious issues present. The changes made enhance the flow and clarity of the information. Therefore, the edited content passes the quality check.
 
 VALIDATION SUMMARY 7
 Content Type: notes (grouped_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:16
-Result: The edited content is clear and concise, effectively summarizing the changes introduced. It maintains the essential details from the original content while improving readability. There are no serious issues present, so this content passes the quality check.
+Last Validation: 2025-06-12 16:50:40
+Result: The edited content is clear and concise, effectively summarizing the changes introduced in the update. It maintains the essential details from the original content while improving readability. There are no serious issues present. The release notes are acceptable.
 
 VALIDATION SUMMARY 8
 Content Type: notes (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:28
-Result: The edited content is clear and accurately conveys the same information as the original. It maintains the functionality details and uses concise language. There are no serious issues present. The content is approved.
+Last Validation: 2025-06-12 16:50:46
+Result: The edited content is clear and concise, effectively conveying the same information as the original content. There are no serious issues present. The update is acceptable for release.
 
 VALIDATION SUMMARY 9
 Content Type: notes (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:30
-Result: The edited content is identical to the original content and does not contain any serious issues. It accurately conveys the information about customizing finding statuses and the behavior when a status is deleted. The release note is clear and concise. Approved.
+Last Validation: 2025-06-12 16:50:49
+Result: The edited content is clear and maintains the original meaning. There are no serious issues present. The change from a semicolon to a period is stylistic and does not affect the overall understanding. The content passes.
 
 VALIDATION SUMMARY 10
 Content Type: summary (grouped_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:51:58
-Result: The edited content maintains the essential details and structure of the original content while making minor stylistic adjustments. It effectively communicates the introduction of a new feature for managing finding statuses, detailing both backend and frontend changes. The content is clear and free o...
+Last Validation: 2025-06-12 16:50:15
+Result: The edited content is clear and effectively communicates the updates introduced in the release. It maintains the essential details from the original content while improving readability and flow. There are no serious issues present, so the content passes the quality check.
 
 VALIDATION SUMMARY 11
 Content Type: summary (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:10
-Result: The edited content effectively summarizes the original release notes, capturing the key features and updates introduced in the application. It maintains clarity and conciseness while ensuring that the essential details are conveyed. There are no serious issues present in the edited content. It is ac...
+Last Validation: 2025-06-12 16:50:31
+Result: The edited content effectively condenses the original information while maintaining clarity. It highlights the key features and changes introduced in the update, such as the new API endpoints, UI components, and layout updates. The essential details about the data model enhancements and the integrat...
 
 VALIDATION SUMMARY 12
 Content Type: summary (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:12
-Result: The edited content is clear and maintains the original meaning while improving readability. There are no serious issues present. The changes made are stylistic and enhance the flow of the text. The release notes are ready for publication.
+Last Validation: 2025-06-12 16:50:35
+Result: The edited content is clear and maintains the original meaning while improving readability. There are no serious issues present. The changes made enhance the flow and clarity of the information. Therefore, the edited content passes the quality check.
 
 VALIDATION SUMMARY 13
 Content Type: notes (grouped_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:16
-Result: The edited content is clear and concise, effectively summarizing the changes introduced. It maintains the essential details from the original content while improving readability. There are no serious issues present, so this content passes the quality check.
+Last Validation: 2025-06-12 16:50:40
+Result: The edited content is clear and concise, effectively summarizing the changes introduced in the update. It maintains the essential details from the original content while improving readability. There are no serious issues present. The release notes are acceptable.
 
 VALIDATION SUMMARY 14
 Content Type: notes (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:28
-Result: The edited content is clear and accurately conveys the same information as the original. It maintains the functionality details and uses concise language. There are no serious issues present. The content is approved.
+Last Validation: 2025-06-12 16:50:46
+Result: The edited content is clear and concise, effectively conveying the same information as the original content. There are no serious issues present. The update is acceptable for release.
 
 VALIDATION SUMMARY 15
 Content Type: notes (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:30
-Result: The edited content is identical to the original content and does not contain any serious issues. It accurately conveys the information about customizing finding statuses and the behavior when a status is deleted. The release note is clear and concise. Approved.
+Last Validation: 2025-06-12 16:50:49
+Result: The edited content is clear and maintains the original meaning. There are no serious issues present. The change from a semicolon to a period is stylistic and does not affect the overall understanding. The content passes.
 
 VALIDATION SUMMARY 16
 Content Type: title
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-12 10:52:31
-Result: The edited content is clear and concise, effectively conveying the main point of the original content. It maintains the essential information and is suitable for release notes. There are no serious issues present. 
-
-Verdict: Pass
+Last Validation: 2025-06-12 16:50:51
+Result: The edited content is a concise version of the original. However, it omits the reference to the specific task or issue number ([SC-10231]), which might be important for tracking purposes. If the context requires maintaining the link to the specific task or issue, it would be better to include it. Ot...
 --->

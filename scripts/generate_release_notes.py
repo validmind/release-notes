@@ -156,16 +156,18 @@ EDIT_CONTENT_PROMPT = (
 # --- Content editing instructions for multi-pass editing ---
 
 EDIT_PASS_1_INSTRUCTIONS = (
-    "Pass 1 — Group and flatten:\n"
-    "- Remove ALL Markdown headings (#, ##, ###, ####, etc.) including '# PR Summary'\n"
-    "- Combine related content into cohesive blocks, but avoid creating duplicate sentences\n"
-    "- Preserve paragraph breaks and list formatting\n"
-    "- If there are breaking changes, highlight them clearly\n"
-    "- Create ONE summary paragraph at the top if multiple summary statements exist\n"
-    "- If content is only bullet points, add a brief introductory sentence\n"
-    "- Ensure content begins with explanatory text, not images or bullet points\n"
-    "- Use varied sentence starters to avoid repetitive patterns\n"
-    "Output only the grouped and flattened text."
+    "Pass 1 — Initial cleanup and structure:\n"
+    "- Remove any headings or section markers\n"
+    "- Start with a clear user benefit statement\n"
+    "- Group related changes together\n"
+    "- Use bullet points for technical details\n"
+    "- Explain technical terms in context\n"
+    "- Format as:\n"
+    "  1. User benefit statement\n"
+    "  2. Key changes (bullet points)\n"
+    "  3. Technical details (if needed)\n"
+    "- Remove any duplicate information\n"
+    "Input: raw text. Output only the edited text."
 )
 
 EDIT_PASS_2_INSTRUCTIONS = (
@@ -187,8 +189,9 @@ EDIT_PASS_3_INSTRUCTIONS = (
     "Pass 3 — Streamline and summarise:\n"
     "- Improve clarity and flow\n"
     "- Trim filler words or overly verbose phrasing\n"
-    "- Start the first paragraph with temporal language, e.g. add 'now', 'you can now', or 'this now requires' where it genuinely clarifies a change\n"
-    "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...' only when necessary\n"
+    "- Avoid using temporal words (e.g., 'now', 'you can now', 'this now requires') multiple times\n"
+    "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...' only when necessary and only at the start\n"
+    "- If semtantic duplicates still exist, aggressively remove them\n"
     "- If concluding or summary statements appear at the end, remove them.\n"
     "Input: deduplicated text from Pass 2. Output only the final edited text."
 )
@@ -2549,7 +2552,22 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             if any_edited:
                 f.write(f'# Content edited by AI - {current_time}\n')
             if any_validated:
-                f.write(f'# Content validated by AI - {current_time}\n')
+                temp = None
+                # Get validation temperature from validation summaries if available
+                for commit in all_commits:
+                    if commit.get('validation_summaries'):
+                        max_temp = max((vs.get('validation_temperature', 0) for vs in commit['validation_summaries']), default=0)
+                        if temp is None or max_temp > temp:
+                            temp = max_temp
+                    elif commit.get('validation_summary', {}).get('validation_temperature') is not None:
+                        commit_temp = commit['validation_summary']['validation_temperature']
+                        if temp is None or commit_temp > temp:
+                            temp = commit_temp
+                
+                if temp is not None:
+                    f.write(f'# Content validated by AI (temperature: {temp}) - {current_time}\n')
+                else:
+                    f.write(f'# Content validated by AI - {current_time}\n')
         if overwrite:
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             f.write(f'# Content overwritten from an earlier version - {current_time}\n')
@@ -2622,17 +2640,19 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         if commit.get('edited', False):
             yaml_header.append(f'# Content edited by AI - {current_time}')
         if commit.get('validated', False):
-            yaml_header.append(f'# Content validated by AI - {current_time}')
-            
             # Add validation temperature information if available
             validation_summaries = commit.get('validation_summaries', [])
+            temp = None
             if validation_summaries:
                 # Get the highest validation temperature used across all validations
-                max_temp = max((vs.get('validation_temperature', 0) for vs in validation_summaries), default=0)
-                yaml_header.append(f'# Validation temperature (higher is more permissive): {max_temp}')
+                temp = max((vs.get('validation_temperature', 0) for vs in validation_summaries), default=0)
             elif commit.get('validation_summary', {}).get('validation_temperature') is not None:
                 temp = commit['validation_summary']['validation_temperature']
-                yaml_header.append(f'# Validation temperature: {temp}')
+            
+            if temp is not None:
+                yaml_header.append(f'# Content validated by AI (temperature: {temp}) - {current_time}')
+            else:
+                yaml_header.append(f'# Content validated by AI - {current_time}')
                 
         if overwrite:
             yaml_header.append(f'# Content overwritten from an earlier version - {current_time}')
