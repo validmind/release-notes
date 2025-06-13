@@ -8,6 +8,8 @@ website:
   navbar:
     logo: assets/images/validmind-slides-logo.png
     left:
+      - text: Feature Highlights
+        href: feature-highlights.qmd#category=highlight
       - text: CMVM
         href: cmvm.qmd
       - text: Backend
@@ -20,8 +22,6 @@ website:
         href: validmind-library.qmd
       - text: Documentation
         href: documentation.qmd
-      - text: Feature Highlights
-        href: feature-highlights.qmd#category=highlight
 
 
 
