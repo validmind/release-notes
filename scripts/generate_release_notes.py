@@ -42,8 +42,13 @@ EXCLUDED_SECTIONS = [
     "Checklist",
     "Review",
     "Testing",
-    "Internal"
-    "Screenshots"
+    "Internal",
+    "Screenshots",
+    "CI/CD",
+    "Workflow",
+    "Pipeline",
+    "Build",
+    "Deploy"
 ]
 
 # --- LLM settings ---
@@ -150,7 +155,7 @@ CORE_EDITING_PRINCIPLES = (
     "- Replace 'this PR' with 'this update'\n"
     "- NEVER alter comment tags (<!-- ... -->)\n"
     "- NEVER replace HTML tags with Markdown formatting — preserve all HTML tags exactly as they are\n"
-    "- NEVER add new Markdown headings (##, ###, etc.) — work within existing structure\n"
+    "- NEVER add Markdown headings (##, ###, etc.) or bolded text to indicate sections\n"
 )
 
 EDIT_CONTENT_PROMPT = (
@@ -169,9 +174,9 @@ PASS_0_ASSESSMENT_PROMPT = (
     "Only include editing steps that are actually needed based on the specific content issues you identify.\n\n"
     
     "ANALYSIS AREAS:\n"
-    "1. CONTENT STRUCTURE: Redundant headings, poor organization, missing user benefit statements\n"
+    "1. CONTENT STRUCTURE: Presence of Markdown headings, poor organization, missing user benefit statements\n"
     "2. DUPLICATION: Overlap between PR summary and external notes, repeated features/changes\n"
-    "3. CLARITY & STYLE: Verbose language, technical jargon, formatting issues\n"
+    "3. CLARITY & STYLE: Verbose language, technical jargon, complex lists,formatting issues\n"
     "4. COMPLETENESS: Missing context, unclear explanations, formatting problems\n\n"
     
     "INSTRUCTION GUIDELINES:\n"
@@ -179,7 +184,11 @@ PASS_0_ASSESSMENT_PROMPT = (
     "- Be specific about what to change, not generic advice\n"
     "- If no issues exist in a category, say 'No changes needed' for that pass\n"
     "- Focus on the most impactful changes first\n"
-    "- Provide actionable, specific instructions rather than general principles\n\n"
+    "- Provide actionable, specific instructions rather than general principles\n"
+    "- NEVER instruct to add new content, sentences, paragraphs, or bullet points — only rework existing content\n"
+    "- NEVER instruct to change formatting style (e.g., adding bullets where none exist)\n"
+    "- NEVER instruct to add introductory paragraphs or duplicate existing introductory content\n"
+    "- Focus on consolidation, removal, and rewording of existing content only\n\n"
     
     "Content to analyze:\n"
     "PR Summary: {pr_summary}\n\n"
@@ -192,11 +201,11 @@ PASS_0_ASSESSMENT_PROMPT = (
     "ASSESSMENT:\n"
     "[Brief assessment of main issues found]\n\n"
     "PASS_1_INSTRUCTIONS:\n"
-    "[Content-specific cleanup and structure instructions - address actual structural issues in this content]\n\n"
+    "[Content-specific cleanup and structure instructions - ONLY rework, consolidate, or remove existing content. NEVER add new sentences, paragraphs, or bullet points. NEVER change formatting style.]\n\n"
     "PASS_2_INSTRUCTIONS:\n"
-    "[Content-specific deduplication instructions - only include if actual duplication exists]\n\n"
+    "[Content-specific deduplication instructions - only include if actual duplication exists, focus on consolidating overlapping content]\n\n"
     "PASS_3_INSTRUCTIONS:\n"
-    "[Content-specific streamlining instructions - address actual clarity/flow issues in this content]"
+    "[Content-specific streamlining instructions - simplify verbose language and improve flow without adding new content]"
 )
 
 # --- Instruction validation prompt ---
@@ -287,7 +296,9 @@ CONTENT_EXTRACTION_PROMPT = (
     "2. Include sections with screenshots or media that relate to user-facing changes.\n"
     "3. Preserve the original markdown formatting and structure.\n"
     "4. Remove the '## Release notes' heading\n"
-    "5. If no relevant content is found, respond with 'NO_CONTENT'.\n\n"
+    "5. EXCLUDE any references to CI/CD workflows, GitHub Actions, build processes, deployment pipelines, or internal automation.\n"
+    "6. EXCLUDE content about testing infrastructure, workflow configurations, or development processes.\n"
+    "7. If no relevant content is found, respond with 'NO_CONTENT'.\n\n"
     "PR Body:\n{pr_body}\n\n"
     "Extract and return only the relevant content, maintaining original formatting:"
 )
@@ -2660,6 +2671,12 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             # Store all validation summaries if any exist
             if validation_summaries:
                 commit['validation_summaries'] = validation_summaries
+            
+            # Store debug information if available
+            if hasattr(pr_obj, 'tailored_instructions'):
+                commit['tailored_instructions'] = pr_obj.tailored_instructions
+            if hasattr(pr_obj, 'quality_assessment'):
+                commit['quality_assessment'] = pr_obj.quality_assessment
         else:
             commit['cleaned_title'] = commit.get('title', '')
             commit['pr_summary'] = commit.get('pr_summary', '')
@@ -2956,25 +2973,37 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             content_parts.append(update_image_links(commit['external_notes'], version, debug, download_assets))
         content = '\n\n'.join([c for c in content_parts if c])
         
-        # Add validation summary at the end if available
-        validation_comment = generate_validation_comment(commit, debug)
-        if validation_comment:
-            content += validation_comment
-        
-        # Add tailored instructions and quality assessment if debug is enabled and available
-        if debug and hasattr(pr_obj, 'tailored_instructions') and pr_obj.tailored_instructions:
+        # Add debug information if debug is enabled and available
+        if debug and commit.get('tailored_instructions'):
             debug_comment = "\n\n<!--- DEBUG INFORMATION\n"
             
             # Add quality assessment if available
-            if hasattr(pr_obj, 'quality_assessment') and pr_obj.quality_assessment:
-                debug_comment += f"QUALITY ASSESSMENT:\n{pr_obj.quality_assessment}\n\n"
+            if commit.get('quality_assessment'):
+                debug_comment += f"QUALITY ASSESSMENT:\n{commit['quality_assessment']}\n\n"
             
             # Add tailored instructions
             debug_comment += "TAILORED INSTRUCTIONS:\n"
-            for pass_name, instruction in pr_obj.tailored_instructions.items():
+            for pass_name, instruction in commit['tailored_instructions'].items():
                 debug_comment += f"{pass_name.upper()}: {instruction}\n"
+            
+            # Add validation summary if available
+            validation_comment = generate_validation_comment(commit, debug)
+            if validation_comment:
+                # Extract just the content without the comment tags
+                validation_lines = validation_comment.strip()
+                if validation_lines.startswith('<!---'):
+                    validation_lines = validation_lines[5:]  # Remove opening tag
+                if validation_lines.endswith('--->'):
+                    validation_lines = validation_lines[:-4]  # Remove closing tag
+                debug_comment += f"\n{validation_lines.strip()}\n"
+            
             debug_comment += "--->\n"
             content += debug_comment
+        elif not debug:
+            # Only add separate validation summary if not in debug mode
+            validation_comment = generate_validation_comment(commit, debug)
+            if validation_comment:
+                content += validation_comment
             
         # Write file
         with open(pr_file, 'w') as f:
@@ -3628,13 +3657,7 @@ def write_file(file, release_components, label_to_category, debug=False):
                 if pr['notes']:
                     pr_lines.append(f"{pr['notes']}\n\n")
                 
-                # Add validation summary if available
-                if hasattr(pr, 'validation_summary') or 'validation_summary' in pr:
-                    validation_comment = generate_validation_comment(pr, debug=False)
-                    if validation_comment:
-                        pr_lines.append(validation_comment)
-                
-                # Add tailored instructions and quality assessment if debug is enabled and available
+                # Add debug information if debug is enabled and available
                 if debug and hasattr(pr, 'tailored_instructions') and pr.tailored_instructions:
                     debug_comment = "\n<!--- DEBUG INFORMATION\n"
                     
@@ -3646,8 +3669,27 @@ def write_file(file, release_components, label_to_category, debug=False):
                     debug_comment += "TAILORED INSTRUCTIONS:\n"
                     for pass_name, instruction in pr.tailored_instructions.items():
                         debug_comment += f"{pass_name.upper()}: {instruction}\n"
+                    
+                    # Add validation summary if available
+                    if hasattr(pr, 'validation_summary') or 'validation_summary' in pr:
+                        validation_content = generate_validation_comment(pr, debug=False)
+                        if validation_content:
+                            # Extract just the content without the comment tags
+                            validation_lines = validation_content.strip()
+                            if validation_lines.startswith('<!---'):
+                                validation_lines = validation_lines[5:]  # Remove opening tag
+                            if validation_lines.endswith('--->'):
+                                validation_lines = validation_lines[:-4]  # Remove closing tag
+                            debug_comment += f"\n{validation_lines.strip()}\n"
+                    
                     debug_comment += "--->\n\n"
                     pr_lines.append(debug_comment)
+                elif not debug:
+                    # Only add separate validation summary if not in debug mode
+                    if hasattr(pr, 'validation_summary') or 'validation_summary' in pr:
+                        validation_comment = generate_validation_comment(pr, debug=False)
+                        if validation_comment:
+                            pr_lines.append(validation_comment)
                 
                 for line in pr_lines:
                     if line.strip() == "":

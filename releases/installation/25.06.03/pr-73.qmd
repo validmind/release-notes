@@ -1,29 +1,137 @@
 ---
-title: "feat: add securityContext-related toggles (#73)"
+title: "Add `securityContext` toggles for improved security and stability (#73)"
 categories: [installation, 25.06.03, hotfix, enhancement, breaking-change]
 sidebar: release-notes
 toc-expand: true
 date: "June 12, 2025"
-# Content overwritten from an earlier version - 2025-06-14 11:44
+# Content edited by AI - 2025-06-14 12:30
+# Content validated by AI (temperature: 0.3) - 2025-06-14 12:30
+# Content overwritten from an earlier version - 2025-06-14 12:30
 # PR URL: https://github.com/validmind/installation/pull/73
 ---
 
 This update introduces several functional improvements focused on security hardening and deployment stability within the Helm charts and associated CI/CD workflows.
 
-Customers are now able to enable a security context for their ValidMind deployments. By default, it will enforce the following constraints:
+This update enhances your Helm charts and CI/CD workflows by introducing a security context for ValidMind deployments, improving security and stability.
 
-* Privilege escalation will not be allowed.
+By default, enabling the security context enforces these constraints:
 
-* The `api`, `worker` and `worker-beat` containers will run as user `vmuser` with uid `1000`. The `litellm` container will run as user `nobody` with uid `65534`. The `app` container will run as user `nginx` with uid `101`. The `redis` container will run as user `redis` with uid `999`. The `postgres` container for POC-related purposes only will run as user `postgres` with uid `999`.
+- Privilege escalation is not allowed.
+- The `api`, `worker`, and `worker-beat` containers run as user `vmuser` with `uid` `1000`.
+- The `litellm` container runs as user `nobody` with `uid` `65534`.
+- The `app` container runs as user `nginx` with `uid` `101`.
+- The `redis` container runs as user `redis` with `uid` `999`.
+- The `postgres` container, for POC purposes only, runs as user `postgres` with `uid` `999`.
+- A seccomp profile can be specified, defaulting to `RuntimeDefault` if unspecified.
+- All Linux capabilities are dropped to maintain a least-privilege approach, with the option to add capabilities back in the future if needed.
 
-* A seccomp profile may be specified, otherwise it will default to `RuntimeDefault`.
+The following changes apply regardless of the `securityContext.enabled` setting:
 
-* All linux capabilities will be dropped in the interest of least-privilege. An update to add capabilities back will be added in a future update if needed.
+- The `app` pod now listens on port `8000`, while the `app` service continues to listen on port `80` and proxies to `8000` on the container.
+- The `api`, `worker`, `worker-beat`, and `litellm` containers run as non-root users with specific `uid`s.
 
-Regardless of whether or not the `securityContext.enabled` field is `true`, the following will hold:
+To utilize these enhancements, upgrade to the latest CMVM version and use Helm chart tag `v0.0.8`.
 
-* The `app` pod now listens on port `8000`. The `app` service will continue to listen on `80` and proxy to `8000` on the container.
+<!--- VALIDATION SUMMARY
+Content Type: pass_0_assessment
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.3
+Last Validation: 2025-06-14 12:29:56
+Result: PASS: Tailored instructions generated and validated
 
-* The `api`, `app`, `worker`, `worker-beat` and `litellm` containers will run as non-root users by default.
+VALIDATION SUMMARY 2
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-14 12:30:02
+Result: The edited content is clear and maintains the essential details from the original content. It effectively communicates the security enhancements and deployment changes. There are no serious issues present, so the content passes the quality check.
 
-Please upgrade to the latest CMVM version and use helm chart tag `v0.0.8` to enable this functionality.
+VALIDATION SUMMARY 3
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-14 12:30:09
+Result: The edited content maintains the essential details and improves clarity and conciseness. It effectively communicates the updates and changes without losing any critical information. There are no serious issues present in the edited content. Therefore, it passes the quality check.
+
+VALIDATION SUMMARY 4
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-14 12:30:14
+Result: The edited content maintains the clarity and intent of the original release notes while making a slight improvement in phrasing. The change from "Whether or not `securityContext.enabled` is set to `true`, the following changes apply:" to "The following changes apply regardless of the `securityContex...
+
+VALIDATION SUMMARY 5
+Content Type: pass_0_assessment
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.3
+Last Validation: 2025-06-14 12:29:56
+Result: PASS: Tailored instructions generated and validated
+
+VALIDATION SUMMARY 6
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-14 12:30:02
+Result: The edited content is clear and maintains the essential details from the original content. It effectively communicates the security enhancements and deployment changes. There are no serious issues present, so the content passes the quality check.
+
+VALIDATION SUMMARY 7
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-14 12:30:09
+Result: The edited content maintains the essential details and improves clarity and conciseness. It effectively communicates the updates and changes without losing any critical information. There are no serious issues present in the edited content. Therefore, it passes the quality check.
+
+VALIDATION SUMMARY 8
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-14 12:30:14
+Result: The edited content maintains the clarity and intent of the original release notes while making a slight improvement in phrasing. The change from "Whether or not `securityContext.enabled` is set to `true`, the following changes apply:" to "The following changes apply regardless of the `securityContex...
+
+VALIDATION SUMMARY 9
+Content Type: title
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-14 12:30:17
+Result: The edited content is clear and provides a concise explanation of the feature. It effectively communicates the addition of `securityContext` toggles and their purpose in enhancing security and stability. There are no serious issues present. Approved.
+--->
+
+
+<!--- DEBUG INFORMATION
+QUALITY ASSESSMENT:
+ASSESSMENT:
+The release notes content has a clear focus on security improvements and deployment stability but lacks a structured presentation. The PR summary is too general compared to the detailed external notes. There is some redundancy between the PR summary and external notes, and the language could be more concise and user-focused.
+
+PASS_1_INSTRUCTIONS:
+1. Reorganize the content to improve flow: Start with a brief introduction summarizing the main changes, followed by detailed explanations. This will help users quickly grasp the update's purpose before diving into specifics.
+2. Ensure all technical terms are enclosed in backticks for consistency (e.g., `securityContext.enabled`, `uid`).
+3. Rephrase the introduction to directly address the user: "This update introduces improvements for security hardening and deployment stability in your Helm charts and CI/CD workflows."
+
+PASS_2_INSTRUCTIONS:
+1. Remove the general statement about "security hardening and deployment stability" from the PR summary, as these are already detailed in the external notes.
+2. Consolidate the information about running containers as non-root users, as this is mentioned in both the security context and general changes sections.
+
+PASS_3_INSTRUCTIONS:
+1. Simplify verbose language: Replace "Regardless of whether or not the `securityContext.enabled` field is `true`, the following will hold:" with "The following changes apply regardless of the `securityContext.enabled` setting:"
+2. Streamline the list of user IDs and containers by removing unnecessary repetition: "The `api`, `worker`, `worker-beat`, and `litellm` containers run as non-root users with specific `uid`s."
+3. Clarify the upgrade instructions: "Upgrade to the latest CMVM version and use Helm chart tag `v0.0.8` to enable these features."
+
+TAILORED INSTRUCTIONS:
+PASS_1: 1. Reorganize the content to improve flow: Start with a brief introduction summarizing the main changes, followed by detailed explanations. This will help users quickly grasp the update's purpose before diving into specifics.
+2. Ensure all technical terms are enclosed in backticks for consistency (e.g., `securityContext.enabled`, `uid`).
+3. Rephrase the introduction to directly address the user: "This update introduces improvements for security hardening and deployment stability in your Helm charts and CI/CD workflows."
+PASS_2: 1. Remove the general statement about "security hardening and deployment stability" from the PR summary, as these are already detailed in the external notes.
+2. Consolidate the information about running containers as non-root users, as this is mentioned in both the security context and general changes sections.
+PASS_3: 1. Simplify verbose language: Replace "Regardless of whether or not the `securityContext.enabled` field is `true`, the following will hold:" with "The following changes apply regardless of the `securityContext.enabled` setting:"
+2. Streamline the list of user IDs and containers by removing unnecessary repetition: "The `api`, `worker`, `worker-beat`, and `litellm` containers run as non-root users with specific `uid`s."
+3. Clarify the upgrade instructions: "Upgrade to the latest CMVM version and use Helm chart tag `v0.0.8` to enable these features."
+--->
