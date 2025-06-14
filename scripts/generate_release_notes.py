@@ -141,7 +141,6 @@ EDIT_CONTENT_SYSTEM = (
 CORE_EDITING_PRINCIPLES = (
     "- Keep original meaning and technical accuracy\n"
     "- Use simple, clear language addressed to 'you' not 'users'\n"
-    "- Use sentence-style capitalization, uppercase acronyms\n"
     "- Use sentence-style capitalization (only the first word and proper nouns)\n"
     "- Uppercase acronyms (e.g., 'LLM', 'API') and spell proper names correctly\n"
     "- Enclose technical terms in backticks\n"
@@ -149,7 +148,9 @@ CORE_EDITING_PRINCIPLES = (
     "- Ensure content starts with text, not images\n"
     "- Keep code formatting (backticks) intact\n"
     "- Replace 'this PR' with 'this update'\n"
-    "- Don't alter comment tags (<!-- ... -->)\n"
+    "- NEVER alter comment tags (<!-- ... -->)\n"
+    "- NEVER replace HTML tags with Markdown formatting — preserve all HTML tags exactly as they are\n"
+    "- NEVER add new Markdown headings (##, ###, etc.) — work within existing structure\n"
 )
 
 EDIT_CONTENT_PROMPT = (
@@ -862,6 +863,8 @@ class PR:
                     if instructions and self._validate_instructions(instructions, debug):
                         if debug:
                             print(f"DEBUG: [_assess_content_quality] Generated tailored instructions successfully on attempt {attempt + 1}")
+                            print(f"DEBUG: [_assess_content_quality] Quality assessment result:")
+                            print(f"DEBUG: {result}")
                         
                         # Track successful Pass 0 assessment
                         if not hasattr(self, 'validation_summaries'):
@@ -878,6 +881,9 @@ class PR:
                         }
                         self.validation_summaries.append(assessment_summary)
                         
+                        # Store tailored instructions and assessment for debug output
+                        self.tailored_instructions = instructions
+                        self.quality_assessment = result  # Store the full assessment result
                         return instructions
                     else:
                         if debug:
@@ -2954,6 +2960,21 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         validation_comment = generate_validation_comment(commit, debug)
         if validation_comment:
             content += validation_comment
+        
+        # Add tailored instructions and quality assessment if debug is enabled and available
+        if debug and hasattr(pr_obj, 'tailored_instructions') and pr_obj.tailored_instructions:
+            debug_comment = "\n\n<!--- DEBUG INFORMATION\n"
+            
+            # Add quality assessment if available
+            if hasattr(pr_obj, 'quality_assessment') and pr_obj.quality_assessment:
+                debug_comment += f"QUALITY ASSESSMENT:\n{pr_obj.quality_assessment}\n\n"
+            
+            # Add tailored instructions
+            debug_comment += "TAILORED INSTRUCTIONS:\n"
+            for pass_name, instruction in pr_obj.tailored_instructions.items():
+                debug_comment += f"{pass_name.upper()}: {instruction}\n"
+            debug_comment += "--->\n"
+            content += debug_comment
             
         # Write file
         with open(pr_file, 'w') as f:
@@ -3041,8 +3062,7 @@ def parse_release_tables(qmd_file_path, version=None, debug=False):
                             git_sha=git_sha,
                             is_hotfix=is_hotfix,
                             is_rc=is_rc,
-                            table='major',
-                            add_prefix=True  # Always add cmvm/ prefix
+                            table='major'
                         )
                         releases.append(release)
                         if debug:
@@ -3092,8 +3112,7 @@ def parse_release_tables(qmd_file_path, version=None, debug=False):
                             git_sha=git_sha,
                             is_hotfix=is_hotfix,
                             is_rc=is_rc,
-                            table='hotfix',
-                            add_prefix=True  # Always add cmvm/ prefix
+                            table='hotfix'
                         )
                         releases.append(release)
                         if debug:
@@ -3538,7 +3557,7 @@ def assemble_release(github_urls, label_hierarchy):
 
     return result
 
-def release_output(output_file, release_components, label_to_category):
+def release_output(output_file, release_components, label_to_category, debug=False):
     """
     Appends release notes to the specified file.
 
@@ -3552,7 +3571,7 @@ def release_output(output_file, release_components, label_to_category):
     """
     try:
         with open(output_file, "a") as file:
-            write_file(file, release_components, label_to_category)
+            write_file(file, release_components, label_to_category, debug)
             print(f"Assembled release notes added to {file.name}\n")
     except Exception as e:
         print(f"Failed to write to {output_file}: {e}")
@@ -3576,7 +3595,7 @@ def release_output(output_file, release_components, label_to_category):
 #     except Exception as e:
 #         print(f"Failed to include _how-to-upgrade.qmd to {output_file}: {e}")
 
-def write_file(file, release_components, label_to_category):
+def write_file(file, release_components, label_to_category, debug=False):
     """Writes each component of the release notes into a file
     Args:
         file - desired file path
@@ -3614,6 +3633,21 @@ def write_file(file, release_components, label_to_category):
                     validation_comment = generate_validation_comment(pr, debug=False)
                     if validation_comment:
                         pr_lines.append(validation_comment)
+                
+                # Add tailored instructions and quality assessment if debug is enabled and available
+                if debug and hasattr(pr, 'tailored_instructions') and pr.tailored_instructions:
+                    debug_comment = "\n<!--- DEBUG INFORMATION\n"
+                    
+                    # Add quality assessment if available
+                    if hasattr(pr, 'quality_assessment') and pr.quality_assessment:
+                        debug_comment += f"QUALITY ASSESSMENT:\n{pr.quality_assessment}\n\n"
+                    
+                    # Add tailored instructions
+                    debug_comment += "TAILORED INSTRUCTIONS:\n"
+                    for pass_name, instruction in pr.tailored_instructions.items():
+                        debug_comment += f"{pass_name.upper()}: {instruction}\n"
+                    debug_comment += "--->\n\n"
+                    pr_lines.append(debug_comment)
                 
                 for line in pr_lines:
                     if line.strip() == "":
