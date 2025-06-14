@@ -56,7 +56,7 @@ EXCLUDED_SECTIONS = [
 MODEL_CLASSIFYING = "gpt-4o-mini"  # For quick section classification
 MODEL_EDITING = "gpt-4o"           # For content editing (single-pass and default multi-pass)
 MODEL_VALIDATION = "gpt-4o"        # For edit validation
-MODEL_PROOFREADING = "gpt-4o-mini" # For proofreading tasks
+MODEL_PROOFREADING = "gpt-4o-mini" # For summary proofreading tasks only
 
 # Multi-pass editing model settings
 MODEL_PASS_1 = "gpt-4o"       # Pass 1: Clean and flatten
@@ -175,8 +175,8 @@ PASS_0_ASSESSMENT_PROMPT = (
     
     "ANALYSIS AREAS:\n"
     "1. CONTENT STRUCTURE: Presence of Markdown headings, poor organization, missing user benefit statements\n"
-    "2. DUPLICATION: Overlap between PR summary and external notes, repeated features/changes\n"
-    "3. CLARITY & STYLE: Verbose language, technical jargon, complex lists,formatting issues\n"
+    "2. DUPLICATION: Overlap between PR summary and external notes, repeated features/changes, multiple introductory sentences with similar meaning (even if worded differently)\n"
+    "3. CLARITY & STYLE: Verbose language, technical jargon, complex lists, formatting issues\n"
     "4. COMPLETENESS: Missing context, unclear explanations, formatting problems\n\n"
     
     "INSTRUCTION GUIDELINES:\n"
@@ -203,7 +203,7 @@ PASS_0_ASSESSMENT_PROMPT = (
     "PASS_1_INSTRUCTIONS:\n"
     "[Content-specific cleanup and structure instructions - ONLY rework, consolidate, or remove existing content. NEVER add new sentences, paragraphs, or bullet points. NEVER change formatting style.]\n\n"
     "PASS_2_INSTRUCTIONS:\n"
-    "[Content-specific deduplication instructions - only include if actual duplication exists, focus on consolidating overlapping content]\n\n"
+    "[Content-specific deduplication instructions - only include if actual duplication exists. Focus on consolidating overlapping content, especially multiple introductory sentences that convey similar meaning (even if worded differently). Look for patterns like 'This update introduces...' followed by 'This update enhances...' and merge them into a single, comprehensive opening statement. Remove redundant introductory paragraphs.]\n\n"
     "PASS_3_INSTRUCTIONS:\n"
     "[Content-specific streamlining instructions - simplify verbose language and improve flow without adding new content]"
 )
@@ -298,7 +298,8 @@ CONTENT_EXTRACTION_PROMPT = (
     "4. Remove the '## Release notes' heading\n"
     "5. EXCLUDE any references to CI/CD workflows, GitHub Actions, build processes, deployment pipelines, or internal automation.\n"
     "6. EXCLUDE content about testing infrastructure, workflow configurations, or development processes.\n"
-    "7. If no relevant content is found, respond with 'NO_CONTENT'.\n\n"
+    "7. EXCLUDE phrases like 'CI/CD workflows', 'deployment workflows', 'build pipelines', 'GitHub workflows', even when mentioned alongside user-facing features.\n"
+    "8. If no relevant content is found, respond with 'NO_CONTENT'.\n\n"
     "PR Body:\n{pr_body}\n\n"
     "Extract and return only the relevant content, maintaining original formatting:"
 )
