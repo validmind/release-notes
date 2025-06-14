@@ -50,9 +50,9 @@ MODEL_VALIDATION = "gpt-4o"        # For edit validation
 MODEL_PROOFREADING = "gpt-4o-mini" # For proofreading tasks
 
 # Multi-pass editing model settings
-MODEL_PASS_1 = "gpt-4o"            # Pass 1: Group and flatten (structural, gpt-4o seems better)
-MODEL_PASS_2 = "o3"                # Pass 2: Deduplicate (complex reasoning, o3 seems better)
-MODEL_PASS_3 = "gpt-4o"            # Pass 3: Streamline (style polish, gpt-4o seems better)
+MODEL_PASS_1 = "gpt-4o"       # Pass 1: Clean and flatten
+MODEL_PASS_2 = "o3"           # Pass 2: Deduplicate
+MODEL_PASS_3 = "gpt-4o"       # Pass 3: Streamline and proofread
 
 # Editing temperature settings
 BASE_TEMPERATURE = 0.3          # Slightly higher for better creativity in editing
@@ -128,13 +128,16 @@ EDIT_TITLE_PROMPT = (
     "{body}"
 )
 
-EDIT_SUMMARY_PROMPT = "Edit this PR summary for clarity and brevity."
-
-EDIT_NOTES_PROMPT = "Edit these external release notes for clarity and brevity."
+EDIT_SUMMARY_PROMPT = (
+    "Edit this PR summary for clarity and brevity:\n"
+    "The summary should be clear and concise for an external audience without access to the codebase, making the changes easy to understand.\n"
+    "Remove the last sentence if it ends with a colon (e.g. 'The key changes include:', 'This update includes:', 'This release includes:')\n"
+    "The summary should be no more than 500 characters.\n"
+)
 
 # --- Content editing instructions ---
 EDIT_CONTENT_SYSTEM = (
-    "You are a professional release notes editor. Your task is to combine and streamline duplicate content from the PR body and PR summary comment.\n"
+     "You are a professional release notes editor. Your task is to clean up, deduplicate and streamline content.\n"
     "The result should be clear and concise for an external audience without access to the codebase, making the changes easy to understand."
 )
 
@@ -144,56 +147,55 @@ EDIT_CONTENT_PROMPT = (
     "- Use simple, clear language.\n"
     "- Address readers directly using 'you' instead of 'users' (e.g., 'you can now ...' not 'users now can ...').\n"
     "- Focus on user-facing changes; keep content concise.\n"
+    "- Do not include internal information related to CI/CD workflows, readmes, tooling, future items, to dos, etc.\n"
+    "- Use sentence-style capitalization (only the first word and proper nouns).\n"
     "- Uppercase acronyms (e.g., 'LLM', 'API') and spell proper names correctly.\n"
-    "- Enclose technical terms in backticks"
-    "- Follow Quarto formatting (e.g., blank lines between blocks).\n"
+    "- Enclose technical terms (e.g. words_with_underscores, camelCase) in backticks.\n"
+    "- Follow Quarto formatting (e.g., add blank lines before lists and between blocks).\n"
     "- Use a space after list markers and start each item with a capital letter.\n"
+    "- If content contains images, ensure the content begins with text before any image embeds.\n"
     "- Don't refer to the 'PR body' or 'PR summary'.\n"
-    "- Don't add concluding or summary statements.\n"
+    "- Keep code formatting (backticks) intact.\n"
     "- If content contains images, ensure the content begins with text before any image embeds."
     "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
+    "- NEVER add extra sections, lists, or concluding summary statements.\n"
 )
 
 # --- Content editing instructions for multi-pass editing ---
-
 EDIT_PASS_1_INSTRUCTIONS = (
     "Pass 1 — Initial cleanup and structure:\n"
+    "- Use {external_notes} as the primary content.\n"
+    "- Supplement with {pr_summary} if it contains relevant external information.\n"
     "- Remove all Markdown headings (e.g., '#### What', '# PR Summary').\n"
     "- Start with a clear user benefit statement.\n"
     "- Group related changes together.\n"
-    "- Use bullet points for technical details.\n"
-    "- Explain technical terms in context.\n"
-    "- Format as:\n"
-    "  1. User benefit statement.\n"
-    "  2. Technical details (if needed).\n"
-    "  3. Key changes (bullet points).\n"
-    "- Remove any semantically duplicate information.\n"
-    "Input: raw text. Output only the edited text."
+    
+    "Input: raw text. Output only the cleaned text, same length or shorter."
 )
 
 EDIT_PASS_2_INSTRUCTIONS = (
     "Pass 2 — Deduplicate:\n"
-    "- AGGRESSIVELY remove semantic duplicates - if two sentences describe the same feature/concept, keep only the clearest one.\n"
+    "- AGGRESSIVELY remove semantic duplicates - ensure each feature/improvement is mentioned exactly once.\n"
     "- Consolidate ALL overlapping content about the same functionality into ONE concise paragraph.\n"
     "- Remove redundant explanations - if something is mentioned twice with different wording, pick the best version.\n"
     "- Eliminate repetitive sentence patterns - avoid starting multiple sentences with 'As of this release', 'Now', 'This update', etc.\n"
     "- Remove bullet points that merely restate what's already in paragraph form.\n"
-    "- If both high-level and detailed descriptions exist for the same feature, merge them into one comprehensive explanation.\n"
     "- Cut verbose explanations - be concise while preserving technical accuracy.\n"
     "- Remove filler phrases and unnecessary elaboration.\n"
-    "- Ensure each feature/improvement is mentioned exactly once.\n"
     "- Focus on the most important user-facing changes - remove minor implementation details if they don't add value.\n"
     "Input: grouped text from Pass 1. Output only the deduplicated text."
 )
 
 EDIT_PASS_3_INSTRUCTIONS = (
-    "Pass 3 — Streamline and summarise:\n"
+    "Pass 3 — Streamline and proofread:\n"
     "- Improve clarity and flow.\n"
     "- Trim filler words or overly verbose phrasing.\n"
-    "- Group related sentences into paragraphs.\n"
-    "- Avoid using multiple temporal words (e.g., 'now', 'you can now', 'this now requires').\n"
-    "- For requirements or behaviors, use phrases like 'you must now...', 'you can now...', 'this now requires...' only when necessary and only at the start.\n"
-    "- If semtantic duplicates still exist, aggressively remove them.\n"
+    "- If text with multiple facts or statements would be better as a list, convert it to a list.\n"
+    "- Add 'now' before the verb in the first sentence if it makes sense stylistically.\n"
+    "- Remove subsequent occurrences of 'now' except for requirements or changed behaviors.\n"
+    "- Ensure content starts with text, not images.\n"
+    "- Replace references to 'this PR' with 'this update'.\n"
+    "- If semantic duplicates still exist, aggressively remove them.\n"
     "- If concluding or summary statements appear at the end, remove them.\n"
     "Input: deduplicated text from Pass 2. Output only the final edited text."
 )
@@ -234,6 +236,7 @@ VALIDATION_CRITERIA = {
         "Starts with text, not images",
         "Does not contain internal sections",
         "Does not have identical duplicate sentences"
+        "Is not substantially longer than the original"
     ],
     'summary': [
         "Starts with text, not images", 
@@ -645,8 +648,8 @@ class PR:
         # Initialize validation summaries list if it doesn't exist
         if not hasattr(self, 'validation_summaries'):
             self.validation_summaries = []
-        # Use multi-pass for 'notes' and 'summary', single pass for 'title'
-        if content_type in ("notes", "summary") and edit:
+        # Use multi-pass for 'notes', single pass for 'title' and 'summary'
+        if content_type in ("notes",) and edit:
             # Pass 1: Group and Flatten
             if 1 not in skip_passes:
                 grouped = self._edit_pass(
@@ -1596,9 +1599,9 @@ def get_pr_content(pr_number, repo, debug=False):
         pr_data = json.loads(result.stdout)
         if debug:
             print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Title: {pr_data.get('title')}")
-            print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Labels: {[label['name'] for label in pr_data.get('labels', [])]}")
             pr_url = f"https://github.com/validmind/{repo}/pull/{pr_number}"
             print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - URL: {pr_url}")
+            print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Labels: {[label['name'] for label in pr_data.get('labels', [])]}")
         
         # Get the title and check if it's a merge PR
         title = pr_data.get('title')
@@ -1708,13 +1711,20 @@ def get_pr_content(pr_number, repo, debug=False):
                                     break
                                 first_paragraph.append(line)
                             if first_paragraph:
-                                pr_summary = f"# PR Summary\n\n{' '.join(first_paragraph)}"
+                                first_paragraph_text = ' '.join(first_paragraph)
+                                # Remove last sentence if it ends with a colon (e.g., "Key changes include:")
+                                sentences = first_paragraph_text.split('.')
+                                if len(sentences) > 1 and sentences[-2].strip().endswith(':'):
+                                    original_text = first_paragraph_text
+                                    first_paragraph_text = '.'.join(sentences[:-2]).strip() + '.'
+                                pr_summary = f"# PR Summary\n\n{first_paragraph_text}"
                             else:
                                 pr_summary = full_summary
                     else:
                         pr_summary = full_summary
                     if debug:
-                        print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Found PR summary: {pr_summary[:80]!r}")
+                        print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Final PR summary content:")
+                        print(f"DEBUG: {pr_summary}")
                     break
         if pr_summary is None and debug:
             print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - No PR summary found.")
@@ -2261,10 +2271,10 @@ def generate_changelog_content(repo, tag, commits, has_release, download_assets=
                     if local_path:
                         rel_path = os.path.relpath(local_path, os.getcwd())
                         section_content += f'![Image]({rel_path})\n'
-                if commit['external_notes']:
-                    section_content += f"{update_image_links(commit['external_notes'], tag, False, download_assets)}\n\n"
                 if commit['pr_summary']:
                     section_content += f"{update_image_links(commit['pr_summary'], tag, False, download_assets)}\n\n"
+                if commit['external_notes']:
+                    section_content += f"{update_image_links(commit['external_notes'], tag, False, download_assets)}\n\n"
                 # If no notes or summary, use PR body as fallback
                 if not commit['external_notes'] and not commit['pr_summary']:
                     if commit.get('pr_body'):
@@ -2368,7 +2378,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                 if pr_obj.validated:
                     validated = True
             if commit.get('external_notes'):
-                pr_obj.edit_content('notes', commit['external_notes'], EDIT_NOTES_PROMPT, edit=True)
+                pr_obj.edit_content('notes', commit['external_notes'], EDIT_CONTENT_PROMPT, edit=True)
                 commit['external_notes'] = pr_obj.edited_text
                 if hasattr(pr_obj, 'validation_summaries'):
                     validation_summaries.extend(pr_obj.validation_summaries)
@@ -2682,16 +2692,16 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             yaml_header.append(f'# Content overwritten from an earlier version - {current_time}')
         yaml_header.append(f'# PR URL: https://github.com/validmind/{repo}/pull/{pr_number}')
         yaml_header.append('---\n\n')
-        # Prepare content (notes, summary, body)
+        # Prepare content (summary, notes, body)
         content_parts = []
-        # Use edited content (stored back in external_notes after editing)
-        if commit.get('external_notes'):
-            content_parts.append(update_image_links(commit['external_notes'], version, debug, download_assets))
         # Use edited summary content (stored in pr_summary after editing, with fallback to pr_interpreted_summary)
         if commit.get('pr_summary'):
             content_parts.append(update_image_links(commit['pr_summary'], version, debug, download_assets))
         elif commit.get('pr_interpreted_summary'):
             content_parts.append(update_image_links(commit['pr_interpreted_summary'], version, debug, download_assets))
+        # Use edited content (stored back in external_notes after editing)
+        if commit.get('external_notes'):
+            content_parts.append(update_image_links(commit['external_notes'], version, debug, download_assets))
         if not content_parts and commit.get('pr_body'):
             content_parts.append(update_image_links(commit['pr_body'], version, debug, download_assets))
         content = '\n\n'.join([c for c in content_parts if c])

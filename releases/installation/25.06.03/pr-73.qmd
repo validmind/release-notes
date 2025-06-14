@@ -1,0 +1,112 @@
+---
+title: "Add `securityContext` toggles for enhanced security (#73)"
+categories: [installation, 25.06.03, hotfix, enhancement, breaking-change]
+sidebar: release-notes
+toc-expand: true
+date: "June 12, 2025"
+# Content edited by AI - 2025-06-13 17:42
+# Content validated by AI (temperature: 0.2) - 2025-06-13 17:42
+# Content overwritten from an earlier version - 2025-06-13 17:42
+# PR URL: https://github.com/validmind/installation/pull/73
+---
+
+This update enhances security and deployment stability in Helm charts.
+
+You can now enable a security context for ValidMind deployments to:
+
+- Block privilege escalation
+- Drop all Linux capabilities
+- Apply the `RuntimeDefault` seccomp profile
+
+All containers now run as non-root:
+
+- `api`, `worker`, `worker-beat`: `vmuser` (uid `1000`)
+- `litellm`: `nobody` (uid `65534`)
+- `app`: `nginx` (uid `101`)
+- `redis`: `redis` (uid `999`)
+- `postgres` (POC only): `postgres` (uid `999`)
+
+The `app` pod now listens on port `8000`, while the service still exposes port `80` and forwards traffic accordingly.
+
+Upgrade to the latest CMVM release and use helm chart tag `v0.0.8` to enable these features.
+
+<!--- VALIDATION SUMMARY
+Content Type: summary
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-13 17:42:10
+Result: The edited content is a concise summary of the original PR summary. It captures the essence of the changes by highlighting the focus on security and deployment stability in Helm charts. However, it omits the mention of associated CI/CD workflows, which might be important for some readers. Despite th...
+
+VALIDATION SUMMARY 2
+Content Type: summary
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-13 17:42:10
+Result: The edited content is a concise summary of the original PR summary. It captures the essence of the changes by highlighting the focus on security and deployment stability in Helm charts. However, it omits the mention of associated CI/CD workflows, which might be important for some readers. Despite th...
+
+VALIDATION SUMMARY 3
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-13 17:42:14
+Result: The release notes and the edited content both effectively communicate the changes and enhancements made to the ValidMind deployments. The information is clear and provides necessary details about the security context, user configurations, and additional changes. There are no serious issues present i...
+
+VALIDATION SUMMARY 4
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-13 17:42:23
+Result: The edited content maintains the essential information from the original content while making it more concise. It effectively communicates the security enhancements and configuration changes for ValidMind deployments. The key points about non-root user configurations, port changes, and upgrade instr...
+
+VALIDATION SUMMARY 5
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-13 17:42:28
+Result: The edited content is clear and maintains the essential information from the original content. The changes made improve readability by breaking down the security context features into bullet points. There are no serious issues present, and the technical details remain intact. The content is ready fo...
+
+VALIDATION SUMMARY 6
+Content Type: summary
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-13 17:42:10
+Result: The edited content is a concise summary of the original PR summary. It captures the essence of the changes by highlighting the focus on security and deployment stability in Helm charts. However, it omits the mention of associated CI/CD workflows, which might be important for some readers. Despite th...
+
+VALIDATION SUMMARY 7
+Content Type: notes (grouped_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-13 17:42:14
+Result: The release notes and the edited content both effectively communicate the changes and enhancements made to the ValidMind deployments. The information is clear and provides necessary details about the security context, user configurations, and additional changes. There are no serious issues present i...
+
+VALIDATION SUMMARY 8
+Content Type: notes (deduplicated_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-13 17:42:23
+Result: The edited content maintains the essential information from the original content while making it more concise. It effectively communicates the security enhancements and configuration changes for ValidMind deployments. The key points about non-root user configurations, port changes, and upgrade instr...
+
+VALIDATION SUMMARY 9
+Content Type: notes (edited_text)
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-13 17:42:28
+Result: The edited content is clear and maintains the essential information from the original content. The changes made improve readability by breaking down the security context features into bullet points. There are no serious issues present, and the technical details remain intact. The content is ready fo...
+
+VALIDATION SUMMARY 10
+Content Type: title
+Validation Status: PASSED
+Attempts: 1
+Validation Temperature: 0.2
+Last Validation: 2025-06-13 17:42:29
+Result: The edited content is clear and concise, effectively communicating the addition of `securityContext` toggles for enhanced security. There are no serious issues present. The release note passes.
+--->

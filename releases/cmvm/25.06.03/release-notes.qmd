@@ -1,0 +1,76 @@
+---
+title: "25.06.03 Hotfix release notes"
+date: "June 12, 2025"
+categories: [cmvm, 25.06.03, hotfix]
+sidebar: release-notes
+toc-expand: true
+# Content edited by AI - 2025-06-13 17:42
+# Content validated by AI (temperature: 0.2) - 2025-06-13 17:42
+# Content overwritten from an earlier version - 2025-06-13 17:42
+---
+
+This release includes `securityContext` toggles for enhanced security and updates `requests` from version 2.32.3 to 2.32.4.
+
+<!-- WARNING: Summary may not mention an enhancement PR -->
+
+# Backend
+<!--- Tag: [cmvm/25.06.03](https://github.com/validmind/backend/releases/tag/cmvm/25.06.03) --->
+<!--- Compare API call: gh api repos/validmind/backend/compare/a52d60325160a252e5e976e2f1784b9905907bc6...a52d60325160a252e5e976e2f1784b9905907bc6 --->
+
+<!-- ### Changes with no label -->
+
+
+<!--- PR #1579: https://github.com/validmind/backend/pull/1579 --->
+<!--- Labels: dependencies, python --->
+### Update `requests` from 2.32.3 to 2.32.4 (#1579)
+
+This PR refines the dependency configuration in the project's lock file and related metadata.
+
+
+<!--- # Frontend --->
+<!--- Tag cmvm/25.06.03 not found in frontend repository --->
+<!-- No tag found in this repository -->
+
+<!--- # Agents --->
+<!--- Tag cmvm/25.06.03 not found in agents repository --->
+<!-- No tag found in this repository -->
+
+# Installation
+<!--- Tag: [cmvm/25.06.03](https://github.com/validmind/installation/releases/tag/cmvm/25.06.03) --->
+<!--- Compare API call: gh api repos/validmind/installation/compare/032e62eab8dbab7496551962fd07c802433984f4...032e62eab8dbab7496551962fd07c802433984f4 --->
+
+## Enhancements
+
+
+<!--- PR #73: https://github.com/validmind/installation/pull/73 --->
+<!--- Labels: enhancement, security, breaking-change --->
+### Add `securityContext` toggles for enhanced security (#73)
+
+This update enhances security and deployment stability in Helm charts.
+
+You can now enable a security context for ValidMind deployments to:
+
+- Block privilege escalation
+- Drop all Linux capabilities
+- Apply the `RuntimeDefault` seccomp profile
+
+All containers now run as non-root:
+
+- `api`, `worker`, `worker-beat`: `vmuser` (uid `1000`)
+- `litellm`: `nobody` (uid `65534`)
+- `app`: `nginx` (uid `101`)
+- `redis`: `redis` (uid `999`)
+- `postgres` (POC only): `postgres` (uid `999`)
+
+The `app` pod now listens on port `8000`, while the service still exposes port `80` and forwards traffic accordingly.
+
+Upgrade to the latest CMVM release and use helm chart tag `v0.0.8` to enable these features.
+
+
+<!--- # Documentation --->
+<!--- Tag cmvm/25.06.03 not found in documentation repository --->
+<!-- No tag found in this repository -->
+
+<!--- # Validmind-library --->
+<!--- Tag cmvm/25.06.03 not found in validmind-library repository --->
+<!-- No tag found in this repository -->
