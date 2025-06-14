@@ -132,76 +132,87 @@ EDIT_TITLE_PROMPT = (
     "{body}"
 )
 
-EDIT_SUMMARY_PROMPT = (
-    "Edit this PR summary for clarity and brevity:\n"
-    "The summary should be clear and concise for an external audience without access to the codebase, making the changes easy to understand.\n"
-    "Remove the last sentence if it ends with a colon (e.g. 'The key changes include:', 'This update includes:', 'This release includes:')\n"
-    "The summary should be no more than 500 characters.\n"
-)
-
 # --- Content editing instructions ---
 EDIT_CONTENT_SYSTEM = (
      "You are a professional release notes editor. Your task is to clean up, deduplicate and streamline content.\n"
     "The result should be clear and concise for an external audience without access to the codebase, making the changes easy to understand."
 )
 
+CORE_EDITING_PRINCIPLES = (
+    "- Keep original meaning and technical accuracy\n"
+    "- Use simple, clear language addressed to 'you' not 'users'\n"
+    "- Use sentence-style capitalization, uppercase acronyms\n"
+    "- Use sentence-style capitalization (only the first word and proper nouns)\n"
+    "- Uppercase acronyms (e.g., 'LLM', 'API') and spell proper names correctly\n"
+    "- Enclose technical terms in backticks\n"
+    "- Follow Quarto formatting with proper spacing\n"
+    "- Ensure content starts with text, not images\n"
+    "- Keep code formatting (backticks) intact\n"
+    "- Replace 'this PR' with 'this update'\n"
+    "- Don't alter comment tags (<!-- ... -->)\n"
+)
+
 EDIT_CONTENT_PROMPT = (
     "When editing content:\n"
-    "- Keep the original meaning and technical accuracy.\n"
-    "- Use simple, clear language.\n"
-    "- Address readers directly using 'you' instead of 'users' (e.g., 'you can now ...' not 'users now can ...').\n"
-    "- Focus on user-facing changes; keep content concise.\n"
-    "- Do not include internal information related to CI/CD workflows, readmes, tooling, future items, to dos, etc.\n"
-    "- Use sentence-style capitalization (only the first word and proper nouns).\n"
-    "- Uppercase acronyms (e.g., 'LLM', 'API') and spell proper names correctly.\n"
-    "- Enclose technical terms (e.g. words_with_underscores, camelCase) in backticks.\n"
-    "- Follow Quarto formatting (e.g., add blank lines before lists and between blocks).\n"
-    "- Use a space after list markers and start each item with a capital letter.\n"
-    "- If content contains images, ensure the content begins with text before any image embeds.\n"
-    "- Don't refer to the 'PR body' or 'PR summary'.\n"
-    "- Keep code formatting (backticks) intact.\n"
-    "- If content contains images, ensure the content begins with text before any image embeds."
-    "- Don't alter comment tags (<!-- ... -->) or add new sections, images, or headings.\n"
-    "- NEVER add extra sections, lists, or concluding summary statements.\n"
+    f"{CORE_EDITING_PRINCIPLES}\n"
 )
 
-# --- Content editing instructions for multi-pass editing ---
-EDIT_PASS_1_INSTRUCTIONS = (
-    "Pass 1 — Initial cleanup and structure:\n"
-    "- Use {external_notes} as the primary content.\n"
-    "- Supplement with {pr_summary} if it contains relevant external information.\n"
-    "- Remove all Markdown headings (e.g., '#### What', '# PR Summary').\n"
-    "- Start with a clear user benefit statement that addresses the user directly.\n"
-    "- Group related changes together.\n"
+# --- Content quality assessment instructions for Pass 0 ---
+PASS_0_ASSESSMENT_SYSTEM = (
+    "You are a content quality assessor for release notes. Your task is to analyze the initial content quality "
+    "and generate tailored editing instructions for subsequent processing passes."
+)
+
+PASS_0_ASSESSMENT_PROMPT = (
+    "Analyze the following release notes content and generate tailored editing instructions for each pass. "
+    "Only include editing steps that are actually needed based on the specific content issues you identify.\n\n"
     
-    "Input: raw text. Output only the cleaned text, same length or shorter."
+    "ANALYSIS AREAS:\n"
+    "1. CONTENT STRUCTURE: Redundant headings, poor organization, missing user benefit statements\n"
+    "2. DUPLICATION: Overlap between PR summary and external notes, repeated features/changes\n"
+    "3. CLARITY & STYLE: Verbose language, technical jargon, formatting issues\n"
+    "4. COMPLETENESS: Missing context, unclear explanations, formatting problems\n\n"
+    
+    "INSTRUCTION GUIDELINES:\n"
+    "- Only include steps that address actual issues found in this specific content\n"
+    "- Be specific about what to change, not generic advice\n"
+    "- If no issues exist in a category, say 'No changes needed' for that pass\n"
+    "- Focus on the most impactful changes first\n"
+    "- Provide actionable, specific instructions rather than general principles\n\n"
+    
+    "Content to analyze:\n"
+    "PR Summary: {pr_summary}\n\n"
+    "External Notes: {external_notes}\n\n"
+    
+    "Generate tailored, content-specific editing instructions that address the actual issues present in this content. "
+    "Your instructions should work together with these core editing principles:\n\n"
+    f"CORE EDITING PRINCIPLES:\n{CORE_EDITING_PRINCIPLES}\n\n"
+    "Focus your tailored instructions on the specific content issues you identify beyond these core principles.\n\n"
+    "ASSESSMENT:\n"
+    "[Brief assessment of main issues found]\n\n"
+    "PASS_1_INSTRUCTIONS:\n"
+    "[Content-specific cleanup and structure instructions - address actual structural issues in this content]\n\n"
+    "PASS_2_INSTRUCTIONS:\n"
+    "[Content-specific deduplication instructions - only include if actual duplication exists]\n\n"
+    "PASS_3_INSTRUCTIONS:\n"
+    "[Content-specific streamlining instructions - address actual clarity/flow issues in this content]"
 )
 
-EDIT_PASS_2_INSTRUCTIONS = (
-    "Pass 2 — Deduplicate:\n"
-    "- AGGRESSIVELY remove semantic duplicates - ensure each feature/improvement is mentioned exactly once.\n"
-    "- Consolidate ALL overlapping content about the same functionality into ONE concise paragraph.\n"
-    "- Remove redundant explanations - if something is mentioned twice with different wording, pick the best version.\n"
-    "- Eliminate repetitive sentence patterns - avoid starting multiple sentences with 'As of this release', 'Now', 'This update', etc.\n"
-    "- Remove bullet points that merely restate what's already in paragraph form.\n"
-    "- Cut verbose explanations - be concise while preserving technical accuracy.\n"
-    "- Remove filler phrases and unnecessary elaboration.\n"
-    "- Focus on the most important user-facing changes - remove minor implementation details if they don't add value.\n"
-    "Input: grouped text from Pass 1. Output only the deduplicated text."
-)
+# --- Instruction validation prompt ---
+INSTRUCTION_VALIDATION_SYSTEM = "You are a quality checker for editing instructions. Assess if the generated instructions are specific and actionable."
 
-EDIT_PASS_3_INSTRUCTIONS = (
-    "Pass 3 — Streamline and proofread:\n"
-    "- Improve clarity and flow.\n"
-    "- Trim filler words or overly verbose phrasing.\n"
-    "- If text with multiple facts or statements would be better as a list, convert it to a list.\n"
-    "- Add 'now' before the verb in the first sentence if it makes sense stylistically.\n"
-    "- Remove subsequent occurrences of 'now' except for requirements or changed behaviors.\n"
-    "- Ensure content starts with text, not images.\n"
-    "- Replace references to 'this PR' with 'this update'.\n"
-    "- If semantic duplicates still exist, aggressively remove them.\n"
-    "- If concluding or summary statements appear at the end, remove them.\n"
-    "Input: deduplicated text from Pass 2. Output only the final edited text."
+INSTRUCTION_VALIDATION_PROMPT = (
+    "Review these generated editing instructions and determine if they are specific and actionable:\n\n"
+    "{instructions}\n\n"
+    "VALIDATION CRITERIA:\n"
+    "1. Are instructions specific to the actual content issues (not generic advice)?\n"
+    "2. Do they provide concrete, actionable steps?\n"
+    "3. Do they avoid unnecessary work by only addressing real issues?\n"
+    "4. Are they clear about what specifically needs to be changed?\n"
+    "5. Do they include 'No changes needed' for passes where no issues exist?\n\n"
+    "PASS if instructions are tailored, specific, and actionable.\n"
+    "FAIL if instructions are generic, vague, or include unnecessary steps.\n\n"
+    "Respond with exactly 'PASS' or 'FAIL: [specific reason]'."
 )
 
 # --- Content validation instructions ---
@@ -241,11 +252,6 @@ VALIDATION_CRITERIA = {
         "Does not contain internal sections",
         "Does not have identical duplicate sentences"
         "Is not substantially longer than the original"
-    ],
-    'summary': [
-        "Starts with text, not images", 
-        "Does not contain internal sections",
-        "Does not have identical duplicate sentences"
     ]
 }
 
@@ -372,6 +378,95 @@ from difflib import SequenceMatcher
 
 ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
 
+def unified_openai_call(messages, api_params, debug=False, function_name="OpenAI", 
+                        max_retries=DEFAULT_MAX_RETRIES, success_condition=None, 
+                        failure_callback=None, retry_callback=None, return_full_response=False):
+    """
+    Unified OpenAI API call with exponential backoff, jitter, and flexible success/failure handling.
+    
+    Args:
+        messages: The messages to send to the API
+        api_params: The API parameters (model, max_tokens, temperature, etc.)
+        debug: Whether to print debug information
+        function_name: Name of the calling function for error messages
+        max_retries: Maximum number of retry attempts
+        success_condition: Optional function to validate if response is successful (response) -> bool
+        failure_callback: Optional function called on each failure (attempt, error, response) -> bool (continue retrying)
+        retry_callback: Optional function called before each retry (attempt, last_response) -> modified_messages or None
+        return_full_response: If True, return full response object; if False, return content string
+        
+    Returns:
+        The API response (full object or content string), or None if all retries failed
+    """
+    delay = DEFAULT_INITIAL_DELAY
+    last_response = None
+    
+    for attempt in range(max_retries):
+        try:
+            # Allow retry callback to modify messages
+            current_messages = messages
+            if retry_callback and attempt > 0:
+                modified_messages = retry_callback(attempt, last_response)
+                if modified_messages is not None:
+                    current_messages = modified_messages
+            
+            response = client.chat.completions.create(
+                messages=current_messages,
+                **api_params
+            )
+            
+            last_response = response
+            
+            # Check custom success condition if provided
+            if success_condition:
+                if success_condition(response):
+                    return response if return_full_response else response.choices[0].message.content.strip()
+                else:
+                    # Custom validation failed, treat as failure
+                    if failure_callback:
+                        should_continue = failure_callback(attempt, "Custom validation failed", response)
+                        if not should_continue:
+                            return response if return_full_response else response.choices[0].message.content.strip()
+                    
+                    if attempt < max_retries - 1:
+                        if debug:
+                            print(f"DEBUG: [{function_name}] Custom validation failed on attempt {attempt + 1}, retrying...")
+                    continue  # Retry
+            else:
+                # No custom validation, return successful API response
+                return response if return_full_response else response.choices[0].message.content.strip()
+                
+        except Exception as e:
+            if debug:
+                print(f"DEBUG: [{function_name}] Attempt {attempt + 1} failed: {e}")
+            
+            # Call failure callback
+            if failure_callback:
+                should_continue = failure_callback(attempt, str(e), None)
+                if not should_continue:
+                    return None
+            
+            if attempt < max_retries - 1:
+                # Add jitter to prevent thundering herd
+                jitter = random.uniform(*JITTER_RANGE) * delay
+                sleep_time = min(DEFAULT_MAX_DELAY, delay + jitter)
+                
+                if debug:
+                    print(f"DEBUG: [{function_name}] Retrying in {sleep_time:.1f} seconds...")
+                
+                time.sleep(sleep_time)
+                delay = min(DEFAULT_MAX_DELAY, delay * 2)  # Exponential backoff
+            else:
+                if debug:
+                    print(f"DEBUG: [{function_name}] All {max_retries} attempts failed")
+    
+    return None
+
+# Backward compatibility alias
+def robust_openai_call(messages, api_params, debug=False, function_name="OpenAI", max_retries=DEFAULT_MAX_RETRIES):
+    """Legacy function - use unified_openai_call instead."""
+    return unified_openai_call(messages, api_params, debug, function_name, max_retries)
+
 def classify_section(section_title, section_content, debug=False):
     """Use OpenAI to classify whether a section should be included in release notes.
     
@@ -388,37 +483,33 @@ def classify_section(section_title, section_content, debug=False):
         print(f"DEBUG: [classify_section] Title: {section_title}")
         print(f"DEBUG: [classify_section] Content: {section_content[:200]}...")  # Show first 200 chars of content
     
-    try:
-        prompt = SECTION_CLASSIFICATION_PROMPT.format(
-            title=section_title,
-            content=section_content
-        )
-            
-        api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_CLASSIFICATION)
-        response = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": SECTION_CLASSIFICATION_SYSTEM
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            **api_params
-        )
+    prompt = SECTION_CLASSIFICATION_PROMPT.format(
+        title=section_title,
+        content=section_content
+    )
         
-        result = response.choices[0].message.content.strip().upper()
+    api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_CLASSIFICATION)
+    messages = [
+        {
+            "role": "system",
+            "content": SECTION_CLASSIFICATION_SYSTEM
+        },
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+    
+    result = robust_openai_call(messages, api_params, debug, "classify_section")
+    
+    if result:
+        result_upper = result.upper()
         if debug:
-            print(f"DEBUG: [classify_section] OpenAI response: {result}")
-        return result == 'INCLUDE'
-        
-    except Exception as e:
+            print(f"DEBUG: [classify_section] OpenAI response: {result_upper}")
+        return result_upper == 'INCLUDE'
+    else:
         if debug:
-            print(f"DEBUG: [classify_section] Error in OpenAI classification: {e}")
-            print("DEBUG: [classify_section] Defaulting to exclude section")
-        
+            print("DEBUG: [classify_section] All OpenAI attempts failed, defaulting to exclude section")
         # Default to excluding section if OpenAI fails
         return False
 
@@ -439,33 +530,31 @@ def extract_relevant_content(pr_body, debug=False):
         print(f"\nDEBUG: [extract_relevant_content] Extracting relevant content from PR body")
         print(f"DEBUG: [extract_relevant_content] PR body length: {len(pr_body)}")
     
-    try:
-        # Format the sections lists for the prompt
-        included_sections_text = "\n".join(f"- {section}" for section in INCLUDED_SECTIONS)
-        excluded_sections_text = "\n".join(f"- {section}" for section in EXCLUDED_SECTIONS)
+    # Format the sections lists for the prompt
+    included_sections_text = "\n".join(f"- {section}" for section in INCLUDED_SECTIONS)
+    excluded_sections_text = "\n".join(f"- {section}" for section in EXCLUDED_SECTIONS)
+    
+    prompt = CONTENT_EXTRACTION_PROMPT.format(
+        pr_body=pr_body,
+        included_sections=included_sections_text,
+        excluded_sections=excluded_sections_text
+    )
         
-        prompt = CONTENT_EXTRACTION_PROMPT.format(
-            pr_body=pr_body,
-            included_sections=included_sections_text,
-            excluded_sections=excluded_sections_text
-        )
-            
-        api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_EDITING)  # Use higher token limit for extraction
-        response = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": CONTENT_EXTRACTION_SYSTEM
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            **api_params
-        )
-        
-        result = response.choices[0].message.content.strip()
+    api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_EDITING)  # Use higher token limit for extraction
+    messages = [
+        {
+            "role": "system",
+            "content": CONTENT_EXTRACTION_SYSTEM
+        },
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+    
+    result = robust_openai_call(messages, api_params, debug, "extract_relevant_content")
+    
+    if result:
         if debug:
             print(f"DEBUG: [extract_relevant_content] OpenAI response length: {len(result)}")
             print(f"DEBUG: [extract_relevant_content] OpenAI response (first 200 chars): {result[:200]}...")
@@ -477,12 +566,9 @@ def extract_relevant_content(pr_body, debug=False):
             return None
             
         return result
-        
-    except Exception as e:
+    else:
         if debug:
-            print(f"DEBUG: [extract_relevant_content] Error in OpenAI extraction: {e}")
-            print("DEBUG: [extract_relevant_content] Returning None")
-        
+            print("DEBUG: [extract_relevant_content] All OpenAI attempts failed, returning None")
         # Return None if extraction fails
         return None
 
@@ -514,25 +600,23 @@ def extract_pr_summary(comments, debug=False):
             print("DEBUG: [extract_pr_summary] No comment content found")
         return None
     
-    try:
-        prompt = PR_SUMMARY_EXTRACTION_PROMPT.format(comments=comments_text)
-            
-        api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_EDITING)  # Use higher token limit for extraction
-        response = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": PR_SUMMARY_EXTRACTION_SYSTEM
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            **api_params
-        )
+    prompt = PR_SUMMARY_EXTRACTION_PROMPT.format(comments=comments_text)
         
-        result = response.choices[0].message.content.strip()
+    api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_EDITING)  # Use higher token limit for extraction
+    messages = [
+        {
+            "role": "system",
+            "content": PR_SUMMARY_EXTRACTION_SYSTEM
+        },
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+    
+    result = robust_openai_call(messages, api_params, debug, "extract_pr_summary")
+    
+    if result:
         if debug:
             print(f"DEBUG: [extract_pr_summary] OpenAI response length: {len(result)}")
             print(f"DEBUG: [extract_pr_summary] OpenAI response (first 200 chars): {result[:200]}...")
@@ -544,12 +628,9 @@ def extract_pr_summary(comments, debug=False):
             return None
             
         return result
-        
-    except Exception as e:
+    else:
         if debug:
-            print(f"DEBUG: [extract_pr_summary] Error in OpenAI extraction: {e}")
-            print("DEBUG: [extract_pr_summary] Returning None")
-        
+            print("DEBUG: [extract_pr_summary] All OpenAI attempts failed, returning None")
         # Return None if extraction fails
         return None
 
@@ -637,7 +718,6 @@ class PR:
         self.generated_lines = None
         self.edited_text = None
         
-        self.pr_auto_summary = None
         self.pr_interpreted_summary = None
         self.pr_details = None # final form
         self.validated = False  # Track if any content was validated
@@ -735,61 +815,180 @@ class PR:
             print("DEBUG: [extract_external_release_notes] No sections found in fallback patterns")
         return None
         
-    def extract_pr_summary_comment(self):
-        """Takes the github bot's comment containing an auto-generated summary of the PR.
 
-        Modifies:
-            self.pr_auto_summary
-        """
-        # Run the GitHub CLI command and capture the output
-        cmd = f'gh pr view {self.pr_number} --repo {self.repo_name} --comments'
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
-        if result.returncode == 0:
-            output = result.stdout
-            
-            # Extract the content under '# PR Summary' from comments by github-actions
-            lines = output.splitlines()
-            capture = False
-            summary_content = []
-
-            for line in lines:
-                if "github-actions" in line:
-                    capture = False
-                if "# PR Summary" in line:
-                    capture = True
-                    continue
-                if capture:
-                    if "## Test Suggestions" in line:
-                        break
-                    summary_content.append(line)
-
-            # Join and print the captured summary content
-            summary = "\n".join(summary_content).strip()
-            if summary:
-                self.pr_auto_summary = summary
-            else:
-                print(f"No PR summary found for #{self.pr_number} from {self.repo_name}\n")
-        else:
-            print(f"Failed to fetch comments: {result.stderr}")
-
-    def extract_pr_summary(self):
-        """Extract the PR summary from the PR body
+    def _assess_content_quality(self, external_notes, pr_summary, debug=False):
+        """Pass 0: Assess content quality and generate tailored editing instructions."""
+        print(f"Analyzing content quality for PR #{self.pr_number} in {self.repo_name} ...")
+        if debug:
+            print(f"DEBUG: [_assess_content_quality] PR #{self.pr_number} in {self.repo_name} - Analyzing content quality")
         
-        Returns:
-            str: The PR summary or None if not found
-        """
-        # Try new template format first
-        match = re.search(r"## What and why\?\s*(.+?)(?=^## |\Z)", self.pr_body, re.DOTALL | re.MULTILINE)
-        if match:
-            return match.group(1).strip()
-            
-        # Fallback to old format
-        match = re.search(r"## Summary\s*(.+?)(?=^## |\Z)", self.pr_body, re.DOTALL | re.MULTILINE)
-        if match:
-            return match.group(1).strip()
-            
+        max_attempts = DEFAULT_MAX_RETRIES
+        for attempt in range(max_attempts):
+            try:
+                # Adjust temperature for retries to get more specific instructions
+                temperature = BASE_TEMPERATURE + (attempt * TEMPERATURE_INCREMENT)
+                
+                prompt = PASS_0_ASSESSMENT_PROMPT.format(
+                    pr_summary=pr_summary or "None",
+                    external_notes=external_notes or "None"
+                )
+                
+                # Add retry guidance for subsequent attempts
+                if attempt > 0:
+                    prompt += f"\n\nPREVIOUS ATTEMPT FEEDBACK: Instructions were too generic. Be more specific about actual issues in this content and avoid generic editing advice."
+                
+                api_params = get_model_api_params(MODEL_EDITING, MAX_TOKENS_EDITING, temperature)
+                messages = [
+                    {"role": "system", "content": PASS_0_ASSESSMENT_SYSTEM},
+                    {"role": "user", "content": prompt}
+                ]
+                
+                result = unified_openai_call(
+                    messages=messages,
+                    api_params=api_params,
+                    debug=debug,
+                    function_name="_assess_content_quality"
+                )
+                
+                if result:
+                    if debug:
+                        print(f"DEBUG: [_assess_content_quality] Attempt {attempt + 1} result length: {len(result)}")
+                    
+                    # Parse the response to extract instructions for each pass
+                    instructions = self._parse_assessment_result(result, debug)
+                    
+                    # Validate the generated instructions
+                    if instructions and self._validate_instructions(instructions, debug):
+                        if debug:
+                            print(f"DEBUG: [_assess_content_quality] Generated tailored instructions successfully on attempt {attempt + 1}")
+                        
+                        # Track successful Pass 0 assessment
+                        if not hasattr(self, 'validation_summaries'):
+                            self.validation_summaries = []
+                        
+                        assessment_summary = {
+                            'content_type': 'pass_0_assessment',
+                            'validation_failed': False,
+                            'attempts': attempt + 1,
+                            'validation_result': "PASS: Tailored instructions generated and validated",
+                            'failure_patterns': {},
+                            'validation_temperature': temperature,
+                            'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                        self.validation_summaries.append(assessment_summary)
+                        
+                        return instructions
+                    else:
+                        if debug:
+                            print(f"DEBUG: [_assess_content_quality] Attempt {attempt + 1} validation failed")
+                        if attempt < max_attempts - 1:
+                            print(f"Instructions not specific enough, retrying... (attempt {attempt + 2}/{max_attempts})")
+                else:
+                    if debug:
+                        print(f"DEBUG: [_assess_content_quality] Attempt {attempt + 1} returned None")
+                    if attempt < max_attempts - 1:
+                        print(f"Error generating instructions, retrying... (attempt {attempt + 2}/{max_attempts})")
+                        
+            except Exception as e:
+                if debug:
+                    print(f"DEBUG: [_assess_content_quality] Attempt {attempt + 1} error: {e}")
+                if attempt < max_attempts - 1:
+                    print(f"Error generating instructions, retrying... (attempt {attempt + 2}/{max_attempts})")
+        
+        # If all attempts failed, this is a critical error since we need tailored instructions
+        print(f"ERROR: Failed to generate tailored editing instructions for PR #{self.pr_number} after {max_attempts} attempts")
+        
+        # Track failed Pass 0 assessment
+        if not hasattr(self, 'validation_summaries'):
+            self.validation_summaries = []
+        
+        assessment_summary = {
+            'content_type': 'pass_0_assessment',
+            'validation_failed': True,
+            'attempts': max_attempts,
+            'validation_result': "FAIL: Could not generate specific enough instructions",
+            'failure_patterns': {'generic_instructions': max_attempts},
+            'validation_temperature': BASE_TEMPERATURE + ((max_attempts - 1) * TEMPERATURE_INCREMENT),
+            'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        self.validation_summaries.append(assessment_summary)
+        
+        # Return None - the calling code will need to handle this error case
         return None
+    
+    def _parse_assessment_result(self, result, debug=False):
+        """Parse the assessment result to extract individual pass instructions."""
+        try:
+            instructions = {}
+            
+            # Extract each section using regex patterns
+            pass_1_match = re.search(r'PASS_1_INSTRUCTIONS:\s*\n(.*?)(?=\n\nPASS_2_INSTRUCTIONS:|\Z)', result, re.DOTALL)
+            pass_2_match = re.search(r'PASS_2_INSTRUCTIONS:\s*\n(.*?)(?=\n\nPASS_3_INSTRUCTIONS:|\Z)', result, re.DOTALL)
+            pass_3_match = re.search(r'PASS_3_INSTRUCTIONS:\s*\n(.*?)(?=\n\n|\Z)', result, re.DOTALL)
+            
+            if pass_1_match:
+                instructions['pass_1'] = pass_1_match.group(1).strip()
+            if pass_2_match:
+                instructions['pass_2'] = pass_2_match.group(1).strip()
+            if pass_3_match:
+                instructions['pass_3'] = pass_3_match.group(1).strip()
+            
+            if debug:
+                print(f"DEBUG: [_parse_assessment_result] Extracted {len(instructions)} instruction sets")
+            
+            # Return None if we didn't get all three instruction sets
+            if len(instructions) != 3:
+                if debug:
+                    print(f"DEBUG: [_parse_assessment_result] Missing instruction sets, got {list(instructions.keys())}")
+                return None
+                
+            return instructions
+            
+        except Exception as e:
+            if debug:
+                print(f"DEBUG: [_parse_assessment_result] Error parsing assessment result: {e}")
+            return None
+    
+    def _validate_instructions(self, instructions, debug=False):
+        """Validate that the generated instructions are meaningful and specific."""
+        try:
+            # Combine all instructions for validation
+            all_instructions = "\n\n".join([
+                f"Pass 1: {instructions['pass_1']}",
+                f"Pass 2: {instructions['pass_2']}",
+                f"Pass 3: {instructions['pass_3']}"
+            ])
+            
+            prompt = INSTRUCTION_VALIDATION_PROMPT.format(instructions=all_instructions)
+            
+            api_params = get_model_api_params(MODEL_VALIDATION, MAX_TOKENS_VALIDATION, VALIDATION_BASE_TEMPERATURE)
+            messages = [
+                {"role": "system", "content": INSTRUCTION_VALIDATION_SYSTEM},
+                {"role": "user", "content": prompt}
+            ]
+            
+            result = unified_openai_call(
+                messages=messages,
+                api_params=api_params,
+                debug=debug,
+                function_name="_validate_instructions"
+            )
+            
+            if result is None:
+                if debug:
+                    print(f"DEBUG: [_validate_instructions] All OpenAI attempts failed")
+                return False
+            
+            if debug:
+                print(f"DEBUG: [_validate_instructions] Validation result: {result}")
+            
+            return result.upper().startswith('PASS')
+            
+        except Exception as e:
+            if debug:
+                print(f"DEBUG: [_validate_instructions] Error validating instructions: {e}")
+            return False
 
     def edit_content(self, content_type, content, editing_instructions, edit=False, skip_passes=None):
         """Unified function to edit PR content (summaries, titles, or release notes) with three-pass editing for notes/summary."""
@@ -799,14 +998,36 @@ class PR:
         # Initialize validation summaries list if it doesn't exist
         if not hasattr(self, 'validation_summaries'):
             self.validation_summaries = []
-        # Use multi-pass for 'notes', single pass for 'title' and 'summary'
+        # Use multi-pass for 'notes', single pass for 'title'
         if content_type in ("notes",) and edit:
+            # Pass 0: Assess content quality and generate tailored instructions
+            tailored_instructions = None
+            if 0 not in skip_passes:
+                # For content quality assessment, we need both external_notes and pr_summary
+                # The content parameter should be external_notes when content_type is 'notes'
+                external_notes = content  # This is the external_notes passed to edit_content
+                pr_summary = getattr(self, 'pr_interpreted_summary', None)
+                tailored_instructions = self._assess_content_quality(external_notes, pr_summary, self.debug)
+            
+            # Tailored instructions are required - if Pass 0 failed, we can't proceed
+            if not tailored_instructions:
+                print(f"ERROR: Cannot proceed with editing PR #{self.pr_number} - Pass 0 failed to generate tailored instructions")
+                # Set the content as-is without editing
+                if content_type == 'notes':
+                    self.edited_text = content
+                return
+            
+            print(f"Using tailored editing instructions for PR #{self.pr_number}")
+            pass_1_instructions = tailored_instructions['pass_1']
+            pass_2_instructions = tailored_instructions['pass_2']
+            pass_3_instructions = tailored_instructions['pass_3']
+            
             # Pass 1: Group and Flatten
             if 1 not in skip_passes:
                 grouped = self._edit_pass(
                     content_type,
                     content,
-                    EDIT_PASS_1_INSTRUCTIONS,
+                    pass_1_instructions,
                     attr_name="grouped_text",
                     edit=edit
                 )
@@ -818,7 +1039,7 @@ class PR:
                 deduped = self._edit_pass(
                     content_type,
                     grouped,
-                    EDIT_PASS_2_INSTRUCTIONS,
+                    pass_2_instructions,
                     attr_name="deduplicated_text",
                     edit=edit
                 )
@@ -830,7 +1051,7 @@ class PR:
                 final = self._edit_pass(
                     content_type,
                     deduped,
-                    EDIT_PASS_3_INSTRUCTIONS,
+                    pass_3_instructions,
                     attr_name="edited_text",
                     edit=edit
                 )
@@ -838,18 +1059,13 @@ class PR:
                 final = deduped
                 self.edited_text = final
             # Set output based on content type
-            if content_type == 'summary':
-                self.pr_interpreted_summary = final
-            elif content_type == 'notes':
+            if content_type == 'notes':
                 self.edited_text = final
             return
         # Single pass for titles or fallback for other types
         if not edit:
             if content_type == 'title':
                 self.cleaned_title = content.rstrip('.')
-            elif content_type == 'summary':
-                self.pr_interpreted_summary = content
-                self.edited_text = content
             elif content_type == 'notes':
                 self.edited_text = content
             return
@@ -1013,18 +1229,7 @@ class PR:
                     self.cleaned_title = edited_content.rstrip('.')
                 if self.debug:
                     print(f"DEBUG: [edit_content] Set cleaned_title: {self.cleaned_title}")
-            elif content_type == 'summary':
-                if not is_valid and attempt == max_attempts - 1:
-                    comment = "<!--- CHECK: Content may be substantially different from original --->\n"
-                    self.content_warning_comment = comment
-                    self.pr_interpreted_summary = edited_content
-                    self.edited_text = edited_content
-                else:
-                    self.content_warning_comment = ""
-                    self.pr_interpreted_summary = edited_content
-                    self.edited_text = self.pr_interpreted_summary
-                if self.debug:
-                    print(f"DEBUG: [edit_content] Set pr_interpreted_summary and edited_text")
+
             elif content_type == 'notes':
                 if not is_valid and attempt == max_attempts - 1:
                     comment = "<!--- CHECK: Content may be substantially different from original --->\n"
@@ -1046,9 +1251,6 @@ class PR:
             # Use original content if editing fails
             if content_type == 'title':
                 self.cleaned_title = content.rstrip('.')
-            elif content_type == 'summary':
-                self.pr_interpreted_summary = content
-                self.edited_text = content
             elif content_type == 'notes':
                 self.edited_text = content
 
@@ -1073,21 +1275,16 @@ class PR:
         
         if self.debug:
             print(f"DEBUG: [_edit_pass] Using model {model} for {pass_name}")
-        full_instructions = f"{pass_instructions}\n\n{EDIT_CONTENT_PROMPT}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
+        
+        base_instructions = f"{pass_instructions}\n\n{EDIT_CONTENT_PROMPT}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
         max_attempts = DEFAULT_MAX_RETRIES
-        initial_delay = DEFAULT_INITIAL_DELAY
-        delay = initial_delay
-        max_delay = DEFAULT_MAX_DELAY
         last_validation_result = None
         failure_patterns = {}
         content_for_reedit = None
+        
         for attempt in range(max_attempts):
-            base_temp = 0.2
-            if 'formatting' in failure_patterns:
-                base_temp += 0.1
-            if 'meaning' in failure_patterns:
-                base_temp -= 0.05
-            temperature = min(0.7, base_temp + (attempt * 0.05))
+            # Build dynamic instructions based on previous failures
+            full_instructions = base_instructions
             if last_validation_result and attempt > 0:
                 if 'formatting' in last_validation_result.lower():
                     failure_patterns['formatting'] = failure_patterns.get('formatting', 0) + 1
@@ -1101,26 +1298,47 @@ class PR:
                 full_instructions += f"\n\nPrevious attempt failed: {last_validation_result}"
                 if guidance:
                     full_instructions += f"\nPlease address these specific issues:\n" + "\n".join(f"- {g}" for g in guidance)
+            
+            # Determine content to edit
             if attempt > 0 and content_for_reedit and 'edited' in content_for_reedit:
                 content_to_edit = content_for_reedit['edited']
             else:
                 content_to_edit = content
+            
+            # Calculate adaptive temperature
+            base_temp = BASE_TEMPERATURE
+            if 'formatting' in failure_patterns:
+                base_temp += TEMPERATURE_INCREMENT
+            if 'meaning' in failure_patterns:
+                base_temp -= (TEMPERATURE_INCREMENT / 2)
+            temperature = min(0.7, base_temp + (attempt * (TEMPERATURE_INCREMENT / 2)))
+            
             # Use appropriate parameters based on model
             api_params = get_model_api_params(model, MAX_TOKENS_EDITING, temperature)
+            messages = [
+                {"role": "system", "content": EDIT_CONTENT_SYSTEM},
+                {"role": "user", "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content_to_edit}"}
+            ]
             
-            response = client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": EDIT_CONTENT_SYSTEM},
-                    {"role": "user", "content": f"Instructions:\n{full_instructions}\n\nContent to edit:\n{content_to_edit}"}
-                ],
-                **api_params
+            current_edit = unified_openai_call(
+                messages=messages,
+                api_params=api_params,
+                debug=self.debug,
+                function_name=f"_edit_pass_{attr_name}"
             )
-            current_edit = response.choices[0].message.content.strip()
+            
+            if current_edit is None:
+                if self.debug:
+                    print(f"DEBUG: [edit_content] {attr_name} pass attempt {attempt + 1} returned None")
+                continue
+            
             if self.debug:
-                print(f"DEBUG: [edit_content] {attr_name} pass attempt {attempt + 1} content (first 100 chars): {repr(current_edit[:100]) if current_edit else None}")
+                print(f"DEBUG: [edit_content] {attr_name} pass attempt {attempt + 1} content (first 100 chars): {repr(current_edit[:100])}")
+            
             is_valid, validation_result, content_for_reedit = self.validate_edit(content_type, content, current_edit, edit)
             if self.debug:
                 print(f"DEBUG: [edit_content] {attr_name} pass attempt {attempt + 1} validation result: {is_valid}")
+            
             if is_valid:
                 # Add successful validation summary for multi-pass editing
                 validation_summary = {
@@ -1130,7 +1348,6 @@ class PR:
                     'validation_result': validation_result,
                     'failure_patterns': failure_patterns,
                     'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + attempt * VALIDATION_TEMPERATURE_INCREMENT),
-
                     'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 if not hasattr(self, 'validation_summaries'):
@@ -1139,57 +1356,52 @@ class PR:
                 
                 setattr(self, attr_name, current_edit)
                 return current_edit
+            
             last_validation_result = validation_result
             
-            # For critical failures (duplicates, image positioning), force complete re-edit
+            # Handle critical failures with enhanced instructions
             critical_failures = ['duplicate content', 'begin with text summary', 'same feature', 'same functionality']
             is_critical_failure = any(failure in validation_result.lower() for failure in critical_failures)
             
             if is_critical_failure and attempt < max_attempts - 1:
                 print(f"CRITICAL validation failure detected: {validation_result}")
-                # For critical failures, we need more aggressive re-editing
+                # Add critical failure guidance to base instructions for next attempt
                 if 'duplicate' in validation_result.lower():
-                    # Add strong anti-duplication guidance
-                    full_instructions += f"\n\nCRITICAL: Previous attempt failed due to duplicate content. You MUST consolidate all information about the same feature into a single paragraph. Do not repeat any concepts or explanations."
+                    base_instructions += f"\n\nCRITICAL: Previous attempt failed due to duplicate content. You MUST consolidate all information about the same feature into a single paragraph. Do not repeat any concepts or explanations."
                 elif 'text summary' in validation_result.lower():
-                    # Add image positioning guidance
-                    full_instructions += f"\n\nCRITICAL: Previous attempt failed because content started with an image. You MUST begin with explanatory text before any images."
+                    base_instructions += f"\n\nCRITICAL: Previous attempt failed because content started with an image. You MUST begin with explanatory text before any images."
             
             if attempt < max_attempts - 1:
-                jitter = random.uniform(0, 0.1 * delay)
-                sleep_time = min(max_delay, delay + jitter)
-                print(f"Validation failed, waiting {sleep_time:.1f} seconds before retry...")
-                time.sleep(sleep_time)
-                delay = min(max_delay, delay * 2)
-            else:
-                # Add failed validation summary for multi-pass editing
-                validation_summary = {
-                    'content_type': f"{content_type} ({attr_name})",
-                    'validation_failed': True,
-                    'attempts': max_attempts,
-                    'validation_result': validation_result,
-                    'failure_patterns': failure_patterns,
-                    'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + (max_attempts - 1) * VALIDATION_TEMPERATURE_INCREMENT),
-
-                    'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                }
-                if content_for_reedit:
-                    validation_summary['reedit_available'] = True
-                    validation_summary['reedit_message'] = content_for_reedit.get('validation_message', '')
-                
-                if not hasattr(self, 'validation_summaries'):
-                    self.validation_summaries = []
-                self.validation_summaries.append(validation_summary)
-                
-                print(f"WARN: All {max_attempts} content edit attempts failed for {attr_name} pass in PR #{self.pr_number}")
-                if self.debug:
-                    print(f"Validation result: {validation_result}")
-                print(f"Failure patterns: {failure_patterns}")
-                if content_for_reedit:
-                    print(f"Content available for reedit with validation message: {content_for_reedit['validation_message']}")
-                # Do NOT revert to the original content; keep the last attempted edit
-                setattr(self, attr_name, current_edit)
-                return current_edit
+                print(f"Validation failed, retrying {attr_name} pass... (attempt {attempt + 2}/{max_attempts})")
+        
+        # All attempts failed - record failure and return last attempt
+        validation_summary = {
+            'content_type': f"{content_type} ({attr_name})",
+            'validation_failed': True,
+            'attempts': max_attempts,
+            'validation_result': validation_result,
+            'failure_patterns': failure_patterns,
+            'validation_temperature': min(VALIDATION_MAX_TEMPERATURE, VALIDATION_BASE_TEMPERATURE + (max_attempts - 1) * VALIDATION_TEMPERATURE_INCREMENT),
+            'last_validation_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        if content_for_reedit:
+            validation_summary['reedit_available'] = True
+            validation_summary['reedit_message'] = content_for_reedit.get('validation_message', '')
+        
+        if not hasattr(self, 'validation_summaries'):
+            self.validation_summaries = []
+        self.validation_summaries.append(validation_summary)
+        
+        print(f"WARN: All {max_attempts} content edit attempts failed for {attr_name} pass in PR #{self.pr_number}")
+        if self.debug:
+            print(f"Validation result: {validation_result}")
+        print(f"Failure patterns: {failure_patterns}")
+        if content_for_reedit:
+            print(f"Content available for reedit with validation message: {content_for_reedit['validation_message']}")
+        
+        # Keep the last attempted edit
+        setattr(self, attr_name, current_edit)
+        return current_edit
 
     def validate_edit(self, content_type, original_content, edited_content, edit=False, attempt_number=1):
         """Uses LLM to validate edits by checking for common issues.
@@ -1243,128 +1455,103 @@ class PR:
             for criterion in VALIDATION_CRITERIA[content_type]:
                 validation_prompt += f"- {criterion}\n"
 
-        max_retries = 3  # Reasonable retries with improved validation prompt
-        retry_delay = DEFAULT_INITIAL_DELAY
-        max_delay = DEFAULT_MAX_DELAY
-        last_error = None
-
         # Calculate adaptive validation temperature based on editing attempt
         validation_temperature = min(
             VALIDATION_MAX_TEMPERATURE,
             VALIDATION_BASE_TEMPERATURE + (attempt_number - 1) * VALIDATION_TEMPERATURE_INCREMENT
         )
         
-        for attempt in range(max_retries):
-            try:
-                # Use appropriate parameters based on model with adaptive temperature
-                api_params = get_model_api_params(MODEL_VALIDATION, MAX_TOKENS_VALIDATION, validation_temperature)
-                
-                # Truncate content if too long to avoid token limits
-                max_content_length = 8000  # Higher limit for gpt-4o
-                truncated_original = original_content[:max_content_length] if original_content else ""
-                truncated_edited = edited_content[:max_content_length] if edited_content else ""
-                
-                if len(original_content) > max_content_length or len(edited_content) > max_content_length:
-                    truncated_original += "... [truncated]"
-                    truncated_edited += "... [truncated]"
-                
-                response = client.chat.completions.create(
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": VALIDATION_SYSTEM
-                        },
-                        {
-                            "role": "user",
-                            "content": f"Original content: {truncated_original}\n\nEdited content: {truncated_edited}"
-                        }
-                    ],
-                    **api_params
-                )
-                result = response.choices[0].message.content.strip() if response.choices[0].message.content else ""
-                
-                if self.debug:
-                    print(f"DEBUG: [validate_edit] Validation LLM response: {result}")
-                
-                # Handle empty or invalid responses
-                if not result:
-                    result = "PASS"  # Default to pass if no response
-                    if self.debug:
-                        print(f"DEBUG: [validate_edit] Empty validation response, defaulting to PASS")
-                
-                # Clean up the result and handle edge cases
-                result = result.strip()
-                if not result or len(result) < 3:
-                    result = "PASS"  # Default to pass for very short responses
-                    if self.debug:
-                        print(f"DEBUG: [validate_edit] Very short validation response, defaulting to PASS")
-                
-                # Add validation result to info
-                validation_info['validation_result'] = result
-                validation_info['attempt_number'] = attempt + 1
-                
-                # Determine if validation passed - be more lenient with parsing
-                result_upper = result.upper()
-                is_valid = (result_upper.startswith('PASS') or 
-                           (not result_upper.startswith('FAIL') and 
-                            'PASS' in result_upper) or
-                           (not result_upper.startswith('FAIL') and 
-                            'FAIL' not in result_upper))
-                
-                # Print validation result with appropriate detail level
-                if is_valid:
-                    if self.debug:
-                        print(f"Validation result for {content_type} edit in PR #{self.pr_number}: {result}")
-                    else:
-                        print(f"Validation PASS for {content_type} edit in PR #{self.pr_number}")
-                else:
-                    print(f"Validation FAIL for {content_type} edit in PR #{self.pr_number}: {result}")
-                
-                # Prepare content for reedit if validation fails
-                content_for_reedit = None
-                if not is_valid:
-                    content_for_reedit = {
-                        'original': original_content,
-                        'edited': edited_content,
-                        'validation_message': result,
-                        'content_type': content_type
-                    }
-                
-                # Cache the result
-                if not hasattr(self, '_validation_cache'):
-                    self._validation_cache = {}
-                self._validation_cache[cache_key] = (is_valid, result, content_for_reedit)
-                
-                return is_valid, result, content_for_reedit
-
-            except Exception as e:
-                last_error = str(e)
-                validation_info['error'] = last_error
-                if attempt < max_retries - 1:
-                    # Use a more moderate growth rate (1.5x instead of 2x)
-                    retry_delay = min(max_delay, retry_delay * 1.5)
-                    # Add small random jitter (±20%)
-                    jitter = random.uniform(-0.2, 0.2) * retry_delay
-                    sleep_time = max(0.5, retry_delay + jitter)  # Ensure minimum 0.5s delay
-                    print(f"\nValidation attempt {attempt + 1} failed for {content_type} edit in PR #{self.pr_number}: {last_error}")
-                    print(f"Retrying in {sleep_time:.1f} seconds...")
-                    time.sleep(sleep_time)
-                else:
-                    print(f"\nAll validation attempts failed for {content_type} edit in PR #{self.pr_number}. Last error: {last_error}")
-                    return True, f"FAIL: Exception during validation - {last_error}", None
-
-
-
-    def extract_dependencies(self):
-        """Extract dependencies and breaking changes from the PR body
+        # Use appropriate parameters based on model with adaptive temperature
+        api_params = get_model_api_params(MODEL_VALIDATION, MAX_TOKENS_VALIDATION, validation_temperature)
         
-        Returns:
-            str: The dependencies and breaking changes or None if not found
-        """
-        match = re.search(r"## Dependencies, breaking changes, and deployment notes\s*(.+?)(?=^## |\Z)", self.pr_body, re.DOTALL | re.MULTILINE)
-        if match:
-            return match.group(1).strip()
-        return None
+        # Truncate content if too long to avoid token limits
+        max_content_length = 8000  # Higher limit for gpt-4o
+        truncated_original = original_content[:max_content_length] if original_content else ""
+        truncated_edited = edited_content[:max_content_length] if edited_content else ""
+        
+        if len(original_content) > max_content_length or len(edited_content) > max_content_length:
+            truncated_original += "... [truncated]"
+            truncated_edited += "... [truncated]"
+        
+        messages = [
+            {
+                "role": "system",
+                "content": VALIDATION_SYSTEM
+            },
+            {
+                "role": "user",
+                "content": f"Original content: {truncated_original}\n\nEdited content: {truncated_edited}"
+            }
+        ]
+        
+        result = unified_openai_call(
+            messages=messages,
+            api_params=api_params,
+            debug=self.debug,
+            function_name="validate_edit"
+        )
+        
+        if result is None:
+            print(f"\nAll validation attempts failed for {content_type} edit in PR #{self.pr_number}")
+            return True, f"FAIL: All OpenAI validation attempts failed", None
+        
+        if self.debug:
+            print(f"DEBUG: [validate_edit] Validation LLM response: {result}")
+        
+        # Handle empty or invalid responses
+        if not result:
+            result = "PASS"  # Default to pass if no response
+            if self.debug:
+                print(f"DEBUG: [validate_edit] Empty validation response, defaulting to PASS")
+        
+        # Clean up the result and handle edge cases
+        result = result.strip()
+        if not result or len(result) < 3:
+            result = "PASS"  # Default to pass for very short responses
+            if self.debug:
+                print(f"DEBUG: [validate_edit] Very short validation response, defaulting to PASS")
+        
+        # Add validation result to info
+        validation_info['validation_result'] = result
+        validation_info['attempt_number'] = 1  # Unified call handles retries internally
+        
+        # Determine if validation passed - be more lenient with parsing
+        result_upper = result.upper()
+        is_valid = (result_upper.startswith('PASS') or 
+                   (not result_upper.startswith('FAIL') and 
+                    'PASS' in result_upper) or
+                   (not result_upper.startswith('FAIL') and 
+                    'FAIL' not in result_upper))
+        
+        # Print validation result with appropriate detail level
+        if is_valid:
+            if self.debug:
+                print(f"Validation result for {content_type} edit in PR #{self.pr_number}: {result}")
+            else:
+                print(f"Validation PASS for {content_type} edit in PR #{self.pr_number}")
+        else:
+            print(f"Validation FAIL for {content_type} edit in PR #{self.pr_number}: {result}")
+        
+        # Prepare content for reedit if validation fails
+        content_for_reedit = None
+        if not is_valid:
+            content_for_reedit = {
+                'original': original_content,
+                'edited': edited_content,
+                'validation_message': result,
+                'content_type': content_type
+            }
+        
+        # Cache the result
+        if not hasattr(self, '_validation_cache'):
+            self._validation_cache = {}
+        self._validation_cache[cache_key] = (is_valid, result, content_for_reedit)
+        
+        return is_valid, result, content_for_reedit
+
+
+
+
 
 class ReleaseURL:
     def __init__(self, url):
@@ -1697,33 +1884,29 @@ def is_merge_pr(title, debug=False):
     if debug:
         print(f"\nDEBUG: [is_merge_pr] Classifying PR title: {title}")
     
-    try:
-        prompt = MERGE_PR_CLASSIFICATION_PROMPT.format(title=title)
-        api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_CLASSIFICATION)
-
-        response = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": MERGE_PR_CLASSIFICATION_SYSTEM
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            **api_params
-        )
-        
-        result = response.choices[0].message.content.strip().upper()
+    prompt = MERGE_PR_CLASSIFICATION_PROMPT.format(title=title)
+    api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_CLASSIFICATION)
+    messages = [
+        {
+            "role": "system",
+            "content": MERGE_PR_CLASSIFICATION_SYSTEM
+        },
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+    
+    result = robust_openai_call(messages, api_params, debug, "is_merge_pr")
+    
+    if result:
+        result_upper = result.upper()
         if debug:
-            print(f"DEBUG: [is_merge_pr] OpenAI response: {result}")
-        return result == 'MERGE'
-        
-    except Exception as e:
+            print(f"DEBUG: [is_merge_pr] OpenAI response: {result_upper}")
+        return result_upper == 'MERGE'
+    else:
         if debug:
-            print(f"DEBUG: [is_merge_pr] Error in OpenAI classification: {e}")
-            print("DEBUG: [is_merge_pr] Falling back to keyword matching...")
+            print("DEBUG: [is_merge_pr] All OpenAI attempts failed, falling back to keyword matching...")
             
         # Fallback to keyword matching if OpenAI fails
         title_lower = title.lower()
@@ -2437,17 +2620,9 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
             # Store all validation summaries
             validation_summaries = []
             
+            # PR summary is already processed by LLM extraction, no additional editing needed
             if commit.get('pr_summary'):
-                pr_obj.edit_content('summary', commit['pr_summary'], EDIT_SUMMARY_PROMPT, edit=True)
-                commit['pr_summary'] = pr_obj.pr_interpreted_summary
-                if hasattr(pr_obj, 'validation_summaries'):
-                    validation_summaries.extend(pr_obj.validation_summaries)
-                elif hasattr(pr_obj, 'validation_summary'):
-                    validation_summaries.append(pr_obj.validation_summary)
-                # Set edited=True if editing was attempted, regardless of validation status
-                edited = True
-                if pr_obj.validated:
-                    validated = True
+                pr_obj.pr_interpreted_summary = commit['pr_summary']
             if commit.get('external_notes'):
                 pr_obj.edit_content('notes', commit['external_notes'], EDIT_CONTENT_PROMPT, edit=True)
                 commit['external_notes'] = pr_obj.edited_text
@@ -3261,25 +3436,7 @@ def edit_release_notes(github_urls, editing_instructions_body, debug=False):
                         print(f"DEBUG: [edit_release_notes] No external notes found for PR #{pr.pr_number}")
         print()
 
-def auto_summary(github_urls, summary_instructions, debug=False):
-    """
-    Processes GitHub PRs by fetching comments, extracting summaries, and converting 
-    summaries to release notes based on given instructions.
 
-    Args:
-        github_urls (list): A list of GitHub URLs, each containing PR data.
-        summary_instructions (str): Instructions for converting summaries to release notes.
-        debug (bool): Whether to show debug output
-    """
-    for url in github_urls:
-        for pr in url.prs:
-            if pr.data_json:
-                print(f"Fetching GitHub comment from PR #{pr.pr_number} of {pr.repo_name}...\n")
-                pr.extract_pr_summary_comment()
-                if debug:
-                    print(f"DEBUG: [auto_summary] Editing summary for PR #{pr.pr_number} in {pr.repo_name}")
-                pr.edit_content('summary', pr.pr_auto_summary, summary_instructions)
-        print()
 
 def edit_titles(github_urls, debug=False):
     """
