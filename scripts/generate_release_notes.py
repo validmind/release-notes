@@ -28,18 +28,22 @@ categories = {
 
 # --- Section definitions ---
 INCLUDED_SECTIONS = [
-    "What and why",
     "Release notes",
 ]
 
 EXCLUDED_SECTIONS = [
+    "What and why?",
+    "How to test",
+    "What needs special review?"
+    "Dependencies, breaking changes, and deployment notes",
+    "Breaking changes",
     "Dependencies",
     "Deployment",
+    "Checklist",
     "Review",
     "Testing",
     "Internal"
     "Screenshots"
-    "Checklist",
 ]
 
 # --- LLM settings ---
@@ -51,7 +55,7 @@ MODEL_PROOFREADING = "gpt-4o-mini" # For proofreading tasks
 
 # Multi-pass editing model settings
 MODEL_PASS_1 = "gpt-4o"       # Pass 1: Clean and flatten
-MODEL_PASS_2 = "o3"           # Pass 2: Deduplicate
+MODEL_PASS_2 = "gpt-4o"       # Pass 2: Deduplicate
 MODEL_PASS_3 = "gpt-4o"       # Pass 3: Streamline and proofread
 
 # Editing temperature settings
@@ -262,6 +266,44 @@ SECTION_CLASSIFICATION_PROMPT = (
     "Respond with only 'INCLUDE' or 'EXCLUDE'."
 )
 
+# --- Content extraction prompt ---
+CONTENT_EXTRACTION_SYSTEM = "You are a release notes content extractor. Your job is to extract only the user-facing content from PR descriptions."
+
+CONTENT_EXTRACTION_PROMPT = (
+    "Extract only the content that should be included in public release notes from this PR body.\n\n"
+    "INCLUDE these sections if present:\n"
+    "{included_sections}\n\n"
+    "EXCLUDE these sections if present:\n"
+    "{excluded_sections}\n\n"
+    "Additional rules:\n"
+    "1. Always extract any mentions of breaking changes, even if they appear in excluded sections.\n"
+    "2. Include sections with screenshots or media that relate to user-facing changes.\n"
+    "3. Preserve the original markdown formatting and structure.\n"
+    "4. Remove the '## Release notes' heading\n"
+    "5. If no relevant content is found, respond with 'NO_CONTENT'.\n\n"
+    "PR Body:\n{pr_body}\n\n"
+    "Extract and return only the relevant content, maintaining original formatting:"
+)
+
+# --- PR summary extraction prompt ---
+PR_SUMMARY_EXTRACTION_SYSTEM = "You are a PR summary extractor. Your job is to find and extract PR summaries from GitHub comments."
+
+PR_SUMMARY_EXTRACTION_PROMPT = (
+    "Find the PR summary in these GitHub comments and extract ONLY the first paragraph.\n\n"
+    "Steps:\n"
+    "1. Find a comment with '# PR Summary' heading\n"
+    "2. Extract ONLY the first paragraph after this heading\n"
+    "3. Stop at the first line break, bullet point, numbered list, or colon\n\n"
+    "Rules:\n"
+    "- Extract ONLY the first paragraph - nothing else\n"
+    "- Stop immediately at bullet points (•, -, *), numbers (1., 2.), or colons (:)\n"
+    "- Remove the '# PR Summary' heading\n"
+    "- Replace 'this PR' with 'this update'\n"
+    "- If no summary found, respond with 'NO_SUMMARY'\n\n"
+    "Comments:\n{comments}\n\n"
+    "Extract ONLY the first paragraph:"
+)
+
 # --- Merge PR classification prompt ---
 MERGE_PR_CLASSIFICATION_SYSTEM = "You are a PR classifier. Your job is to determine if a PR represents an automatic merge or contains actual changes."
 
@@ -375,32 +417,141 @@ def classify_section(section_title, section_content, debug=False):
     except Exception as e:
         if debug:
             print(f"DEBUG: [classify_section] Error in OpenAI classification: {e}")
-            print("DEBUG: [classify_section] Falling back to pattern matching...")
-            
-        # Fallback to basic pattern matching if OpenAI fails
-        normalized_title = section_title.lower()
-        normalized_title = re.sub(r'[^\w\s]', '', normalized_title)
+            print("DEBUG: [classify_section] Defaulting to exclude section")
         
-        if debug:
-            print(f"DEBUG: [classify_section] Normalized title: {normalized_title}")
-        
-        # Check excluded patterns first
-        for excluded in EXCLUDED_SECTIONS:
-            if excluded.lower() in normalized_title:
-                if debug:
-                    print(f"DEBUG: [classify_section] Matched excluded pattern: {excluded}")
-                return False
-                
-        # Then check included patterns
-        for included in INCLUDED_SECTIONS:
-            if included.lower() in normalized_title:
-                if debug:
-                    print(f"DEBUG: [classify_section] Matched included pattern: {included}")
-                return True
-                
-        if debug:
-            print("DEBUG: No patterns matched, excluding section")
+        # Default to excluding section if OpenAI fails
         return False
+
+def extract_relevant_content(pr_body, debug=False):
+    """Use OpenAI to extract only relevant content from PR body for release notes.
+    
+    Args:
+        pr_body (str): The full PR body content
+        debug (bool): Whether to show debug output
+        
+    Returns:
+        str: Extracted relevant content, or None if no relevant content found
+    """
+    if not pr_body or not pr_body.strip():
+        return None
+        
+    if debug:
+        print(f"\nDEBUG: [extract_relevant_content] Extracting relevant content from PR body")
+        print(f"DEBUG: [extract_relevant_content] PR body length: {len(pr_body)}")
+    
+    try:
+        # Format the sections lists for the prompt
+        included_sections_text = "\n".join(f"- {section}" for section in INCLUDED_SECTIONS)
+        excluded_sections_text = "\n".join(f"- {section}" for section in EXCLUDED_SECTIONS)
+        
+        prompt = CONTENT_EXTRACTION_PROMPT.format(
+            pr_body=pr_body,
+            included_sections=included_sections_text,
+            excluded_sections=excluded_sections_text
+        )
+            
+        api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_EDITING)  # Use higher token limit for extraction
+        response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": CONTENT_EXTRACTION_SYSTEM
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            **api_params
+        )
+        
+        result = response.choices[0].message.content.strip()
+        if debug:
+            print(f"DEBUG: [extract_relevant_content] OpenAI response length: {len(result)}")
+            print(f"DEBUG: [extract_relevant_content] OpenAI response (first 200 chars): {result[:200]}...")
+        
+        # Check if LLM found no relevant content
+        if result.upper() == 'NO_CONTENT':
+            if debug:
+                print(f"DEBUG: [extract_relevant_content] LLM found no relevant content")
+            return None
+            
+        return result
+        
+    except Exception as e:
+        if debug:
+            print(f"DEBUG: [extract_relevant_content] Error in OpenAI extraction: {e}")
+            print("DEBUG: [extract_relevant_content] Returning None")
+        
+        # Return None if extraction fails
+        return None
+
+def extract_pr_summary(comments, debug=False):
+    """Use OpenAI to extract PR summary from GitHub comments.
+    
+    Args:
+        comments (list): List of GitHub comment objects
+        debug (bool): Whether to show debug output
+        
+    Returns:
+        str: Extracted PR summary, or None if no summary found
+    """
+    if not comments:
+        return None
+        
+    if debug:
+        print(f"\nDEBUG: [extract_pr_summary] Extracting PR summary from {len(comments)} comments")
+    
+    # Combine all comments into a single text for LLM processing
+    comments_text = ""
+    for i, comment in enumerate(comments):
+        body = comment.get('body', '')
+        if body.strip():
+            comments_text += f"\n--- Comment {i+1} ---\n{body}\n"
+    
+    if not comments_text.strip():
+        if debug:
+            print("DEBUG: [extract_pr_summary] No comment content found")
+        return None
+    
+    try:
+        prompt = PR_SUMMARY_EXTRACTION_PROMPT.format(comments=comments_text)
+            
+        api_params = get_model_api_params(MODEL_CLASSIFYING, MAX_TOKENS_EDITING)  # Use higher token limit for extraction
+        response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": PR_SUMMARY_EXTRACTION_SYSTEM
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            **api_params
+        )
+        
+        result = response.choices[0].message.content.strip()
+        if debug:
+            print(f"DEBUG: [extract_pr_summary] OpenAI response length: {len(result)}")
+            print(f"DEBUG: [extract_pr_summary] OpenAI response (first 200 chars): {result[:200]}...")
+        
+        # Check if LLM found no summary
+        if result.upper() == 'NO_SUMMARY':
+            if debug:
+                print(f"DEBUG: [extract_pr_summary] LLM found no PR summary")
+            return None
+            
+        return result
+        
+    except Exception as e:
+        if debug:
+            print(f"DEBUG: [extract_pr_summary] Error in OpenAI extraction: {e}")
+            print("DEBUG: [extract_pr_summary] Returning None")
+        
+        # Return None if extraction fails
+        return None
 
 def generate_validation_comment(commit, debug=False):
     """Generate HTML comment with validation summary information.
@@ -1623,111 +1774,35 @@ def get_pr_content(pr_number, repo, debug=False):
                 print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} is internal, skipping.")
             return None, None, ['internal'], pr_data.get('title'), None, []
 
-        # Extract external release notes using section classification
+        # Extract external release notes using LLM-based content extraction
         external_notes = None
         if pr_data.get('body'):
             if debug:
-                print("\nDEBUG: [get_pr_content] Extracting external release notes")
+                print("\nDEBUG: [get_pr_content] Extracting external release notes using LLM")
                 print(f"DEBUG: [get_pr_content] PR body length: {len(pr_data['body'])}")
             
-            # Extract only the sections we want to keep
-            sections = []
+            # Use LLM to extract only relevant content
+            external_notes = extract_relevant_content(pr_data['body'], debug)
             
-            # Split the body into sections with more flexible matching
-            section_pattern = r"##\s*([^\n]+)\s*(.+?)(?=^##\s*|\Z)"
-            matches = re.finditer(section_pattern, pr_data['body'], re.DOTALL | re.MULTILINE)
-            
-            for match in matches:
-                section_title = match.group(1).strip()
-                section_content = match.group(2).strip()
-                
-                if debug:
-                    print(f"\nDEBUG: [get_pr_content] Found section: {section_title}")
-                    print(f"DEBUG: [get_pr_content] Section content (first 200 chars): {section_content[:200]}")
-                # Use OpenAI to classify the section
-                if classify_section(section_title, section_content, debug):
-                    if debug:
-                        print(f"DEBUG: [get_pr_content] Including section: {section_title}")
-                    sections.append(f"#### {section_title}\n{section_content}")
+            if debug:
+                if external_notes:
+                    print(f"DEBUG: [get_pr_content] LLM extracted {len(external_notes)} characters of relevant content")
                 else:
-                    if debug:
-                        print(f"DEBUG: [get_pr_content] Excluding section: {section_title}")
-            
-            # If we found any sections, combine them
-            if sections:
-                if debug:
-                    print(f"\nDEBUG: [get_pr_content] Found {len(sections)} sections to include")
-                external_notes = "\n\n".join(sections)
-            else:
-                if debug:
-                    print("\nDEBUG: [get_pr_content] No sections found, trying fallback patterns")
-                
-                # Fallback to old format with more robust matching
-                old_format_patterns = [
-                    r"##\s*External\s+Release\s+Notes\s*(.+)",
-                    r"##\s*Release\s+Notes\s*(.+)",
-                    r"##\s*Notes\s*(.+)",
-                    r"##\s*What's\s+New\s*(.+)",
-                    r"##\s*Changes\s*(.+)",
-                    r"##\s*Overview\s*(.+)"
-                ]
-                
-                for pattern in old_format_patterns:
-                    match = re.search(pattern, pr_data['body'], re.DOTALL | re.IGNORECASE)
-                    if match:
-                        if debug:
-                            print(f"DEBUG: [get_pr_content] Found match with pattern: {pattern}")
-                        extracted_text = match.group(1).strip()
-                        external_notes = extracted_text
-                        break
+                    print("DEBUG: [get_pr_content] LLM found no relevant content")
 
-        # Extract PR summary (robust: search all comments for '# PR Summary')
+        # Extract PR summary using LLM-based extraction
         pr_summary = None
         comments = pr_data.get('comments', [])
         if debug:
             print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Number of comments: {len(comments)}")
-        for i, comment in enumerate(comments):
-            body = comment.get('body', '')
+        
+        if comments:
+            pr_summary = extract_pr_summary(comments, debug)
             if debug:
-                print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Comment {i} full body: {body!r}")
-            if "# PR Summary" in body:
-                match = re.search(r"(# PR Summary\s*.+?)(?=^## |\Z)", body, re.DOTALL | re.MULTILINE)
-                if match:
-                    full_summary = match.group(1).strip()
-                    # Extract only the first paragraph after the "# PR Summary" heading
-                    summary_content = full_summary.replace("# PR Summary", "").strip()
-                    if summary_content:
-                        # Split on double newlines first, then single newlines as fallback
-                        paragraphs = summary_content.split('\n\n')
-                        if len(paragraphs) > 1:
-                            pr_summary = f"# PR Summary\n\n{paragraphs[0].strip()}"
-                        else:
-                            # If no double newlines, take first few lines until we hit a bullet point or empty line
-                            lines = summary_content.split('\n')
-                            first_paragraph = []
-                            for line in lines:
-                                line = line.strip()
-                                if not line or line.startswith('- ') or line.startswith('* ') or line.startswith('1.'):
-                                    break
-                                first_paragraph.append(line)
-                            if first_paragraph:
-                                first_paragraph_text = ' '.join(first_paragraph)
-                                # Remove last sentence if it ends with a colon (e.g., "Key changes include:")
-                                sentences = first_paragraph_text.split('.')
-                                if len(sentences) > 1 and sentences[-2].strip().endswith(':'):
-                                    original_text = first_paragraph_text
-                                    first_paragraph_text = '.'.join(sentences[:-2]).strip() + '.'
-                                pr_summary = f"# PR Summary\n\n{first_paragraph_text}"
-                            else:
-                                pr_summary = full_summary
-                    else:
-                        pr_summary = full_summary
-                    if debug:
-                        print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - Final PR summary content:")
-                        print(f"DEBUG: {pr_summary}")
-                    break
-        if pr_summary is None and debug:
-            print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - No PR summary found.")
+                if pr_summary:
+                    print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - LLM extracted PR summary")
+                else:
+                    print(f"DEBUG: [get_pr_content] PR #{pr_number} in {repo} - LLM found no PR summary")
         title = pr_data.get('title')
         pr_body = pr_data.get('body')
         # Extract image URLs from PR body and comments
@@ -2275,10 +2350,6 @@ def generate_changelog_content(repo, tag, commits, has_release, download_assets=
                     section_content += f"{update_image_links(commit['pr_summary'], tag, False, download_assets)}\n\n"
                 if commit['external_notes']:
                     section_content += f"{update_image_links(commit['external_notes'], tag, False, download_assets)}\n\n"
-                # If no notes or summary, use PR body as fallback
-                if not commit['external_notes'] and not commit['pr_summary']:
-                    if commit.get('pr_body'):
-                        section_content += f"{update_image_links(commit['pr_body'], tag, False, download_assets)}\n\n"
             
             pr_sections.append(section_content)
     
@@ -2702,8 +2773,6 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         # Use edited content (stored back in external_notes after editing)
         if commit.get('external_notes'):
             content_parts.append(update_image_links(commit['external_notes'], version, debug, download_assets))
-        if not content_parts and commit.get('pr_body'):
-            content_parts.append(update_image_links(commit['pr_body'], version, debug, download_assets))
         content = '\n\n'.join([c for c in content_parts if c])
         
         # Add validation summary at the end if available
@@ -3854,13 +3923,11 @@ def main():
         repo_root = os.path.dirname(script_dir)
         env_location = os.path.join(repo_root, ".env")
         
-        # Setup OpenAI if editing is enabled
-        if args.edit:
-            
-           env_location = get_env_location()
-           api_key = setup_openai_api(env_location)
-           global client
-           client = openai.OpenAI(api_key=api_key)
+        # Setup OpenAI client (always needed for classify_section and is_merge_pr)
+        env_location = get_env_location()
+        api_key = setup_openai_api(env_location)
+        global client
+        client = openai.OpenAI(api_key=api_key)
 
         # Get release information from GitHub
         version = args.tag if args.tag else None
