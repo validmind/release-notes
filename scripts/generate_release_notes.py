@@ -167,7 +167,7 @@ EDIT_PASS_1_INSTRUCTIONS = (
     "- Use {external_notes} as the primary content.\n"
     "- Supplement with {pr_summary} if it contains relevant external information.\n"
     "- Remove all Markdown headings (e.g., '#### What', '# PR Summary').\n"
-    "- Start with a clear user benefit statement.\n"
+    "- Start with a clear user benefit statement that addresses the user directly.\n"
     "- Group related changes together.\n"
     
     "Input: raw text. Output only the cleaned text, same length or shorter."

@@ -4,109 +4,107 @@ categories: [installation, 25.06.03, hotfix, enhancement, breaking-change]
 sidebar: release-notes
 toc-expand: true
 date: "June 12, 2025"
-# Content edited by AI - 2025-06-13 17:42
-# Content validated by AI (temperature: 0.2) - 2025-06-13 17:42
-# Content overwritten from an earlier version - 2025-06-13 17:42
+# Content edited by AI - 2025-06-13 17:47
+# Content validated by AI (temperature: 0.2) - 2025-06-13 17:47
+# Content overwritten from an earlier version - 2025-06-13 17:47
 # PR URL: https://github.com/validmind/installation/pull/73
 ---
 
-This update enhances security and deployment stability in Helm charts.
+This update enhances security and deployment stability in the Helm charts.
 
-You can now enable a security context for ValidMind deployments to:
+You can now enable a pod security context (Helm chart tag `v0.0.8`) that blocks privilege escalation, applies the `RuntimeDefault` seccomp profile, drops all Linux capabilities, and runs each container as a non-root user:
 
-- Block privilege escalation
-- Drop all Linux capabilities
-- Apply the `RuntimeDefault` seccomp profile
+- `api`, `worker`, `worker-beat`: `vmuser` (uid 1000)
+- `litellm`: `nobody` (uid 65534)
+- `app`: `nginx` (uid 101)
+- `redis`: `redis` (uid 999)
+- `postgres` (POC only): `postgres` (uid 999)
 
-All containers now run as non-root:
+Other updates:
 
-- `api`, `worker`, `worker-beat`: `vmuser` (uid `1000`)
-- `litellm`: `nobody` (uid `65534`)
-- `app`: `nginx` (uid `101`)
-- `redis`: `redis` (uid `999`)
-- `postgres` (POC only): `postgres` (uid `999`)
-
-The `app` pod now listens on port `8000`, while the service still exposes port `80` and forwards traffic accordingly.
-
-Upgrade to the latest CMVM release and use helm chart tag `v0.0.8` to enable these features.
+- `app` listens on port 8000; the service still exposes port 80 and proxies to 8000.
+- `postgres` no longer mounts an `emptyDir` volume.
+- RDB snapshotting is disabled for `redis`.
+- The `cmvm-test` namespace adopts the new restricted policy.
+- Liveness and readiness probe timeouts for `litellm` are increased to accommodate slower non-root startup.
 
 <!--- VALIDATION SUMMARY
 Content Type: summary
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-13 17:42:10
-Result: The edited content is a concise summary of the original PR summary. It captures the essence of the changes by highlighting the focus on security and deployment stability in Helm charts. However, it omits the mention of associated CI/CD workflows, which might be important for some readers. Despite th...
+Last Validation: 2025-06-13 17:47:07
+Result: The edited content provides a concise summary of the original PR summary, focusing on the main improvements related to security and deployment stability in the Helm charts. However, it omits the mention of associated CI/CD workflows, which could be an important aspect of the update. While the edited...
 
 VALIDATION SUMMARY 2
 Content Type: summary
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-13 17:42:10
-Result: The edited content is a concise summary of the original PR summary. It captures the essence of the changes by highlighting the focus on security and deployment stability in Helm charts. However, it omits the mention of associated CI/CD workflows, which might be important for some readers. Despite th...
+Last Validation: 2025-06-13 17:47:07
+Result: The edited content provides a concise summary of the original PR summary, focusing on the main improvements related to security and deployment stability in the Helm charts. However, it omits the mention of associated CI/CD workflows, which could be an important aspect of the update. While the edited...
 
 VALIDATION SUMMARY 3
 Content Type: notes (grouped_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-13 17:42:14
-Result: The release notes and the edited content both effectively communicate the changes and enhancements made to the ValidMind deployments. The information is clear and provides necessary details about the security context, user configurations, and additional changes. There are no serious issues present i...
+Last Validation: 2025-06-13 17:47:12
+Result: The release notes content is clear and provides a comprehensive overview of the changes and enhancements made. It effectively communicates the new security context features, the default user configurations for various containers, and additional adjustments to the deployment setup. The instructions f...
 
 VALIDATION SUMMARY 4
 Content Type: notes (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-13 17:42:23
-Result: The edited content maintains the essential information from the original content while making it more concise. It effectively communicates the security enhancements and configuration changes for ValidMind deployments. The key points about non-root user configurations, port changes, and upgrade instr...
+Last Validation: 2025-06-13 17:47:25
+Result: The edited content is clear and concise, maintaining the essential details from the original content. It effectively communicates the updates and changes without omitting any critical information. The restructuring of the information into a more streamlined format enhances readability. There are no ...
 
 VALIDATION SUMMARY 5
 Content Type: notes (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-13 17:42:28
-Result: The edited content is clear and maintains the essential information from the original content. The changes made improve readability by breaking down the security context features into bullet points. There are no serious issues present, and the technical details remain intact. The content is ready fo...
+Last Validation: 2025-06-13 17:47:29
+Result: The edited content is clear and maintains the original meaning. The changes made are minor and do not affect the overall understanding of the release notes. The removal of extra spaces at the end of lines is acceptable and does not impact the content's quality. Therefore, the edited content passes t...
 
 VALIDATION SUMMARY 6
 Content Type: summary
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-13 17:42:10
-Result: The edited content is a concise summary of the original PR summary. It captures the essence of the changes by highlighting the focus on security and deployment stability in Helm charts. However, it omits the mention of associated CI/CD workflows, which might be important for some readers. Despite th...
+Last Validation: 2025-06-13 17:47:07
+Result: The edited content provides a concise summary of the original PR summary, focusing on the main improvements related to security and deployment stability in the Helm charts. However, it omits the mention of associated CI/CD workflows, which could be an important aspect of the update. While the edited...
 
 VALIDATION SUMMARY 7
 Content Type: notes (grouped_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-13 17:42:14
-Result: The release notes and the edited content both effectively communicate the changes and enhancements made to the ValidMind deployments. The information is clear and provides necessary details about the security context, user configurations, and additional changes. There are no serious issues present i...
+Last Validation: 2025-06-13 17:47:12
+Result: The release notes content is clear and provides a comprehensive overview of the changes and enhancements made. It effectively communicates the new security context features, the default user configurations for various containers, and additional adjustments to the deployment setup. The instructions f...
 
 VALIDATION SUMMARY 8
 Content Type: notes (deduplicated_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-13 17:42:23
-Result: The edited content maintains the essential information from the original content while making it more concise. It effectively communicates the security enhancements and configuration changes for ValidMind deployments. The key points about non-root user configurations, port changes, and upgrade instr...
+Last Validation: 2025-06-13 17:47:25
+Result: The edited content is clear and concise, maintaining the essential details from the original content. It effectively communicates the updates and changes without omitting any critical information. The restructuring of the information into a more streamlined format enhances readability. There are no ...
 
 VALIDATION SUMMARY 9
 Content Type: notes (edited_text)
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-13 17:42:28
-Result: The edited content is clear and maintains the essential information from the original content. The changes made improve readability by breaking down the security context features into bullet points. There are no serious issues present, and the technical details remain intact. The content is ready fo...
+Last Validation: 2025-06-13 17:47:29
+Result: The edited content is clear and maintains the original meaning. The changes made are minor and do not affect the overall understanding of the release notes. The removal of extra spaces at the end of lines is acceptable and does not impact the content's quality. Therefore, the edited content passes t...
 
 VALIDATION SUMMARY 10
 Content Type: title
 Validation Status: PASSED
 Attempts: 1
 Validation Temperature: 0.2
-Last Validation: 2025-06-13 17:42:29
-Result: The edited content is clear and concise, effectively communicating the addition of `securityContext` toggles for enhanced security. There are no serious issues present. The release note passes.
+Last Validation: 2025-06-13 17:47:31
+Result: The edited content is clear and concise, effectively communicating the addition of `securityContext` toggles for enhanced security. There are no serious issues present. The release note passes the quality check.
 --->

@@ -4,12 +4,12 @@ date: "June 12, 2025"
 categories: [cmvm, 25.06.03, hotfix]
 sidebar: release-notes
 toc-expand: true
-# Content edited by AI - 2025-06-13 17:42
-# Content validated by AI (temperature: 0.2) - 2025-06-13 17:42
-# Content overwritten from an earlier version - 2025-06-13 17:42
+# Content edited by AI - 2025-06-13 17:47
+# Content validated by AI (temperature: 0.2) - 2025-06-13 17:47
+# Content overwritten from an earlier version - 2025-06-13 17:47
 ---
 
-This release includes `securityContext` toggles for enhanced security and updates `requests` from version 2.32.3 to 2.32.4.
+This release includes `securityContext` toggles for enhanced security and an update of `requests` from version 2.32.3 to 2.32.4.
 
 <!-- WARNING: Summary may not mention an enhancement PR -->
 
@@ -46,25 +46,23 @@ This PR refines the dependency configuration in the project's lock file and rela
 <!--- Labels: enhancement, security, breaking-change --->
 ### Add `securityContext` toggles for enhanced security (#73)
 
-This update enhances security and deployment stability in Helm charts.
+This update enhances security and deployment stability in the Helm charts.
 
-You can now enable a security context for ValidMind deployments to:
+You can now enable a pod security context (Helm chart tag `v0.0.8`) that blocks privilege escalation, applies the `RuntimeDefault` seccomp profile, drops all Linux capabilities, and runs each container as a non-root user:
 
-- Block privilege escalation
-- Drop all Linux capabilities
-- Apply the `RuntimeDefault` seccomp profile
+- `api`, `worker`, `worker-beat`: `vmuser` (uid 1000)
+- `litellm`: `nobody` (uid 65534)
+- `app`: `nginx` (uid 101)
+- `redis`: `redis` (uid 999)
+- `postgres` (POC only): `postgres` (uid 999)
 
-All containers now run as non-root:
+Other updates:
 
-- `api`, `worker`, `worker-beat`: `vmuser` (uid `1000`)
-- `litellm`: `nobody` (uid `65534`)
-- `app`: `nginx` (uid `101`)
-- `redis`: `redis` (uid `999`)
-- `postgres` (POC only): `postgres` (uid `999`)
-
-The `app` pod now listens on port `8000`, while the service still exposes port `80` and forwards traffic accordingly.
-
-Upgrade to the latest CMVM release and use helm chart tag `v0.0.8` to enable these features.
+- `app` listens on port 8000; the service still exposes port 80 and proxies to 8000.
+- `postgres` no longer mounts an `emptyDir` volume.
+- RDB snapshotting is disabled for `redis`.
+- The `cmvm-test` namespace adopts the new restricted policy.
+- Liveness and readiness probe timeouts for `litellm` are increased to accommodate slower non-root startup.
 
 
 <!--- # Documentation --->
