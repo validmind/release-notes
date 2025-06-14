@@ -4,10 +4,10 @@ date: "June 12, 2025"
 categories: [cmvm, 25.06.03, hotfix]
 sidebar: release-notes
 toc-expand: true
-# Content overwritten from an earlier version - 2025-06-14 10:12
+# Content overwritten from an earlier version - 2025-06-14 10:27
 ---
 
-This release includes securityContext-related toggles and an update of requests from version 2.32.3 to 2.32.4.
+This release includes securityContext-related toggles and updates requests from version 2.32.3 to 2.32.4.
 
 <!-- WARNING: Summary may not mention an enhancement PR -->
 
