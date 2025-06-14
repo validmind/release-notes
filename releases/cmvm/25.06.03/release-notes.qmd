@@ -4,12 +4,10 @@ date: "June 12, 2025"
 categories: [cmvm, 25.06.03, hotfix]
 sidebar: release-notes
 toc-expand: true
-# Content edited by AI - 2025-06-13 17:47
-# Content validated by AI (temperature: 0.2) - 2025-06-13 17:47
-# Content overwritten from an earlier version - 2025-06-13 17:47
+# Content overwritten from an earlier version - 2025-06-14 10:12
 ---
 
-This release includes `securityContext` toggles for enhanced security and an update of `requests` from version 2.32.3 to 2.32.4.
+This release includes securityContext-related toggles and an update of requests from version 2.32.3 to 2.32.4.
 
 <!-- WARNING: Summary may not mention an enhancement PR -->
 
@@ -22,9 +20,33 @@ This release includes `securityContext` toggles for enhanced security and an upd
 
 <!--- PR #1579: https://github.com/validmind/backend/pull/1579 --->
 <!--- Labels: dependencies, python --->
-### Update `requests` from 2.32.3 to 2.32.4 (#1579)
+### Bump requests from 2.32.3 to 2.32.4 (#1579)
 
-This PR refines the dependency configuration in the project's lock file and related metadata.
+This update refines the dependency configuration in the project's lock file and related metadata.
+
+<details>
+<summary>Release notes</summary>
+<p><em>Sourced from <a href="https://github.com/psf/requests/releases">requests's releases</a>.</em></p>
+<blockquote>
+<h2>v2.32.4</h2>
+<h2>2.32.4 (2025-06-10)</h2>
+<p><strong>Security</strong></p>
+<ul>
+<li>CVE-2024-47081 Fixed an issue where a maliciously crafted URL and trusted
+environment will retrieve credentials for the wrong hostname/machine from a
+netrc file. (<a href="https://redirect.github.com/psf/requests/issues/6965">#6965</a>)</li>
+</ul>
+<p><strong>Improvements</strong></p>
+<ul>
+<li>Numerous documentation improvements</li>
+</ul>
+<p><strong>Deprecations</strong></p>
+<ul>
+<li>Added support for pypy 3.11 for Linux and macOS. (<a href="https://redirect.github.com/psf/requests/issues/6926">#6926</a>)</li>
+<li>Dropped support for pypy 3.9 following its end of support. (<a href="https://redirect.github.com/psf/requests/issues/6926">#6926</a>)</li>
+</ul>
+</blockquote>
+</details>
 
 
 <!--- # Frontend --->
@@ -44,25 +66,27 @@ This PR refines the dependency configuration in the project's lock file and rela
 
 <!--- PR #73: https://github.com/validmind/installation/pull/73 --->
 <!--- Labels: enhancement, security, breaking-change --->
-### Add `securityContext` toggles for enhanced security (#73)
+### feat: add securityContext-related toggles (#73)
 
-This update enhances security and deployment stability in the Helm charts.
+This update introduces several functional improvements focused on security hardening and deployment stability within the Helm charts and associated CI/CD workflows.
 
-You can now enable a pod security context (Helm chart tag `v0.0.8`) that blocks privilege escalation, applies the `RuntimeDefault` seccomp profile, drops all Linux capabilities, and runs each container as a non-root user:
+Customers are now able to enable a security context for their ValidMind deployments. By default, it will enforce the following constraints:
 
-- `api`, `worker`, `worker-beat`: `vmuser` (uid 1000)
-- `litellm`: `nobody` (uid 65534)
-- `app`: `nginx` (uid 101)
-- `redis`: `redis` (uid 999)
-- `postgres` (POC only): `postgres` (uid 999)
+* Privilege escalation will not be allowed.
 
-Other updates:
+* The `api`, `worker` and `worker-beat` containers will run as user `vmuser` with uid `1000`. The `litellm` container will run as user `nobody` with uid `65534`. The `app` container will run as user `nginx` with uid `101`. The `redis` container will run as user `redis` with uid `999`. The `postgres` container for POC-related purposes only will run as user `postgres` with uid `999`.
 
-- `app` listens on port 8000; the service still exposes port 80 and proxies to 8000.
-- `postgres` no longer mounts an `emptyDir` volume.
-- RDB snapshotting is disabled for `redis`.
-- The `cmvm-test` namespace adopts the new restricted policy.
-- Liveness and readiness probe timeouts for `litellm` are increased to accommodate slower non-root startup.
+* A seccomp profile may be specified, otherwise it will default to `RuntimeDefault`.
+
+* All linux capabilities will be dropped in the interest of least-privilege. An update to add capabilities back will be added in a future update if needed.
+
+Regardless of whether or not the `securityContext.enabled` field is `true`, the following will hold:
+
+* The `app` pod now listens on port `8000`. The `app` service will continue to listen on `80` and proxy to `8000` on the container.
+
+* The `api`, `app`, `worker`, `worker-beat` and `litellm` containers will run as non-root users by default.
+
+Please upgrade to the latest CMVM version and use helm chart tag `v0.0.8` to enable this functionality.
 
 
 <!--- # Documentation --->
