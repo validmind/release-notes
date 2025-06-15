@@ -146,7 +146,7 @@ EDIT_CONTENT_SYSTEM = (
 
 # --- Core quality principles shared across assessment and validation ---
 CORE_QUALITY_PRINCIPLES = {
-    "DUPLICATE_INTRODUCTIONS": "Multiple introductory paragraphs with semantically similar content",
+    "DUPLICATE_INTRODUCTIONS": "Multiple introductory sentences/paragraphs with similar meaning (e.g., 'This update...', 'Users now can...', 'Customers...', 'This PR...', 'Enables...)",
     "INTERNAL_REFERENCES": "Any mentions of CI/CD workflows, pipelines, GitHub Actions, build processes, readmes, or deployment automation",
     "STRUCTURAL_PROBLEMS": "Poor organization, unclear flow, or formatting issues that affect readability",
     "CONTENT_LOSS": "Important user-facing information that was removed during editing",
@@ -186,6 +186,11 @@ INITIAL_QUALITY_ASSESSMENT_PROMPT = (
     "Analyze the following release notes content and generate tailored editing instructions for each pass. "
     "Only include editing steps that are actually needed based on the specific content issues you identify.\n\n"
     
+    "DEFAULT ASSUMPTIONS:\n"
+    "- ASSUME the first two paragraphs overlap and need deduplication unless strong evidence suggests otherwise\n"
+    "- ASSUME PR summary and external notes contain redundant introductory content\n"
+    "- ASSUME deduplication is needed for Pass 2 unless content is clearly distinct\n\n"
+    
     "ANALYSIS AREAS:\n"
     "1. CONTENT STRUCTURE: Presence of Markdown headings, poor organization, missing user benefit statements\n"
     f"2. DUPLICATION: {CORE_QUALITY_PRINCIPLES['DUPLICATE_INTRODUCTIONS']}, overlap between PR summary and external notes, repeated features/changes\n"
@@ -217,7 +222,7 @@ INITIAL_QUALITY_ASSESSMENT_PROMPT = (
     "PASS_1_INSTRUCTIONS:\n"
     "[Content-specific cleanup and structure instructions - ONLY rework, consolidate, or remove existing content. NEVER add new sentences, paragraphs, or bullet points. NEVER change formatting style.]\n\n"
     "PASS_2_INSTRUCTIONS:\n"
-    "[Content-specific deduplication instructions - only include if actual duplication exists. Focus on consolidating overlapping content, especially multiple introductory paragraphs that convey semantically similar meaning (even if worded very differently). Merge them into a single, comprehensive opening statement. Remove redundant introductory paragraphs.]\n\n"
+    "[Content-specific deduplication instructions - ASSUME the first two paragraphs overlap unless clearly distinct. Focus on consolidating overlapping content, especially multiple introductory paragraphs that convey semantically similar meaning (even if worded very differently). Look for repeated wording like 'This update ...' and merge them into a single, comprehensive opening statement. Remove redundant introductory paragraphs. Only skip deduplication if the first two paragraphs are clearly about different topics or aspects.]\n\n"
     "PASS_3_INSTRUCTIONS:\n"
     "[Content-specific streamlining instructions - simplify verbose language and improve flow without adding new content]"
 )
