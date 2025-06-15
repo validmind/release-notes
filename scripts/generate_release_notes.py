@@ -52,17 +52,13 @@ EXCLUDED_SECTIONS = [
 ]
 
 # --- LLM settings ---
-# Model settings
-MODEL_CLASSIFYING = "gpt-4o-mini"  # For quick section classification
-MODEL_EDITING = "gpt-4o"           # For content editing (single-pass and default multi-pass)
-MODEL_VALIDATION = "gpt-4o"        # For edit validation
-MODEL_PROOFREADING = "gpt-4o-mini" # For summary proofreading tasks only
-
-# Multi-pass editing model settings
-MODEL_PASS_1 = "gpt-4o"       # Pass 1: Clean and flatten
-MODEL_PASS_2 = "gpt-4o"       # Pass 2: Deduplicate
-MODEL_PASS_3 = "gpt-4o"       # Pass 3: Streamline and proofread
-MODEL_PASS_4 = "gpt-4o"       # Pass 4: Quality assessment and feedback
+# Model selection
+MODEL_CLASSIFYING = "gpt-4o-mini"  # For PR body section classification
+MODEL_QUALITY = "gpt-4o"           # For initial and final quality assessment (formerly pass 0 and pass 4)
+MODEL_PASS_1 = "gpt-4o"            # Editing pass 1: Clean and flatten
+MODEL_PASS_2 = "gpt-4o"            # Editing pass 2: Deduplicate
+MODEL_PASS_3 = "gpt-4o"            # Editing pass 3: Streamline and proofread
+MODEL_PROOFREADING = "gpt-4o-mini" # For summary proofreading
 
 # Editing temperature settings
 BASE_TEMPERATURE = 0.3          # Slightly higher for better creativity in editing
@@ -158,7 +154,7 @@ CORE_QUALITY_PRINCIPLES = {
 
 CORE_EDITING_PRINCIPLES = (
     "- Keep original meaning and technical accuracy\n"
-    "- Use simple, clear language addressed to 'you' not 'users'\n"
+    "- Use simple, direct language addressed to 'you' not 'users'\n"
     "- Use sentence-style capitalization (only the first word and proper nouns)\n"
     "- Uppercase acronyms (e.g., 'LLM', 'API') and spell proper names correctly\n"
     "- Enclose technical terms in backticks\n"
@@ -176,7 +172,16 @@ EDIT_CONTENT_PROMPT = (
     f"{CORE_EDITING_PRINCIPLES}\n"
 )
 
-# --- Content quality assessment instructions for Pass 0 ---
+# --- PR summary context prompt for editing passes ---
+PR_SUMMARY_CONTEXT_PROMPT = (
+    "\n\nADDITIONAL CONTEXT (for reference only - do not include directly):\n"
+    "PR Summary: {pr_summary}\n\n"
+    "You may use this PR summary as context to improve the first paragraph of the external notes, "
+    "but do not include any internal information (CI/CD workflows, GitHub Actions, build processes, "
+    "deployment pipelines, or internal automation)."
+)
+
+# --- Content quality assessment instructions for Initial quality assessment pass ---
 INITIAL_QUALITY_ASSESSMENT_SYSTEM = (
     "You are a content quality assessor for release notes. Your task is to analyze the initial content quality "
     "and generate tailored editing instructions for subsequent processing passes."
@@ -186,16 +191,16 @@ INITIAL_QUALITY_ASSESSMENT_PROMPT = (
     "Analyze the following release notes content and generate tailored editing instructions for each pass. "
     "Only include editing steps that are actually needed based on the specific content issues you identify.\n\n"
     
-    "DEFAULT ASSUMPTIONS:\n"
-    "- ASSUME the first two paragraphs overlap and need deduplication unless strong evidence suggests otherwise\n"
-    "- ASSUME PR summary and external notes contain redundant introductory content\n"
-    "- ASSUME deduplication is needed for Pass 2 unless content is clearly distinct\n\n"
+    "CONTENT STRUCTURE:\n"
+    "- The content consists of PR summary (first paragraph) followed by external notes (remaining content)\n"
+    "- External notes contain human-provided context and should be PRIORITIZED over PR summary content\n"
+    "- When deduplicating, PRESERVE external notes content and remove/merge redundant PR summary content\n\n"
     
     "ANALYSIS AREAS:\n"
     "1. CONTENT STRUCTURE: Presence of Markdown headings, poor organization, missing user benefit statements\n"
     f"2. DUPLICATION: {CORE_QUALITY_PRINCIPLES['DUPLICATE_INTRODUCTIONS']}, overlap between PR summary and external notes, repeated features/changes\n"
     f"3. CLARITY & STYLE: {CORE_QUALITY_PRINCIPLES['CLARITY_ISSUES']}, complex lists, formatting issues\n"
-    f"4. CI/CD CONTENT: {CORE_QUALITY_PRINCIPLES['INTERNAL_REFERENCES']}\n"
+    f"4. INTERNAL CONTENT: {CORE_QUALITY_PRINCIPLES['INTERNAL_REFERENCES']} - ALWAYS REMOVE references to CI/CD workflows, GitHub Actions, build processes, deployment pipelines, or internal automation\n"
     "5. COMPLETENESS: Missing context, unclear explanations, formatting problems\n\n"
     
     "INSTRUCTION GUIDELINES:\n"
@@ -207,7 +212,8 @@ INITIAL_QUALITY_ASSESSMENT_PROMPT = (
     "- NEVER instruct to add new content, sentences, paragraphs, or bullet points — only rework existing content\n"
     "- NEVER instruct to change formatting style (e.g., adding bullets where none exist)\n"
     "- NEVER instruct to add introductory paragraphs or duplicate existing introductory content\n"
-    "- Focus on consolidation, removal, and rewording of existing content only\n\n"
+    "- Focus on consolidation, removal, and rewording of existing content only\n"
+    "- ALWAYS instruct to REMOVE (not clarify or rephrase) any references to CI/CD workflows, GitHub Actions, build processes, deployment pipelines, or internal automation\n\n"
     
     "Content to analyze:\n"
     "PR Summary: {pr_summary}\n\n"
@@ -227,7 +233,7 @@ INITIAL_QUALITY_ASSESSMENT_PROMPT = (
     "[Content-specific streamlining instructions - simplify verbose language and improve flow without adding new content]"
 )
 
-# --- Pass 4 quality assessment instructions ---
+# --- Final quality assessment pass quality assessment instructions ---
 FINAL_QUALITY_ASSESSMENT_SYSTEM = (
     "You are a final quality assessor for release notes. Your task is to compare the final edited content "
     "with the original content and identify any remaining issues that require additional editing passes."
@@ -886,11 +892,11 @@ class PR:
         
 
 
-    def _assess_content_quality(self, external_notes, pr_summary, debug=False):
-        """Pass 0: Assess content quality and generate tailored editing instructions."""
+    def _assess_initial_content_quality(self, external_notes, pr_summary, debug=False):
+        """Initial quality assessment pass: Assess content quality and generate tailored editing instructions."""
         print(f"Analyzing content quality for PR #{self.pr_number} in {self.repo_name} ...")
         if debug:
-            print(f"DEBUG: [_assess_content_quality] PR #{self.pr_number} in {self.repo_name} - Analyzing content quality")
+            print(f"DEBUG: [_assess_initial_content_quality] PR #{self.pr_number} in {self.repo_name} - Analyzing content quality")
         
         max_attempts = DEFAULT_MAX_RETRIES
         for attempt in range(max_attempts):
@@ -907,7 +913,7 @@ class PR:
                 if attempt > 0:
                     prompt += f"\n\nPREVIOUS ATTEMPT FEEDBACK: Instructions were too generic. Be more specific about actual issues in this content and avoid generic editing advice."
                 
-                api_params = get_model_api_params(MODEL_EDITING, MAX_TOKENS_EDITING, temperature)
+                api_params = get_model_api_params(MODEL_QUALITY, MAX_TOKENS_EDITING, temperature)
                 messages = [
                     {"role": "system", "content": INITIAL_QUALITY_ASSESSMENT_SYSTEM},
                     {"role": "user", "content": prompt}
@@ -917,12 +923,12 @@ class PR:
                     messages=messages,
                     api_params=api_params,
                     debug=debug,
-                    function_name="_assess_content_quality"
+                    function_name="_assess_initial_content_quality"
                 )
                 
                 if result:
                     if debug:
-                        print(f"DEBUG: [_assess_content_quality] Attempt {attempt + 1} result length: {len(result)}")
+                        print(f"DEBUG: [_assess_initial_content_quality] Attempt {attempt + 1} result length: {len(result)}")
                     
                     # Parse the response to extract instructions for each pass
                     instructions = self._parse_assessment_result(result, debug)
@@ -930,11 +936,11 @@ class PR:
                     # Validate the generated instructions
                     if instructions and self._validate_instructions(instructions, debug):
                         if debug:
-                            print(f"DEBUG: [_assess_content_quality] Generated tailored instructions successfully on attempt {attempt + 1}")
-                            print(f"DEBUG: [_assess_content_quality] Quality assessment result:")
+                            print(f"DEBUG: [_assess_initial_content_quality] Generated tailored instructions successfully on attempt {attempt + 1}")
+                            print(f"DEBUG: [_assess_initial_content_quality] Quality assessment result:")
                             print(f"DEBUG: {result}")
                         
-                        # Track successful Pass 0 assessment
+                        # Track successful Initial quality assessment pass assessment
                         if not hasattr(self, 'validation_summaries'):
                             self.validation_summaries = []
                         
@@ -955,25 +961,25 @@ class PR:
                         return instructions
                     else:
                         if debug:
-                            print(f"DEBUG: [_assess_content_quality] Attempt {attempt + 1} validation failed")
+                            print(f"DEBUG: [_assess_initial_content_quality] Attempt {attempt + 1} validation failed")
                         if attempt < max_attempts - 1:
                             print(f"Instructions not specific enough, retrying... (attempt {attempt + 2}/{max_attempts})")
                 else:
                     if debug:
-                        print(f"DEBUG: [_assess_content_quality] Attempt {attempt + 1} returned None")
+                        print(f"DEBUG: [_assess_initial_content_quality] Attempt {attempt + 1} returned None")
                     if attempt < max_attempts - 1:
                         print(f"Error generating instructions, retrying... (attempt {attempt + 2}/{max_attempts})")
                         
             except Exception as e:
                 if debug:
-                    print(f"DEBUG: [_assess_content_quality] Attempt {attempt + 1} error: {e}")
+                    print(f"DEBUG: [_assess_initial_content_quality] Attempt {attempt + 1} error: {e}")
                 if attempt < max_attempts - 1:
                     print(f"Error generating instructions, retrying... (attempt {attempt + 2}/{max_attempts})")
         
         # If all attempts failed, this is a critical error since we need tailored instructions
         print(f"ERROR: Failed to generate tailored editing instructions for PR #{self.pr_number} after {max_attempts} attempts")
         
-        # Track failed Pass 0 assessment
+        # Track failed Initial quality assessment pass assessment
         if not hasattr(self, 'validation_summaries'):
             self.validation_summaries = []
         
@@ -1072,7 +1078,7 @@ class PR:
                 edited_content=edited_content
             )
             
-            api_params = get_model_api_params(MODEL_PASS_4, MAX_TOKENS_VALIDATION, BASE_TEMPERATURE)
+            api_params = get_model_api_params(MODEL_QUALITY, MAX_TOKENS_VALIDATION, BASE_TEMPERATURE)
             messages = [
                 {"role": "system", "content": FINAL_QUALITY_ASSESSMENT_SYSTEM},
                 {"role": "user", "content": prompt}
@@ -1113,7 +1119,7 @@ class PR:
             return None
 
     def _validate_final_quality_assessment(self, assessment, debug=False):
-        """Validate that the Pass 4 assessment has the correct format and content."""
+        """Validate that the Final quality assessment pass assessment has the correct format and content."""
         try:
             # Check required fields
             required_fields = ['status', 'issue', 'recommendation']
@@ -1162,18 +1168,18 @@ class PR:
             self.validation_summaries = []
         # Use multi-pass for 'notes', single pass for 'title'
         if content_type in ("notes",) and edit:
-            # Pass 0: Assess content quality and generate tailored instructions
+            # Initial quality assessment pass: Assess content quality and generate tailored instructions
             tailored_instructions = None
             if 0 not in skip_passes:
                 # For content quality assessment, we need both external_notes and pr_summary
                 # The content parameter should be external_notes when content_type is 'notes'
                 external_notes = content  # This is the external_notes passed to edit_content
                 pr_summary = getattr(self, 'pr_interpreted_summary', None)
-                tailored_instructions = self._assess_content_quality(external_notes, pr_summary, self.debug)
+                tailored_instructions = self._assess_initial_content_quality(external_notes, pr_summary, self.debug)
             
-            # Tailored instructions are required - if Pass 0 failed, we can't proceed
+            # Tailored instructions are required - if Initial quality assessment pass failed, we can't proceed
             if not tailored_instructions:
-                print(f"ERROR: Cannot proceed with editing PR #{self.pr_number} - Pass 0 failed to generate tailored instructions")
+                print(f"ERROR: Cannot proceed with editing PR #{self.pr_number} - Initial quality assessment pass failed to generate tailored instructions")
                 # Set the content as-is without editing
                 if content_type == 'notes':
                     self.edited_text = content
@@ -1221,7 +1227,7 @@ class PR:
                 final = deduped
                 self.edited_text = final
             
-            # Pass 4: Quality assessment and feedback loop
+            # Final quality assessment pass: Quality assessment and feedback loop
             if 4 not in skip_passes:
                 max_feedback_loops = 3  # Prevent infinite loops
                 feedback_loop_count = 0
@@ -1230,15 +1236,15 @@ class PR:
                     assessment = self._assess_final_quality(content, final, self.debug)
                     
                     if not assessment:
-                        # Pass 4 assessment failed - accept current content and break
+                        # Final quality assessment pass assessment failed - accept current content and break
                         if self.debug:
-                            print(f"DEBUG: [Pass 4] Assessment failed, accepting current content")
+                            print(f"DEBUG: [Final quality assessment pass] Assessment failed, accepting current content")
                         break
                     
-                    # Validate Pass 4 assessment format
+                    # Validate Final quality assessment pass assessment format
                     if not self._validate_final_quality_assessment(assessment, self.debug):
                         if self.debug:
-                            print(f"DEBUG: [Pass 4] Assessment format invalid, accepting current content")
+                            print(f"DEBUG: [Final quality assessment pass] Assessment format invalid, accepting current content")
                         
                         # Store failed validation for debug output
                         if not hasattr(self, 'final_quality_feedback'):
@@ -1246,7 +1252,7 @@ class PR:
                         self.final_quality_feedback.append({
                             'loop': feedback_loop_count + 1,
                             'status': assessment.get('status', 'INVALID'),
-                            'issue': 'Pass 4 assessment validation failed',
+                            'issue': 'Final quality assessment pass assessment validation failed',
                             'recommendation': 'Assessment format was invalid or incomplete',
                             'validation_passed': False
                         })
@@ -1255,7 +1261,21 @@ class PR:
                     if assessment['status'] == 'PASS':
                         # Quality assessment passed - accept the content
                         if self.debug:
-                            print(f"DEBUG: [Pass 4] Content passed quality assessment")
+                            print(f"DEBUG: [Final quality assessment pass] Content passed quality assessment")
+                        
+                        # Store successful Final quality assessment pass result for debug output
+                        if not hasattr(self, 'final_quality_feedback'):
+                            self.final_quality_feedback = []
+                        self.final_quality_feedback.append({
+                            'loop': feedback_loop_count + 1,
+                            'status': 'PASS',
+                            'issue': 'None',
+                            'recommendation': 'Content quality acceptable',
+                            'validation_passed': True
+                        })
+                        
+                        # Store the detailed assessment result for debug output
+                        self.final_quality_assessment_detail = result
                         break
                     
                     # Extract which pass to return to
@@ -1263,9 +1283,9 @@ class PR:
                         pass_number = int(assessment['status'].split('_')[-1])
                         
                         if self.debug:
-                            print(f"DEBUG: [Pass 4] Returning to Pass {pass_number} - {assessment['issue']}")
+                            print(f"DEBUG: [Final quality assessment pass] Returning to Pass {pass_number} - {assessment['issue']}")
                         
-                        # Store Pass 4 feedback for debug output
+                        # Store Final quality assessment pass feedback for debug output
                         if not hasattr(self, 'final_quality_feedback'):
                             self.final_quality_feedback = []
                         self.final_quality_feedback.append({
@@ -1275,6 +1295,10 @@ class PR:
                             'recommendation': assessment['recommendation'],
                             'validation_passed': True  # Since we validated the assessment format
                         })
+                        
+                        # Store the detailed assessment result for debug output
+                        if not hasattr(self, 'final_quality_assessment_detail'):
+                            self.final_quality_assessment_detail = result
                         
                         # Return to the appropriate pass
                         if pass_number == 1:
@@ -1528,7 +1552,12 @@ class PR:
         if self.debug:
             print(f"DEBUG: [_edit_pass] Using model {model} for {pass_name}")
         
-        base_instructions = f"{pass_instructions}\n\n{EDIT_CONTENT_PROMPT}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content."
+        # Add PR summary as context if available
+        pr_summary_context = ""
+        if hasattr(self, 'pr_interpreted_summary') and self.pr_interpreted_summary:
+            pr_summary_context = PR_SUMMARY_CONTEXT_PROMPT.format(pr_summary=self.pr_interpreted_summary)
+        
+        base_instructions = f"{pass_instructions}\n\n{EDIT_CONTENT_PROMPT}\n\nIMPORTANT: Maintain the scope of this specific PR (#{self.pr_number}). Do not merge content from other PRs or add information not present in the original content.{pr_summary_context}"
         max_attempts = DEFAULT_MAX_RETRIES
         last_validation_result = None
         failure_patterns = {}
@@ -2914,6 +2943,8 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                 commit['quality_assessment'] = pr_obj.quality_assessment
             if hasattr(pr_obj, 'final_quality_feedback'):
                 commit['final_quality_feedback'] = pr_obj.final_quality_feedback
+            if hasattr(pr_obj, 'final_quality_assessment_detail'):
+                commit['final_quality_assessment_detail'] = pr_obj.final_quality_assessment_detail
         else:
             commit['cleaned_title'] = commit.get('title', '')
             commit['pr_summary'] = commit.get('pr_summary', '')
@@ -3200,28 +3231,48 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
         yaml_header.append('---\n\n')
         # Prepare content (summary, notes, body)
         content_parts = []
-        # Use edited summary content (stored in pr_summary after editing, with fallback to pr_interpreted_summary)
-        if commit.get('pr_summary'):
+        # Use only the edited external_notes content
+        # The pr_summary is used as context for editing but should not appear in final output
+        if commit.get('external_notes'):
+            content_parts.append(update_image_links(commit['external_notes'], version, debug, download_assets))
+        # Fallback: if no external notes, use pr_summary (for cases where editing didn't occur)
+        elif commit.get('pr_summary'):
             content_parts.append(update_image_links(commit['pr_summary'], version, debug, download_assets))
         elif commit.get('pr_interpreted_summary'):
             content_parts.append(update_image_links(commit['pr_interpreted_summary'], version, debug, download_assets))
-        # Use edited content (stored back in external_notes after editing)
-        if commit.get('external_notes'):
-            content_parts.append(update_image_links(commit['external_notes'], version, debug, download_assets))
         content = '\n\n'.join([c for c in content_parts if c])
         
         # Add debug information if debug is enabled and available
         if debug and commit.get('tailored_instructions'):
             debug_comment = "\n\n<!--- DEBUG INFORMATION\n"
             
-            # Add quality assessment if available
+            # Add initial quality assessment if available
             if commit.get('quality_assessment'):
-                debug_comment += f"QUALITY ASSESSMENT:\n{commit['quality_assessment']}\n\n"
+                debug_comment += f"INITIAL QUALITY ASSESSMENT:\n{commit['quality_assessment']}\n\n"
             
             # Add tailored instructions
             debug_comment += "TAILORED INSTRUCTIONS:\n"
             for pass_name, instruction in commit['tailored_instructions'].items():
                 debug_comment += f"{pass_name.upper()}: {instruction}\n"
+            debug_comment += "\n"
+            
+            # Add final quality assessment if available
+            if commit.get('final_quality_feedback'):
+                debug_comment += "FINAL QUALITY ASSESSMENT:\n"
+                # Add the detailed assessment result if available
+                if commit.get('final_quality_assessment_detail'):
+                    debug_comment += f"DETAILED ASSESSMENT:\n{commit['final_quality_assessment_detail']}\n\n"
+                
+                # Add feedback loop information
+                for feedback in commit['final_quality_feedback']:
+                    debug_comment += f"Loop {feedback['loop']}: {feedback['status']}\n"
+                    if feedback.get('issue'):
+                        debug_comment += f"Issue: {feedback['issue']}\n"
+                    if feedback.get('recommendation'):
+                        debug_comment += f"Recommendation: {feedback['recommendation']}\n"
+                    if not feedback.get('validation_passed', True):
+                        debug_comment += "Validation: FAILED\n"
+                    debug_comment += "\n"
             
             # Add validation summary if available
             validation_comment = generate_validation_comment(commit, debug)
@@ -3232,7 +3283,7 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                     validation_lines = validation_lines[5:]  # Remove opening tag
                 if validation_lines.endswith('--->'):
                     validation_lines = validation_lines[:-4]  # Remove closing tag
-                debug_comment += f"\n{validation_lines.strip()}\n"
+                debug_comment += f"{validation_lines.strip()}\n"
             
             debug_comment += "--->\n"
             content += debug_comment
@@ -3911,7 +3962,7 @@ def write_file(file, release_components, label_to_category, debug=False):
                         for pass_name, instruction in tailored_instructions.items():
                             debug_comment += f"{pass_name.upper()}: {instruction}\n"
                     
-                    # Add Pass 4 feedback if available
+                    # Add Final quality assessment pass feedback if available
                     final_quality_feedback = getattr(pr, 'final_quality_feedback', None) or pr.get('final_quality_feedback')
                     if final_quality_feedback:
                         debug_comment += "\nPASS 4 FEEDBACK LOOPS:\n"
