@@ -55,9 +55,11 @@ EXCLUDED_SECTIONS = [
 # Model selection
 MODEL_CLASSIFYING = "gpt-4o-mini"  # For PR body section classification
 MODEL_QUALITY = "gpt-4o"           # For initial and final quality assessment (formerly pass 0 and pass 4)
+MODEL_EDITING = "gpt-4o"           # Default editing model
 MODEL_PASS_1 = "gpt-4o"            # Editing pass 1: Clean and flatten
 MODEL_PASS_2 = "gpt-4o"            # Editing pass 2: Deduplicate
 MODEL_PASS_3 = "gpt-4o"            # Editing pass 3: Streamline and proofread
+MODEL_VALIDATION = "gpt-4o"        # Validation pass model
 MODEL_PROOFREADING = "gpt-4o-mini" # For summary proofreading
 
 # Editing temperature settings
@@ -157,7 +159,7 @@ CORE_EDITING_PRINCIPLES = (
     "- Use simple, direct language addressed to 'you' not 'users'\n"
     "- Use sentence-style capitalization (only the first word and proper nouns)\n"
     "- Uppercase acronyms (e.g., 'LLM', 'API') and spell proper names correctly\n"
-    "- Enclose technical terms in backticks\n"
+    "- Enclose technical terms with underscores or hyphens or in camelCase in backticks\n"
     "- Follow Quarto formatting with proper spacing\n"
     "- Ensure content starts with text, not images\n"
     "- Keep code formatting (backticks) intact\n"
@@ -230,7 +232,7 @@ INITIAL_QUALITY_ASSESSMENT_PROMPT = (
     "PASS_2_INSTRUCTIONS:\n"
     "[Content-specific deduplication instructions - ASSUME the first two paragraphs overlap unless clearly distinct. Focus on consolidating overlapping content, especially multiple introductory paragraphs that convey semantically similar meaning (even if worded very differently). Look for repeated wording like 'This update ...' and merge them into a single, comprehensive opening statement. Remove redundant introductory paragraphs. Only skip deduplication if the first two paragraphs are clearly about different topics or aspects.]\n\n"
     "PASS_3_INSTRUCTIONS:\n"
-    "[Content-specific streamlining instructions - simplify verbose language and improve flow without adding new content]"
+    "[Content-specific streamlining instructions - simplify verbose language, break up overly long sentences and list items, and improve flow without adding new content]"
 )
 
 # --- Final quality assessment pass quality assessment instructions ---
@@ -1111,6 +1113,9 @@ class PR:
                 elif line.startswith('RECOMMENDATION:'):
                     assessment['recommendation'] = line.split(':', 1)[1].strip()
             
+            # Store the raw result for debug output
+            assessment['_raw_result'] = result
+            
             return assessment
             
         except Exception as e:
@@ -1233,13 +1238,18 @@ class PR:
                 feedback_loop_count = 0
                 
                 while feedback_loop_count < max_feedback_loops:
-                    assessment = self._assess_final_quality(content, final, self.debug)
+                    # Get both assessment and raw result for debug output
+                    assessment_result = self._assess_final_quality(content, final, self.debug)
                     
-                    if not assessment:
+                    if not assessment_result:
                         # Final quality assessment pass assessment failed - accept current content and break
                         if self.debug:
                             print(f"DEBUG: [Final quality assessment pass] Assessment failed, accepting current content")
                         break
+                    
+                    # assessment_result is the parsed assessment dict, but we need the raw result for debug
+                    # We'll need to modify _assess_final_quality to return both
+                    assessment = assessment_result
                     
                     # Validate Final quality assessment pass assessment format
                     if not self._validate_final_quality_assessment(assessment, self.debug):
@@ -1275,7 +1285,7 @@ class PR:
                         })
                         
                         # Store the detailed assessment result for debug output
-                        self.final_quality_assessment_detail = result
+                        self.final_quality_assessment_detail = assessment.get('_raw_result', assessment)
                         break
                     
                     # Extract which pass to return to
@@ -1298,7 +1308,7 @@ class PR:
                         
                         # Store the detailed assessment result for debug output
                         if not hasattr(self, 'final_quality_assessment_detail'):
-                            self.final_quality_assessment_detail = result
+                            self.final_quality_assessment_detail = assessment.get('_raw_result', assessment)
                         
                         # Return to the appropriate pass
                         if pass_number == 1:
@@ -3950,12 +3960,7 @@ def write_file(file, release_components, label_to_category, debug=False):
                              ('tailored_instructions' in pr and pr['tailored_instructions'])):
                     debug_comment = "\n<!--- DEBUG INFORMATION\n"
                     
-                    # Add quality assessment if available
-                    quality_assessment = getattr(pr, 'quality_assessment', None) or pr.get('quality_assessment')
-                    if quality_assessment:
-                        debug_comment += f"QUALITY ASSESSMENT:\n{quality_assessment}\n\n"
-                    
-                    # Add tailored instructions
+                    # Add tailored instructions 
                     tailored_instructions = getattr(pr, 'tailored_instructions', None) or pr.get('tailored_instructions')
                     if tailored_instructions:
                         debug_comment += "TAILORED INSTRUCTIONS:\n"
