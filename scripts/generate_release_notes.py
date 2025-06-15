@@ -146,8 +146,8 @@ EDIT_CONTENT_SYSTEM = (
 
 # --- Core quality principles shared across assessment and validation ---
 CORE_QUALITY_PRINCIPLES = {
-    "DUPLICATE_INTRODUCTIONS": "Multiple introductory sentences/paragraphs with similar meaning (e.g., 'This update introduces...' followed by 'This update enhances...')",
-    "CI_CD_REFERENCES": "Any mentions of workflows, pipelines, GitHub Actions, build processes, or deployment automation",
+    "DUPLICATE_INTRODUCTIONS": "Multiple introductory paragraphs with semantically similar content",
+    "INTERNAL_REFERENCES": "Any mentions of CI/CD workflows, pipelines, GitHub Actions, build processes, readmes, or deployment automation",
     "STRUCTURAL_PROBLEMS": "Poor organization, unclear flow, or formatting issues that affect readability",
     "CONTENT_LOSS": "Important user-facing information that was removed during editing",
     "CLARITY_ISSUES": "Technical jargon, verbose language, or unclear explanations",
@@ -177,12 +177,12 @@ EDIT_CONTENT_PROMPT = (
 )
 
 # --- Content quality assessment instructions for Pass 0 ---
-PASS_0_ASSESSMENT_SYSTEM = (
+INITIAL_QUALITY_ASSESSMENT_SYSTEM = (
     "You are a content quality assessor for release notes. Your task is to analyze the initial content quality "
     "and generate tailored editing instructions for subsequent processing passes."
 )
 
-PASS_0_ASSESSMENT_PROMPT = (
+INITIAL_QUALITY_ASSESSMENT_PROMPT = (
     "Analyze the following release notes content and generate tailored editing instructions for each pass. "
     "Only include editing steps that are actually needed based on the specific content issues you identify.\n\n"
     
@@ -190,7 +190,7 @@ PASS_0_ASSESSMENT_PROMPT = (
     "1. CONTENT STRUCTURE: Presence of Markdown headings, poor organization, missing user benefit statements\n"
     f"2. DUPLICATION: {CORE_QUALITY_PRINCIPLES['DUPLICATE_INTRODUCTIONS']}, overlap between PR summary and external notes, repeated features/changes\n"
     f"3. CLARITY & STYLE: {CORE_QUALITY_PRINCIPLES['CLARITY_ISSUES']}, complex lists, formatting issues\n"
-    f"4. CI/CD CONTENT: {CORE_QUALITY_PRINCIPLES['CI_CD_REFERENCES']}\n"
+    f"4. CI/CD CONTENT: {CORE_QUALITY_PRINCIPLES['INTERNAL_REFERENCES']}\n"
     "5. COMPLETENESS: Missing context, unclear explanations, formatting problems\n\n"
     
     "INSTRUCTION GUIDELINES:\n"
@@ -217,24 +217,24 @@ PASS_0_ASSESSMENT_PROMPT = (
     "PASS_1_INSTRUCTIONS:\n"
     "[Content-specific cleanup and structure instructions - ONLY rework, consolidate, or remove existing content. NEVER add new sentences, paragraphs, or bullet points. NEVER change formatting style.]\n\n"
     "PASS_2_INSTRUCTIONS:\n"
-    "[Content-specific deduplication instructions - only include if actual duplication exists. Focus on consolidating overlapping content, especially multiple introductory sentences that convey similar meaning (even if worded differently). Look for patterns like 'This update introduces...' followed by 'This update enhances...' and merge them into a single, comprehensive opening statement. Remove redundant introductory paragraphs.]\n\n"
+    "[Content-specific deduplication instructions - only include if actual duplication exists. Focus on consolidating overlapping content, especially multiple introductory paragraphs that convey semantically similar meaning (even if worded very differently). Merge them into a single, comprehensive opening statement. Remove redundant introductory paragraphs.]\n\n"
     "PASS_3_INSTRUCTIONS:\n"
     "[Content-specific streamlining instructions - simplify verbose language and improve flow without adding new content]"
 )
 
 # --- Pass 4 quality assessment instructions ---
-PASS_4_ASSESSMENT_SYSTEM = (
+FINAL_QUALITY_ASSESSMENT_SYSTEM = (
     "You are a final quality assessor for release notes. Your task is to compare the final edited content "
     "with the original content and identify any remaining issues that require additional editing passes."
 )
 
-PASS_4_ASSESSMENT_PROMPT = (
+FINAL_QUALITY_ASSESSMENT_PROMPT = (
     "Compare the final edited content with the original content and assess if any critical issues remain "
     "that require returning to specific editing passes.\n\n"
     
     "CRITICAL ISSUES TO CHECK:\n"
     f"1. DUPLICATE INTRODUCTIONS: {CORE_QUALITY_PRINCIPLES['DUPLICATE_INTRODUCTIONS']}\n"
-    f"2. REMAINING CI/CD REFERENCES: {CORE_QUALITY_PRINCIPLES['CI_CD_REFERENCES']}\n"
+    f"2. REMAINING CI/CD REFERENCES: {CORE_QUALITY_PRINCIPLES['INTERNAL_REFERENCES']}\n"
     f"3. STRUCTURAL PROBLEMS: {CORE_QUALITY_PRINCIPLES['STRUCTURAL_PROBLEMS']}\n"
     f"4. CONTENT LOSS: {CORE_QUALITY_PRINCIPLES['CONTENT_LOSS']}\n"
     f"5. CLARITY ISSUES: {CORE_QUALITY_PRINCIPLES['CLARITY_ISSUES']}\n\n"
@@ -893,7 +893,7 @@ class PR:
                 # Adjust temperature for retries to get more specific instructions
                 temperature = BASE_TEMPERATURE + (attempt * TEMPERATURE_INCREMENT)
                 
-                prompt = PASS_0_ASSESSMENT_PROMPT.format(
+                prompt = INITIAL_QUALITY_ASSESSMENT_PROMPT.format(
                     pr_summary=pr_summary or "None",
                     external_notes=external_notes or "None"
                 )
@@ -904,7 +904,7 @@ class PR:
                 
                 api_params = get_model_api_params(MODEL_EDITING, MAX_TOKENS_EDITING, temperature)
                 messages = [
-                    {"role": "system", "content": PASS_0_ASSESSMENT_SYSTEM},
+                    {"role": "system", "content": INITIAL_QUALITY_ASSESSMENT_SYSTEM},
                     {"role": "user", "content": prompt}
                 ]
                 
@@ -934,7 +934,7 @@ class PR:
                             self.validation_summaries = []
                         
                         assessment_summary = {
-                            'content_type': 'pass_0_assessment',
+                            'content_type': 'initial_quality_assessment',
                             'validation_failed': False,
                             'attempts': attempt + 1,
                             'validation_result': "PASS: Tailored instructions generated and validated",
@@ -973,7 +973,7 @@ class PR:
             self.validation_summaries = []
         
         assessment_summary = {
-            'content_type': 'pass_0_assessment',
+            'content_type': 'initial_quality_assessment',
             'validation_failed': True,
             'attempts': max_attempts,
             'validation_result': "FAIL: Could not generate specific enough instructions",
@@ -1062,14 +1062,14 @@ class PR:
     def _assess_final_quality(self, original_content, edited_content, debug=False):
         """Assess the final quality of edited content and determine if additional passes are needed."""
         try:
-            prompt = PASS_4_ASSESSMENT_PROMPT.format(
+            prompt = FINAL_QUALITY_ASSESSMENT_PROMPT.format(
                 original_content=original_content,
                 edited_content=edited_content
             )
             
             api_params = get_model_api_params(MODEL_PASS_4, MAX_TOKENS_VALIDATION, BASE_TEMPERATURE)
             messages = [
-                {"role": "system", "content": PASS_4_ASSESSMENT_SYSTEM},
+                {"role": "system", "content": FINAL_QUALITY_ASSESSMENT_SYSTEM},
                 {"role": "user", "content": prompt}
             ]
             
@@ -1107,7 +1107,7 @@ class PR:
                 print(f"DEBUG: [_assess_final_quality] Error assessing final quality: {e}")
             return None
 
-    def _validate_pass_4_assessment(self, assessment, debug=False):
+    def _validate_final_quality_assessment(self, assessment, debug=False):
         """Validate that the Pass 4 assessment has the correct format and content."""
         try:
             # Check required fields
@@ -1115,21 +1115,21 @@ class PR:
             for field in required_fields:
                 if field not in assessment:
                     if debug:
-                        print(f"DEBUG: [_validate_pass_4_assessment] Missing required field: {field}")
+                        print(f"DEBUG: [_validate_final_quality_assessment] Missing required field: {field}")
                     return False
             
             # Validate status field
             valid_statuses = ['PASS', 'RETURN_TO_PASS_1', 'RETURN_TO_PASS_2', 'RETURN_TO_PASS_3']
             if assessment['status'] not in valid_statuses:
                 if debug:
-                    print(f"DEBUG: [_validate_pass_4_assessment] Invalid status: {assessment['status']}")
+                    print(f"DEBUG: [_validate_final_quality_assessment] Invalid status: {assessment['status']}")
                 return False
             
             # If status is PASS, issue and recommendation should be 'None' or empty
             if assessment['status'] == 'PASS':
                 if assessment['issue'] not in ['None', '', 'none'] or assessment['recommendation'] not in ['None', '', 'none']:
                     if debug:
-                        print(f"DEBUG: [_validate_pass_4_assessment] PASS status should have 'None' for issue/recommendation")
+                        print(f"DEBUG: [_validate_final_quality_assessment] PASS status should have 'None' for issue/recommendation")
                     return False
             
             # If status is RETURN_TO_PASS_X, issue and recommendation should not be empty
@@ -1137,14 +1137,14 @@ class PR:
                 if not assessment['issue'] or assessment['issue'] in ['None', 'none'] or \
                    not assessment['recommendation'] or assessment['recommendation'] in ['None', 'none']:
                     if debug:
-                        print(f"DEBUG: [_validate_pass_4_assessment] RETURN_TO_PASS status requires non-empty issue and recommendation")
+                        print(f"DEBUG: [_validate_final_quality_assessment] RETURN_TO_PASS status requires non-empty issue and recommendation")
                     return False
             
             return True
             
         except Exception as e:
             if debug:
-                print(f"DEBUG: [_validate_pass_4_assessment] Error validating assessment: {e}")
+                print(f"DEBUG: [_validate_final_quality_assessment] Error validating assessment: {e}")
             return False
 
     def edit_content(self, content_type, content, editing_instructions, edit=False, skip_passes=None):
@@ -1231,14 +1231,14 @@ class PR:
                         break
                     
                     # Validate Pass 4 assessment format
-                    if not self._validate_pass_4_assessment(assessment, self.debug):
+                    if not self._validate_final_quality_assessment(assessment, self.debug):
                         if self.debug:
                             print(f"DEBUG: [Pass 4] Assessment format invalid, accepting current content")
                         
                         # Store failed validation for debug output
-                        if not hasattr(self, 'pass_4_feedback'):
-                            self.pass_4_feedback = []
-                        self.pass_4_feedback.append({
+                        if not hasattr(self, 'final_quality_feedback'):
+                            self.final_quality_feedback = []
+                        self.final_quality_feedback.append({
                             'loop': feedback_loop_count + 1,
                             'status': assessment.get('status', 'INVALID'),
                             'issue': 'Pass 4 assessment validation failed',
@@ -1261,9 +1261,9 @@ class PR:
                             print(f"DEBUG: [Pass 4] Returning to Pass {pass_number} - {assessment['issue']}")
                         
                         # Store Pass 4 feedback for debug output
-                        if not hasattr(self, 'pass_4_feedback'):
-                            self.pass_4_feedback = []
-                        self.pass_4_feedback.append({
+                        if not hasattr(self, 'final_quality_feedback'):
+                            self.final_quality_feedback = []
+                        self.final_quality_feedback.append({
                             'loop': feedback_loop_count + 1,
                             'status': assessment['status'],
                             'issue': assessment['issue'],
@@ -2907,8 +2907,8 @@ def create_release_file(release, overwrite=False, debug=False, edit=False, singl
                 commit['tailored_instructions'] = pr_obj.tailored_instructions
             if hasattr(pr_obj, 'quality_assessment'):
                 commit['quality_assessment'] = pr_obj.quality_assessment
-            if hasattr(pr_obj, 'pass_4_feedback'):
-                commit['pass_4_feedback'] = pr_obj.pass_4_feedback
+            if hasattr(pr_obj, 'final_quality_feedback'):
+                commit['final_quality_feedback'] = pr_obj.final_quality_feedback
         else:
             commit['cleaned_title'] = commit.get('title', '')
             commit['pr_summary'] = commit.get('pr_summary', '')
@@ -3907,10 +3907,10 @@ def write_file(file, release_components, label_to_category, debug=False):
                             debug_comment += f"{pass_name.upper()}: {instruction}\n"
                     
                     # Add Pass 4 feedback if available
-                    pass_4_feedback = getattr(pr, 'pass_4_feedback', None) or pr.get('pass_4_feedback')
-                    if pass_4_feedback:
+                    final_quality_feedback = getattr(pr, 'final_quality_feedback', None) or pr.get('final_quality_feedback')
+                    if final_quality_feedback:
                         debug_comment += "\nPASS 4 FEEDBACK LOOPS:\n"
-                        for feedback in pass_4_feedback:
+                        for feedback in final_quality_feedback:
                             validation_status = "✓" if feedback.get('validation_passed', True) else "✗"
                             debug_comment += f"Loop {feedback['loop']} {validation_status}: {feedback['status']} - {feedback['issue']}\n"
                             debug_comment += f"Recommendation: {feedback['recommendation']}\n"
